@@ -1,0 +1,2 @@
+- [Rita session auth](rita-session-auth.md) — uses express-session + connect-pg-simple; frontend needs credentials:include on all API calls
+- [OpenAPI query+path param collision](orval-params-collision.md) — endpoints with BOTH path params AND query params can cause GetXxxParams TS2308 collision; remove query params from those endpoints

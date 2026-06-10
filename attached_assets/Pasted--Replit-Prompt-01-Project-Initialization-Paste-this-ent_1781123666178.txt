@@ -1,0 +1,364 @@
+# Replit Prompt #01 — Project Initialization
+> Paste this entire prompt into Replit Agent to get started.
+> Do NOT proceed to Prompt #02 until this step is fully working.
+
+---
+
+## Your Task
+
+Create a new Next.js project called **Rita** with the following exact setup. Do not add any features yet — this step is only about project structure and configuration.
+
+---
+
+## Step 1: Initialize the Project
+
+Create a Next.js 14 app with App Router and TypeScript:
+
+```bash
+npx create-next-app@latest rita \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir=false \
+  --import-alias="@/*"
+```
+
+---
+
+## Step 2: Install Dependencies
+
+Run the following installs one at a time:
+
+```bash
+npm install @supabase/supabase-js @supabase/ssr
+npm install resend
+npm install @anthropic-ai/sdk
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+npm install @tremor/react
+```
+
+Then initialize shadcn/ui:
+
+```bash
+npx shadcn@latest init
+```
+
+When prompted, choose:
+- Style: **Default**
+- Base color: **Slate**
+- CSS variables: **Yes**
+
+Then add these shadcn components:
+
+```bash
+npx shadcn@latest add button card input label badge toast avatar separator
+```
+
+---
+
+## Step 3: Create Folder Structure
+
+Create the following empty folders and placeholder files exactly as shown. Do not write any logic yet — just create the files with a simple placeholder comment inside each.
+
+```
+app/
+  (auth)/
+    login/
+      page.tsx
+    signup/
+      page.tsx
+  (main)/
+    layout.tsx
+    page.tsx
+    instructors/
+      page.tsx
+      [id]/
+        page.tsx
+    sessions/
+      page.tsx
+    reviews/
+      new/
+        page.tsx
+    ranking/
+      page.tsx
+    profile/
+      page.tsx
+  admin/
+    layout.tsx
+    page.tsx
+    instructors/
+      page.tsx
+    moderation/
+      page.tsx
+    users/
+      page.tsx
+  api/
+    auth/
+      callback/
+        route.ts
+    instructors/
+      route.ts
+      [id]/
+        route.ts
+    sessions/
+      route.ts
+      [id]/
+        verify/
+          route.ts
+    reviews/
+      route.ts
+      [id]/
+        route.ts
+    rankings/
+      private/
+        route.ts
+      public/
+        route.ts
+    notifications/
+      route.ts
+    moderation/
+      route.ts
+
+components/
+  ui/                         ← shadcn puts files here automatically
+  instructor/
+    InstructorCard.tsx
+    InstructorProfile.tsx
+    InstructorSearch.tsx
+  review/
+    VerticalSlider.tsx
+    ReviewCard.tsx
+    ReviewForm.tsx
+  ranking/
+    PrivateRankingList.tsx
+    PublicRankingTable.tsx
+  session/
+    SessionCard.tsx
+    VerificationFlow.tsx
+  shared/
+    Navbar.tsx
+    NotificationBell.tsx
+    ScoreDisplay.tsx
+
+lib/
+  supabase/
+    client.ts
+    server.ts
+    middleware.ts
+  kemeny-young.ts
+  moderation.ts
+  resend.ts
+  utils.ts
+
+types/
+  database.ts
+```
+
+---
+
+## Step 4: Set Up Environment Variables
+
+Create a `.env.local` file in the project root with these placeholder values:
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Resend
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=noreply@livdao.com
+
+# Anthropic
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## Step 5: Configure Tailwind with Rita Brand Colors
+
+Update `tailwind.config.ts` to include Rita's brand colors:
+
+```typescript
+import type { Config } from "tailwindcss"
+
+const config: Config = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        // Rita brand colors (US Open palette)
+        rita: {
+          blue: "#1668c8",
+          "blue-dark": "#1250a0",
+          "blue-light": "#e8f1fc",
+          lime: "#b8d400",
+          "lime-dark": "#8fa300",
+          "lime-light": "#f5fbcc",
+          charcoal: "#1e2a38",
+          gray: "#6b7a8d",
+          "gray-light": "#f4f6f9",
+        },
+        // Score tier colors
+        score: {
+          high: "#1668c8",    // >= 4.0
+          mid: "#c89000",     // 2.5 – 3.9
+          low: "#c83030",     // < 2.5
+        }
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
+
+export default config
+```
+
+---
+
+## Step 6: Set Up Supabase Clients
+
+Write the following files exactly:
+
+**`lib/supabase/client.ts`** — for use in browser components:
+```typescript
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+```
+
+**`lib/supabase/server.ts`** — for use in server components and API routes:
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createClient() {
+  const cookieStore = cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+```
+
+**`middleware.ts`** — in project root, protects authenticated routes:
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const protectedRoutes = ['/sessions', '/reviews', '/ranking', '/profile']
+  const adminRoutes = ['/admin']
+  const path = request.nextUrl.pathname
+
+  // Redirect unauthenticated users
+  if (!user && protectedRoutes.some(r => path.startsWith(r))) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // Redirect non-admins from admin routes
+  if (path.startsWith('/admin')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (!userData?.is_admin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+```
+
+---
+
+## Step 7: Verify Everything Works
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+**Expected result:**
+- No errors in the terminal
+- Browser opens to `http://localhost:3000`
+- A blank Next.js page loads without crashing
+- All folders and files exist as listed in Step 3
+
+---
+
+## ✅ Done When:
+- [ ] `npm run dev` runs without errors
+- [ ] All folders and files created
+- [ ] Tailwind brand colors configured
+- [ ] Supabase client files written
+- [ ] Middleware file in place
+- [ ] `.env.local` file created with placeholders
+
+**Do not proceed to Prompt #02 until all checkboxes above are complete.**
