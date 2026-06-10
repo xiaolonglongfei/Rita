@@ -97,11 +97,9 @@ export const ListInstructorsResponse = zod.object({
   "location": zod.string().nullish(),
   "verified": zod.boolean(),
   "avgScore": zod.number(),
-  "avgTechnique": zod.number().optional(),
-  "avgCommunication": zod.number().optional(),
-  "avgPatience": zod.number().optional(),
-  "avgAdaptability": zod.number().optional(),
-  "avgExpertise": zod.number().optional(),
+  "avgValue": zod.number().optional(),
+  "avgEffectiveness": zod.number().optional(),
+  "avgPunctuality": zod.number().optional(),
   "reviewCount": zod.number(),
   "publicRank": zod.number().nullish(),
   "createdAt": zod.string()
@@ -128,11 +126,9 @@ export const GetInstructorResponse = zod.object({
   "location": zod.string().nullish(),
   "verified": zod.boolean(),
   "avgScore": zod.number(),
-  "avgTechnique": zod.number().optional(),
-  "avgCommunication": zod.number().optional(),
-  "avgPatience": zod.number().optional(),
-  "avgAdaptability": zod.number().optional(),
-  "avgExpertise": zod.number().optional(),
+  "avgValue": zod.number().optional(),
+  "avgEffectiveness": zod.number().optional(),
+  "avgPunctuality": zod.number().optional(),
   "reviewCount": zod.number(),
   "publicRank": zod.number().nullish(),
   "createdAt": zod.string()
@@ -155,11 +151,9 @@ export const GetInstructorReviewsResponse = zod.object({
   "instructorId": zod.number(),
   "instructorName": zod.string().nullish(),
   "sessionId": zod.number().nullish(),
-  "technique": zod.number(),
-  "communication": zod.number(),
-  "patience": zod.number(),
-  "adaptability": zod.number(),
-  "expertise": zod.number(),
+  "value": zod.number(),
+  "effectiveness": zod.number(),
+  "punctuality": zod.number(),
   "overallScore": zod.number(),
   "comment": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
@@ -180,11 +174,9 @@ export const GetInstructorStatsParams = zod.object({
 
 export const GetInstructorStatsResponse = zod.object({
   "instructorId": zod.number(),
-  "avgTechnique": zod.number(),
-  "avgCommunication": zod.number(),
-  "avgPatience": zod.number(),
-  "avgAdaptability": zod.number(),
-  "avgExpertise": zod.number(),
+  "avgValue": zod.number(),
+  "avgEffectiveness": zod.number(),
+  "avgPunctuality": zod.number(),
   "avgScore": zod.number(),
   "reviewCount": zod.number(),
   "scoreDistribution": zod.array(zod.object({
@@ -273,11 +265,9 @@ export const ListMyReviewsResponseItem = zod.object({
   "instructorId": zod.number(),
   "instructorName": zod.string().nullish(),
   "sessionId": zod.number().nullish(),
-  "technique": zod.number(),
-  "communication": zod.number(),
-  "patience": zod.number(),
-  "adaptability": zod.number(),
-  "expertise": zod.number(),
+  "value": zod.number(),
+  "effectiveness": zod.number(),
+  "punctuality": zod.number(),
   "overallScore": zod.number(),
   "comment": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
@@ -289,26 +279,20 @@ export const ListMyReviewsResponse = zod.array(ListMyReviewsResponseItem)
 /**
  * @summary Submit a review
  */
-export const createReviewBodyTechniqueMax = 5;
+export const createReviewBodyValueMax = 5;
 
-export const createReviewBodyCommunicationMax = 5;
+export const createReviewBodyEffectivenessMax = 5;
 
-export const createReviewBodyPatienceMax = 5;
-
-export const createReviewBodyAdaptabilityMax = 5;
-
-export const createReviewBodyExpertiseMax = 5;
+export const createReviewBodyPunctualityMax = 5;
 
 
 
 export const CreateReviewBody = zod.object({
   "instructorId": zod.number(),
   "sessionId": zod.number().optional(),
-  "technique": zod.number().min(1).max(createReviewBodyTechniqueMax),
-  "communication": zod.number().min(1).max(createReviewBodyCommunicationMax),
-  "patience": zod.number().min(1).max(createReviewBodyPatienceMax),
-  "adaptability": zod.number().min(1).max(createReviewBodyAdaptabilityMax),
-  "expertise": zod.number().min(1).max(createReviewBodyExpertiseMax),
+  "value": zod.number().min(1).max(createReviewBodyValueMax),
+  "effectiveness": zod.number().min(1).max(createReviewBodyEffectivenessMax),
+  "punctuality": zod.number().min(1).max(createReviewBodyPunctualityMax),
   "comment": zod.string().optional()
 })
 
@@ -328,11 +312,9 @@ export const GetReviewResponse = zod.object({
   "instructorId": zod.number(),
   "instructorName": zod.string().nullish(),
   "sessionId": zod.number().nullish(),
-  "technique": zod.number(),
-  "communication": zod.number(),
-  "patience": zod.number(),
-  "adaptability": zod.number(),
-  "expertise": zod.number(),
+  "value": zod.number(),
+  "effectiveness": zod.number(),
+  "punctuality": zod.number(),
   "overallScore": zod.number(),
   "comment": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
@@ -445,11 +427,9 @@ export const AdminListInstructorsResponseItem = zod.object({
   "location": zod.string().nullish(),
   "verified": zod.boolean(),
   "avgScore": zod.number(),
-  "avgTechnique": zod.number().optional(),
-  "avgCommunication": zod.number().optional(),
-  "avgPatience": zod.number().optional(),
-  "avgAdaptability": zod.number().optional(),
-  "avgExpertise": zod.number().optional(),
+  "avgValue": zod.number().optional(),
+  "avgEffectiveness": zod.number().optional(),
+  "avgPunctuality": zod.number().optional(),
   "reviewCount": zod.number(),
   "publicRank": zod.number().nullish(),
   "createdAt": zod.string()
@@ -494,11 +474,9 @@ export const AdminUpdateInstructorResponse = zod.object({
   "location": zod.string().nullish(),
   "verified": zod.boolean(),
   "avgScore": zod.number(),
-  "avgTechnique": zod.number().optional(),
-  "avgCommunication": zod.number().optional(),
-  "avgPatience": zod.number().optional(),
-  "avgAdaptability": zod.number().optional(),
-  "avgExpertise": zod.number().optional(),
+  "avgValue": zod.number().optional(),
+  "avgEffectiveness": zod.number().optional(),
+  "avgPunctuality": zod.number().optional(),
   "reviewCount": zod.number(),
   "publicRank": zod.number().nullish(),
   "createdAt": zod.string()
@@ -564,11 +542,9 @@ export const AdminListPendingReviewsResponseItem = zod.object({
   "instructorId": zod.number(),
   "instructorName": zod.string().nullish(),
   "sessionId": zod.number().nullish(),
-  "technique": zod.number(),
-  "communication": zod.number(),
-  "patience": zod.number(),
-  "adaptability": zod.number(),
-  "expertise": zod.number(),
+  "value": zod.number(),
+  "effectiveness": zod.number(),
+  "punctuality": zod.number(),
   "overallScore": zod.number(),
   "comment": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
@@ -597,11 +573,9 @@ export const AdminModerateReviewResponse = zod.object({
   "instructorId": zod.number(),
   "instructorName": zod.string().nullish(),
   "sessionId": zod.number().nullish(),
-  "technique": zod.number(),
-  "communication": zod.number(),
-  "patience": zod.number(),
-  "adaptability": zod.number(),
-  "expertise": zod.number(),
+  "value": zod.number(),
+  "effectiveness": zod.number(),
+  "punctuality": zod.number(),
   "overallScore": zod.number(),
   "comment": zod.string().nullish(),
   "status": zod.enum(['pending', 'approved', 'rejected']),

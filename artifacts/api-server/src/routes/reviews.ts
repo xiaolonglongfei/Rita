@@ -16,11 +16,9 @@ function formatReview(review: typeof reviewsTable.$inferSelect, userName?: strin
     instructorId: review.instructorId,
     instructorName: instructorName ?? null,
     sessionId: review.sessionId ?? null,
-    technique: review.technique,
-    communication: review.communication,
-    patience: review.patience,
-    adaptability: review.adaptability,
-    expertise: review.expertise,
+    value: review.value,
+    effectiveness: review.effectiveness,
+    punctuality: review.punctuality,
     overallScore: review.overallScore,
     comment: review.comment ?? null,
     status: review.status as "pending" | "approved" | "rejected",
@@ -46,18 +44,16 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { instructorId, sessionId, technique, communication, patience, adaptability, expertise, comment } = parsed.data;
-  const overallScore = (technique + communication + patience + adaptability + expertise) / 5;
+  const { instructorId, sessionId, value, effectiveness, punctuality, comment } = parsed.data;
+  const overallScore = (value + effectiveness + punctuality) / 3;
 
   const [review] = await db.insert(reviewsTable).values({
     userId: req.session.userId!,
     instructorId,
     sessionId: sessionId ?? null,
-    technique,
-    communication,
-    patience,
-    adaptability,
-    expertise,
+    value,
+    effectiveness,
+    punctuality,
     overallScore,
     comment: comment ?? null,
     status: "pending",

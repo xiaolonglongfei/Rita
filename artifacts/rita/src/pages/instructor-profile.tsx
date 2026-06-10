@@ -1,8 +1,8 @@
 import { Layout } from "@/components/layout";
 import { useGetInstructor, getGetInstructorQueryKey, useGetInstructorReviews, getGetInstructorReviewsQueryKey, useGetInstructorStats, getGetInstructorStatsQueryKey } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { MapPin, ShieldCheck, Star } from "lucide-react";
+import { ScoreTriangle } from "@/components/score-triangle";
 
 export default function InstructorProfile() {
   const [match, params] = useRoute("/instructors/:id");
@@ -25,14 +25,6 @@ export default function InstructorProfile() {
   }
 
   if (!instructor) return <Layout><div className="text-center py-20 font-bold text-xl text-destructive">Instructor not found</div></Layout>;
-
-  const radarData = stats ? [
-    { subject: 'Technique', A: stats.avgTechnique, fullMark: 5 },
-    { subject: 'Communication', A: stats.avgCommunication, fullMark: 5 },
-    { subject: 'Patience', A: stats.avgPatience, fullMark: 5 },
-    { subject: 'Adaptability', A: stats.avgAdaptability, fullMark: 5 },
-    { subject: 'Expertise', A: stats.avgExpertise, fullMark: 5 },
-  ] : [];
 
   return (
     <Layout>
@@ -106,13 +98,11 @@ export default function InstructorProfile() {
                       </div>
                     </div>
                     {review.comment && <p className="text-muted-foreground leading-relaxed">{review.comment}</p>}
-                    
+
                     <div className="mt-4 pt-4 border-t flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      <span className="flex gap-1">Tech: <span className="text-foreground">{review.technique}</span></span>
-                      <span className="flex gap-1">Comm: <span className="text-foreground">{review.communication}</span></span>
-                      <span className="flex gap-1">Pat: <span className="text-foreground">{review.patience}</span></span>
-                      <span className="flex gap-1">Adapt: <span className="text-foreground">{review.adaptability}</span></span>
-                      <span className="flex gap-1">Exp: <span className="text-foreground">{review.expertise}</span></span>
+                      <span className="flex gap-1">💰 Value: <span className="text-foreground">{review.value.toFixed(1)}</span></span>
+                      <span className="flex gap-1">📈 Effectiveness: <span className="text-foreground">{review.effectiveness.toFixed(1)}</span></span>
+                      <span className="flex gap-1">⏰ Punctuality: <span className="text-foreground">{review.punctuality.toFixed(1)}</span></span>
                     </div>
                   </div>
                 ))}
@@ -124,52 +114,23 @@ export default function InstructorProfile() {
           </div>
 
           <div>
-            {stats && (
-              <div className="sticky top-24 space-y-6">
-                <div className="border rounded-xl bg-card shadow-sm p-6">
-                  <h3 className="font-black text-center mb-6 tracking-tight">Score Breakdown</h3>
-                  <div className="h-[250px] w-full -ml-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                        <PolarGrid stroke="var(--color-border)" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-muted-foreground)', fontSize: 11, fontWeight: 'bold' }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'var(--color-muted-foreground)', fontSize: 10 }} />
-                        <Radar name="Score" dataKey="A" stroke="var(--color-accent)" fill="var(--color-accent)" fillOpacity={0.3} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
-                  <div className="space-y-3 mt-4">
-                    <StatBar label="Technique" score={stats.avgTechnique} />
-                    <StatBar label="Communication" score={stats.avgCommunication} />
-                    <StatBar label="Patience" score={stats.avgPatience} />
-                    <StatBar label="Adaptability" score={stats.avgAdaptability} />
-                    <StatBar label="Expertise" score={stats.avgExpertise} />
-                  </div>
+            <div className="sticky top-24">
+              {stats ? (
+                <ScoreTriangle
+                  value={stats.avgValue}
+                  effectiveness={stats.avgEffectiveness}
+                  punctuality={stats.avgPunctuality}
+                  reviewCount={stats.reviewCount}
+                />
+              ) : (
+                <div className="border rounded-2xl bg-card shadow-sm p-6 text-center text-muted-foreground font-bold">
+                  No stats yet
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
     </Layout>
-  );
-}
-
-function StatBar({ label, score }: { label: string, score: number }) {
-  const percentage = (score / 5) * 100;
-  return (
-    <div>
-      <div className="flex justify-between text-xs font-bold mb-1">
-        <span className="uppercase tracking-wider">{label}</span>
-        <span className="text-accent">{score.toFixed(1)}</span>
-      </div>
-      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-accent rounded-full transition-all duration-1000 ease-out" 
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
   );
 }

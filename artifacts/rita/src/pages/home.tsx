@@ -1,10 +1,10 @@
 import { Layout } from "@/components/layout";
-import { useGetMe, useGetDashboardStats } from "@workspace/api-client-react";
+import { useGetMe, useGetDashboardStats, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { ArrowRight, Star, Calendar, MessageSquare, Bell } from "lucide-react";
 
 export default function Home() {
-  const { data: user, isLoading: userLoading } = useGetMe({ query: { retry: false } });
+  const { data: user, isLoading: userLoading } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   
   if (userLoading) {
     return (

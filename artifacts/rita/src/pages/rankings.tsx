@@ -1,16 +1,16 @@
 import { Layout } from "@/components/layout";
-import { useGetPublicRankings, useGetPrivateRankings, useGetMe } from "@workspace/api-client-react";
+import { useGetPublicRankings, useGetPrivateRankings, useGetMe, getGetMeQueryKey, getGetPrivateRankingsQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { Trophy, Target, ShieldCheck, Star } from "lucide-react";
 
 export default function Rankings() {
-  const { data: user } = useGetMe({ query: { retry: false } });
+  const { data: user } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   const [tab, setTab] = useState<"public" | "private">("public");
   
   const { data: publicRankings, isLoading: publicLoading } = useGetPublicRankings();
   const { data: privateRankings, isLoading: privateLoading } = useGetPrivateRankings({
-    query: { enabled: tab === "private" && !!user }
+    query: { enabled: tab === "private" && !!user, queryKey: getGetPrivateRankingsQueryKey() }
   });
 
   return (

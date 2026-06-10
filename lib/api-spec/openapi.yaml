@@ -673,15 +673,11 @@ components:
           type: boolean
         avgScore:
           type: number
-        avgTechnique:
+        avgValue:
           type: number
-        avgCommunication:
+        avgEffectiveness:
           type: number
-        avgPatience:
-          type: number
-        avgAdaptability:
-          type: number
-        avgExpertise:
+        avgPunctuality:
           type: number
         reviewCount:
           type: integer
@@ -738,19 +734,15 @@ components:
 
     InstructorStats:
       type: object
-      required: [instructorId, avgTechnique, avgCommunication, avgPatience, avgAdaptability, avgExpertise, avgScore, reviewCount, scoreDistribution]
+      required: [instructorId, avgValue, avgEffectiveness, avgPunctuality, avgScore, reviewCount, scoreDistribution]
       properties:
         instructorId:
           type: integer
-        avgTechnique:
+        avgValue:
           type: number
-        avgCommunication:
+        avgEffectiveness:
           type: number
-        avgPatience:
-          type: number
-        avgAdaptability:
-          type: number
-        avgExpertise:
+        avgPunctuality:
           type: number
         avgScore:
           type: number
@@ -813,7 +805,7 @@ components:
     # Reviews
     Review:
       type: object
-      required: [id, userId, instructorId, technique, communication, patience, adaptability, expertise, overallScore, status, createdAt]
+      required: [id, userId, instructorId, value, effectiveness, punctuality, overallScore, status, createdAt]
       properties:
         id:
           type: integer
@@ -829,15 +821,11 @@ components:
           type: ["string", "null"]
         sessionId:
           type: ["integer", "null"]
-        technique:
+        value:
           type: number
-        communication:
+        effectiveness:
           type: number
-        patience:
-          type: number
-        adaptability:
-          type: number
-        expertise:
+        punctuality:
           type: number
         overallScore:
           type: number
@@ -866,29 +854,21 @@ components:
 
     ReviewInput:
       type: object
-      required: [instructorId, technique, communication, patience, adaptability, expertise]
+      required: [instructorId, value, effectiveness, punctuality]
       properties:
         instructorId:
           type: integer
         sessionId:
           type: integer
-        technique:
+        value:
           type: number
           minimum: 1
           maximum: 5
-        communication:
+        effectiveness:
           type: number
           minimum: 1
           maximum: 5
-        patience:
-          type: number
-          minimum: 1
-          maximum: 5
-        adaptability:
-          type: number
-          minimum: 1
-          maximum: 5
-        expertise:
+        punctuality:
           type: number
           minimum: 1
           maximum: 5

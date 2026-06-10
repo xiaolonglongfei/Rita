@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetMe, useLogout, useListNotifications, useMarkAllNotificationsRead, getListNotificationsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useLogout, useListNotifications, useMarkAllNotificationsRead, getListNotificationsQueryKey, getGetMeQueryKey } from "@workspace/api-client-react";
 import { Bell, User, LogOut, ShieldAlert, Trophy, Users, Calendar, Activity } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function Navbar() {
-  const { data: user } = useGetMe({ query: { retry: false } });
+  const { data: user } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   const logout = useLogout();
   const [location] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: notifications } = useListNotifications({ query: { enabled: !!user } });
+  const { data: notifications } = useListNotifications({ query: { enabled: !!user, queryKey: getListNotificationsQueryKey() } });
   const markAllRead = useMarkAllNotificationsRead();
 
   const unreadCount = notifications?.filter(n => !n.read).length || 0;

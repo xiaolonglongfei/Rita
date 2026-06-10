@@ -16,11 +16,9 @@ function formatInstructor(instructor: typeof instructorsTable.$inferSelect) {
     location: instructor.location ?? null,
     verified: instructor.verified,
     avgScore: instructor.avgScore,
-    avgTechnique: instructor.avgTechnique,
-    avgCommunication: instructor.avgCommunication,
-    avgPatience: instructor.avgPatience,
-    avgAdaptability: instructor.avgAdaptability,
-    avgExpertise: instructor.avgExpertise,
+    avgValue: instructor.avgValue,
+    avgEffectiveness: instructor.avgEffectiveness,
+    avgPunctuality: instructor.avgPunctuality,
     reviewCount: instructor.reviewCount,
     publicRank: instructor.publicRank ?? null,
     createdAt: instructor.createdAt.toISOString(),
@@ -91,11 +89,9 @@ router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
     instructorId: review.instructorId,
     instructorName: instructorName ?? null,
     sessionId: review.sessionId ?? null,
-    technique: review.technique,
-    communication: review.communication,
-    patience: review.patience,
-    adaptability: review.adaptability,
-    expertise: review.expertise,
+    value: review.value,
+    effectiveness: review.effectiveness,
+    punctuality: review.punctuality,
     overallScore: review.overallScore,
     comment: review.comment ?? null,
     status: review.status as "pending" | "approved" | "rejected",
@@ -122,11 +118,9 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
 
   res.json({
     instructorId,
-    avgTechnique: instructor.avgTechnique,
-    avgCommunication: instructor.avgCommunication,
-    avgPatience: instructor.avgPatience,
-    avgAdaptability: instructor.avgAdaptability,
-    avgExpertise: instructor.avgExpertise,
+    avgValue: instructor.avgValue,
+    avgEffectiveness: instructor.avgEffectiveness,
+    avgPunctuality: instructor.avgPunctuality,
     avgScore: instructor.avgScore,
     reviewCount: instructor.reviewCount,
     scoreDistribution,
@@ -136,17 +130,15 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
 export async function recomputeInstructorStats(instructorId: number) {
   const reviews = await db.select().from(reviewsTable).where(and(eq(reviewsTable.instructorId, instructorId), eq(reviewsTable.status, "approved")));
   if (reviews.length === 0) {
-    await db.update(instructorsTable).set({ avgScore: 0, avgTechnique: 0, avgCommunication: 0, avgPatience: 0, avgAdaptability: 0, avgExpertise: 0, reviewCount: 0 }).where(eq(instructorsTable.id, instructorId));
+    await db.update(instructorsTable).set({ avgScore: 0, avgValue: 0, avgEffectiveness: 0, avgPunctuality: 0, reviewCount: 0 }).where(eq(instructorsTable.id, instructorId));
     return;
   }
   const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
   await db.update(instructorsTable).set({
     reviewCount: reviews.length,
-    avgTechnique: avg(reviews.map(r => r.technique)),
-    avgCommunication: avg(reviews.map(r => r.communication)),
-    avgPatience: avg(reviews.map(r => r.patience)),
-    avgAdaptability: avg(reviews.map(r => r.adaptability)),
-    avgExpertise: avg(reviews.map(r => r.expertise)),
+    avgValue: avg(reviews.map(r => r.value)),
+    avgEffectiveness: avg(reviews.map(r => r.effectiveness)),
+    avgPunctuality: avg(reviews.map(r => r.punctuality)),
     avgScore: avg(reviews.map(r => r.overallScore)),
   }).where(eq(instructorsTable.id, instructorId));
 }

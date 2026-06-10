@@ -1,10 +1,10 @@
 import { Layout } from "@/components/layout";
-import { useGetMe, useAdminListInstructors, useAdminListUsers, useAdminListPendingReviews, useAdminModerateReview, useAdminCreateInstructor, useAdminDeleteInstructor } from "@workspace/api-client-react";
+import { useGetMe, useAdminListInstructors, useAdminListUsers, useAdminListPendingReviews, useAdminModerateReview, useAdminCreateInstructor, useAdminDeleteInstructor, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function Admin() {
-  const { data: user } = useGetMe({ query: { retry: false } });
+  const { data: user } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   const [tab, setTab] = useState<"instructors" | "reviews" | "users">("instructors");
 
   if (!user?.isAdmin) {

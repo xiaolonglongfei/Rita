@@ -13,26 +13,16 @@ export interface ReviewInput {
      * @minimum 1
      * @maximum 5
      */
-  technique: number;
+  value: number;
   /**
      * @minimum 1
      * @maximum 5
      */
-  communication: number;
+  effectiveness: number;
   /**
      * @minimum 1
      * @maximum 5
      */
-  patience: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  adaptability: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  expertise: number;
+  punctuality: number;
   comment?: string;
 }

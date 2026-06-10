@@ -47,11 +47,9 @@ export interface Instructor {
   location?: string | null;
   verified: boolean;
   avgScore: number;
-  avgTechnique?: number;
-  avgCommunication?: number;
-  avgPatience?: number;
-  avgAdaptability?: number;
-  avgExpertise?: number;
+  avgValue?: number;
+  avgEffectiveness?: number;
+  avgPunctuality?: number;
   reviewCount: number;
   /** @nullable */
   publicRank?: number | null;
@@ -89,11 +87,9 @@ export interface ScoreBucket {
 
 export interface InstructorStats {
   instructorId: number;
-  avgTechnique: number;
-  avgCommunication: number;
-  avgPatience: number;
-  avgAdaptability: number;
-  avgExpertise: number;
+  avgValue: number;
+  avgEffectiveness: number;
+  avgPunctuality: number;
   avgScore: number;
   reviewCount: number;
   scoreDistribution: ScoreBucket[];
@@ -143,11 +139,9 @@ export interface Review {
   instructorName?: string | null;
   /** @nullable */
   sessionId?: number | null;
-  technique: number;
-  communication: number;
-  patience: number;
-  adaptability: number;
-  expertise: number;
+  value: number;
+  effectiveness: number;
+  punctuality: number;
   overallScore: number;
   /** @nullable */
   comment?: string | null;
@@ -169,27 +163,17 @@ export interface ReviewInput {
      * @minimum 1
      * @maximum 5
      */
-  technique: number;
+  value: number;
   /**
      * @minimum 1
      * @maximum 5
      */
-  communication: number;
+  effectiveness: number;
   /**
      * @minimum 1
      * @maximum 5
      */
-  patience: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  adaptability: number;
-  /**
-     * @minimum 1
-     * @maximum 5
-     */
-  expertise: number;
+  punctuality: number;
   comment?: string;
 }
 

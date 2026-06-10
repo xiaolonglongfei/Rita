@@ -18,11 +18,9 @@ export interface Instructor {
   location?: string | null;
   verified: boolean;
   avgScore: number;
-  avgTechnique?: number;
-  avgCommunication?: number;
-  avgPatience?: number;
-  avgAdaptability?: number;
-  avgExpertise?: number;
+  avgValue?: number;
+  avgEffectiveness?: number;
+  avgPunctuality?: number;
   reviewCount: number;
   /** @nullable */
   publicRank?: number | null;

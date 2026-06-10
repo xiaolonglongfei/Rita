@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 
 export default function Profile() {
-  const { data: user } = useGetMe({ query: { retry: false } });
+  const { data: user } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   const [name, setName] = useState("");
   const updateMe = useUpdateMe();
   const queryClient = useQueryClient();

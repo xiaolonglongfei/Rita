@@ -9,11 +9,9 @@ import type { ScoreBucket } from './scoreBucket';
 
 export interface InstructorStats {
   instructorId: number;
-  avgTechnique: number;
-  avgCommunication: number;
-  avgPatience: number;
-  avgAdaptability: number;
-  avgExpertise: number;
+  avgValue: number;
+  avgEffectiveness: number;
+  avgPunctuality: number;
   avgScore: number;
   reviewCount: number;
   scoreDistribution: ScoreBucket[];

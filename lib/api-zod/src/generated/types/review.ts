@@ -19,11 +19,9 @@ export interface Review {
   instructorName?: string | null;
   /** @nullable */
   sessionId?: number | null;
-  technique: number;
-  communication: number;
-  patience: number;
-  adaptability: number;
-  expertise: number;
+  value: number;
+  effectiveness: number;
+  punctuality: number;
   overallScore: number;
   /** @nullable */
   comment?: string | null;
