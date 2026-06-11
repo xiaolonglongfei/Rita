@@ -2,13 +2,13 @@ import { Layout } from "@/components/layout";
 import { useListInstructors } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import { useState } from "react";
-import { Search, MapPin, ShieldCheck, Star, Filter } from "lucide-react";
+import { Search, MapPin, Star } from "lucide-react";
 
 export default function Instructors() {
   const [search, setSearch] = useState("");
-  const [specialty, setSpecialty] = useState("");
-  
-  const { data, isLoading } = useListInstructors({ search, specialty });
+  const [location, setLocation] = useState("");
+
+  const { data, isLoading } = useListInstructors({ search, location });
 
   return (
     <Layout>
@@ -23,26 +23,30 @@ export default function Instructors() {
         <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-xl border shadow-sm">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search by name..." 
+            <input
+              type="text"
+              placeholder="Search by name..."
               className="w-full pl-10 pr-4 py-3 bg-background border rounded-lg font-medium focus:ring-2 focus:ring-accent outline-none transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="relative w-full sm:w-64">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-            <select 
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+            <select
               className="w-full pl-10 pr-4 py-3 bg-background border rounded-lg font-medium appearance-none focus:ring-2 focus:ring-accent outline-none transition-all"
-              value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
             >
-              <option value="">All Specialties</option>
-              <option value="Tennis">Tennis</option>
-              <option value="Golf">Golf</option>
-              <option value="Swimming">Swimming</option>
-              <option value="Personal Training">Personal Training</option>
+              <option value="">All Locations</option>
+              <option value="Scarsdale">Scarsdale, NY</option>
+              <option value="White Plains">White Plains, NY</option>
+              <option value="Rye">Rye, NY</option>
+              <option value="Harrison">Harrison, NY</option>
+              <option value="Mamaroneck">Mamaroneck, NY</option>
+              <option value="Bronxville">Bronxville, NY</option>
+              <option value="Larchmont">Larchmont, NY</option>
+              <option value="New Rochelle">New Rochelle, NY</option>
             </select>
           </div>
         </div>
@@ -65,7 +69,11 @@ export default function Instructors() {
                     <div>
                       <h2 className="text-xl font-black flex items-center gap-2 group-hover:text-accent transition-colors">
                         {instructor.name}
-                        {instructor.verified && <ShieldCheck size={16} className="text-blue-600" />}
+                        {instructor.claimed ? (
+                          <span className="text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">✓ Claimed</span>
+                        ) : (
+                          <span className="text-xs font-semibold bg-muted text-muted-foreground border px-2 py-0.5 rounded-full">Unclaimed</span>
+                        )}
                       </h2>
                       <div className="flex items-center gap-3 mt-1 text-sm font-medium text-muted-foreground">
                         <span className="text-foreground">{instructor.specialty}</span>

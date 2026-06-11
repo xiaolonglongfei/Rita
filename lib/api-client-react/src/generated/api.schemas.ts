@@ -45,7 +45,7 @@ export interface Instructor {
   photoUrl?: string | null;
   /** @nullable */
   location?: string | null;
-  verified: boolean;
+  claimed: boolean;
   avgScore: number;
   avgValue?: number;
   avgEffectiveness?: number;

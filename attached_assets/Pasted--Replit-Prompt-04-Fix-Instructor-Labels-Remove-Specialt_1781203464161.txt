@@ -1,0 +1,192 @@
+# Replit Prompt #04 — Fix Instructor Labels + Remove Specialties Filter
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #05 until this step is verified.
+
+---
+
+## Two Problems to Fix
+
+### Problem 1: Wrong label on instructor profiles
+The word "VERIFIED" is currently shown on instructor profile headers. This is incorrect.
+- "Verified" is only used for **reviews** (when a session has been mutually confirmed)
+- Instructor profiles must show **"Claimed"** or **"Unclaimed"** instead
+
+### Problem 2: Specialties filter must be removed
+The instructor search page has a filter dropdown showing: All Specialties / Tennis / Golf / Swimming / Personal Training.
+- Rita MVP only covers tennis — other sports have zero data
+- This filter creates a confusing empty-results experience
+- Remove it entirely until multi-sport expansion in a future phase
+
+---
+
+## Step 1: Update Instructor Badge Logic
+
+In `types/database.ts`, ensure the Instructor type has a `is_claimed` field:
+
+```typescript
+export interface Instructor {
+  id: string
+  full_name: string
+  bio?: string
+  avatar_url?: string
+  primary_location?: string
+  additional_locations?: string[]
+  is_claimed: boolean           // TRUE = instructor has claimed this profile
+  claimed_by?: string           // user_id of the instructor who claimed it
+  avg_value: number
+  avg_effectiveness: number
+  avg_punctuality: number
+  avg_overall: number
+  total_reviews: number
+  total_verified_reviews: number
+  total_verified_sessions: number
+  verification_rate: number
+  reviews_visible: boolean
+  created_at: string
+  updated_at: string
+}
+```
+
+---
+
+## Step 2: Create InstructorBadge Component
+
+Create a new file `components/instructor/InstructorBadge.tsx`:
+
+```typescript
+interface InstructorBadgeProps {
+  isClaimed: boolean
+}
+
+export function InstructorBadge({ isClaimed }: InstructorBadgeProps) {
+  if (isClaimed) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rita-blue-light text-rita-blue border border-blue-200">
+        ✓ Claimed
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+      Unclaimed
+    </span>
+  )
+}
+```
+
+---
+
+## Step 3: Update Instructor Profile Header
+
+In `app/(main)/instructors/[id]/page.tsx`, replace any "VERIFIED" badge with the new `InstructorBadge` component:
+
+```typescript
+import { InstructorBadge } from '@/components/instructor/InstructorBadge'
+
+// In the instructor header section, replace:
+// ❌ <Badge>VERIFIED</Badge>
+// ✅ with:
+<InstructorBadge isClaimed={instructor.is_claimed} />
+```
+
+---
+
+## Step 4: Update Instructor Card Component
+
+In `components/instructor/InstructorCard.tsx`, replace any "VERIFIED" badge with `InstructorBadge`:
+
+```typescript
+import { InstructorBadge } from '@/components/instructor/InstructorBadge'
+
+// Inside the card, replace any verified badge with:
+<InstructorBadge isClaimed={instructor.is_claimed} />
+```
+
+---
+
+## Step 5: Remove Specialties Filter
+
+In `app/(main)/instructors/page.tsx`, remove the specialties filter entirely:
+
+```typescript
+// REMOVE the following (and any related state/logic):
+// ❌ const [specialty, setSpecialty] = useState('all')
+// ❌ <select> or dropdown for specialties
+// ❌ Any filter logic using specialty/sport type
+// ❌ Any references to: Golf, Swimming, Personal Training, Fitness
+
+// KEEP only these two filters:
+// ✅ Search by name (text input)
+// ✅ Filter by location (text input or dropdown of Westchester locations)
+// ✅ Sort by overall rating (default: highest first)
+```
+
+The search bar section should look like this:
+
+```typescript
+<div className="flex gap-3 mb-6">
+  {/* Name search */}
+  <div className="flex-1 relative">
+    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+    <input
+      type="text"
+      placeholder="Search by name..."
+      className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-rita-blue"
+      value={search}
+      onChange={e => setSearch(e.target.value)}
+    />
+  </div>
+
+  {/* Location filter */}
+  <select
+    className="px-3 py-2.5 border border-slate-200 rounded-lg text-sm text-slate-600 focus:outline-none focus:border-rita-blue"
+    value={location}
+    onChange={e => setLocation(e.target.value)}
+  >
+    <option value="">All Locations</option>
+    <option value="Scarsdale">Scarsdale, NY</option>
+    <option value="White Plains">White Plains, NY</option>
+    <option value="Rye">Rye, NY</option>
+    <option value="Harrison">Harrison, NY</option>
+    <option value="Mamaroneck">Mamaroneck, NY</option>
+    <option value="Bronxville">Bronxville, NY</option>
+    <option value="Larchmont">Larchmont, NY</option>
+    <option value="New Rochelle">New Rochelle, NY</option>
+  </select>
+</div>
+```
+
+---
+
+## Step 6: Search and Remove All Incorrect Sport References
+
+Search the entire codebase and remove every reference to:
+- ❌ `specialty` filter
+- ❌ `sport` filter
+- ❌ "Golf", "Swimming", "Fitness", "Personal Training" as filter options
+- ❌ Any dropdown or select showing multiple sports
+
+**Exception:** The word "Tennis" may remain where it describes an instructor's sport on their profile card (e.g. "Tennis · New York, NY") — this is display text, not a filter.
+
+---
+
+## Step 7: Confirm "Verified" is Only Used for Reviews
+
+Search the codebase and confirm:
+- ✅ The word "Verified" only appears in `ReviewCard.tsx` (for verified sessions)
+- ❌ The word "Verified" must NOT appear in instructor headers or instructor cards
+- ✅ Instructor headers and cards use "Claimed" or "Unclaimed" only
+
+---
+
+## ✅ Done When:
+- [ ] Instructor profile header shows "Claimed" (blue) or "Unclaimed" (gray) badge
+- [ ] Instructor cards in search results show "Claimed" or "Unclaimed" badge
+- [ ] No "VERIFIED" badge appears on any instructor profile or card
+- [ ] "VERIFIED" badge still appears correctly on review cards only
+- [ ] Specialties/sport filter dropdown is completely removed from search page
+- [ ] Only two filters remain: name search + location filter
+- [ ] Location filter shows Westchester County locations only
+- [ ] No references to Golf, Swimming, Personal Training anywhere in the UI
+
+**Do not proceed to Prompt #05 until all checkboxes above are complete.**

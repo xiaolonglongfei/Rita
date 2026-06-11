@@ -14,7 +14,7 @@ function formatInstructor(instructor: typeof instructorsTable.$inferSelect) {
     specialty: instructor.specialty,
     photoUrl: instructor.photoUrl ?? null,
     location: instructor.location ?? null,
-    verified: instructor.verified,
+    claimed: instructor.verified,
     avgScore: instructor.avgScore,
     avgValue: instructor.avgValue,
     avgEffectiveness: instructor.avgEffectiveness,

@@ -1,7 +1,7 @@
 import { Layout } from "@/components/layout";
 import { useGetInstructor, getGetInstructorQueryKey, useGetInstructorReviews, getGetInstructorReviewsQueryKey, useGetInstructorStats, getGetInstructorStatsQueryKey } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
-import { MapPin, ShieldCheck, Star } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import { ScoreTriangle } from "@/components/score-triangle";
 
 export default function InstructorProfile() {
@@ -41,9 +41,13 @@ export default function InstructorProfile() {
             <div>
               <h1 className="text-4xl md:text-5xl font-black tracking-tighter flex items-center gap-3">
                 {instructor.name}
-                {instructor.verified && (
-                  <span className="flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2.5 py-1 rounded font-black tracking-wider uppercase">
-                    <ShieldCheck size={14} /> Verified
+                {instructor.claimed ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    ✓ Claimed
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border">
+                    Unclaimed
                   </span>
                 )}
               </h1>

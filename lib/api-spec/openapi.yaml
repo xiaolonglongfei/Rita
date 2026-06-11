@@ -655,7 +655,7 @@ components:
     # Instructors
     Instructor:
       type: object
-      required: [id, name, specialty, verified, avgScore, reviewCount, createdAt]
+      required: [id, name, specialty, claimed, avgScore, reviewCount, createdAt]
       properties:
         id:
           type: integer
@@ -669,7 +669,7 @@ components:
           type: ["string", "null"]
         location:
           type: ["string", "null"]
-        verified:
+        claimed:
           type: boolean
         avgScore:
           type: number
