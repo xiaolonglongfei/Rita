@@ -1,0 +1,165 @@
+# Replit Prompt #03 — Fix Review Anonymity
+> Paste this entire prompt into Replit Agent.
+> This fixes a critical privacy violation from the previous generation.
+> Do NOT proceed to Prompt #04 until this step is verified.
+
+---
+
+## Critical Problem to Fix
+
+The instructor profile page (`app/(main)/instructors/[id]/page.tsx`) is currently displaying:
+- ❌ Reviewer's name (e.g. "Alex Chen", "Maria Santos")
+- ❌ Review date/timestamp
+
+**This is a serious privacy violation.** Rita guarantees complete anonymity to all reviewers. Student identity must NEVER be visible to instructors or any other user.
+
+---
+
+## Correct Review Display Rules
+
+On the instructor profile page, each review card must show:
+
+| Field | Show? | Notes |
+|---|---|---|
+| Student name | ❌ NEVER | Complete anonymity guaranteed |
+| Student avatar | ❌ NEVER | Could help identify the reviewer |
+| Review date | ❌ NEVER | Timing could help instructor identify reviewer |
+| Verified badge | ✅ YES | Show if is_verified = true |
+| Score (Value) | ✅ YES | rating_value |
+| Score (Effectiveness) | ✅ YES | rating_effectiveness |
+| Score (Punctuality) | ✅ YES | rating_punctuality |
+| Overall score | ✅ YES | Average of three scores |
+| Text comment | ✅ YES (if exists) | Only if comment is not null/empty |
+| "Unverified" label | ✅ YES | Show if is_verified = false |
+
+---
+
+## Step 1: Update ReviewCard Component
+
+Replace `components/review/ReviewCard.tsx` with the following:
+
+```typescript
+import { Badge } from '@/components/ui/badge'
+import { Review } from '@/types/database'
+
+interface ReviewCardProps {
+  review: Review
+}
+
+export function ReviewCard({ review }: ReviewCardProps) {
+  const overall = (
+    (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3
+  ).toFixed(1)
+
+  return (
+    <div className="bg-white border border-slate-100 rounded-xl p-4">
+
+      {/* Top row: overall score + verified badge */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          {review.is_verified ? (
+            <Badge className="bg-green-50 text-green-700 border-green-200 text-xs font-semibold">
+              ✓ Verified Session
+            </Badge>
+          ) : (
+            <Badge className="bg-slate-50 text-slate-500 border-slate-200 text-xs font-semibold">
+              Unverified
+            </Badge>
+          )}
+        </div>
+        <span className="text-lg font-bold text-rita-blue">
+          ⭐ {overall}
+        </span>
+      </div>
+
+      {/* Three dimension scores */}
+      <div className="flex gap-4 mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <span>💰 Value: <strong className="text-rita-blue">{review.rating_value.toFixed(1)}</strong></span>
+        <span>📈 Effectiveness: <strong className="text-rita-blue">{review.rating_effectiveness.toFixed(1)}</strong></span>
+        <span>⏰ Punctuality: <strong className="text-rita-blue">{review.rating_punctuality.toFixed(1)}</strong></span>
+      </div>
+
+      {/* Optional text comment */}
+      {review.comment && review.comment.trim() !== '' && (
+        <p className="text-sm text-slate-600 leading-relaxed border-l-2 border-rita-lime pl-3 mt-2">
+          {review.comment}
+        </p>
+      )}
+
+    </div>
+  )
+}
+```
+
+---
+
+## Step 2: Update Instructor Profile Page
+
+In `app/(main)/instructors/[id]/page.tsx`, ensure the reviews section:
+
+1. Uses the updated `ReviewCard` component
+2. Does **not** pass any student identity data to the component
+3. Does **not** display any student name, avatar, username, or date anywhere on the page
+
+The reviews fetch query must also **not** select student identity fields:
+
+```typescript
+// CORRECT — do not select student data
+const { data: reviews } = await supabase
+  .from('reviews')
+  .select(`
+    id,
+    rating_value,
+    rating_effectiveness,
+    rating_punctuality,
+    comment,
+    is_verified,
+    created_at
+  `)
+  .eq('instructor_id', instructorId)
+  .eq('moderation_status', 'approved')
+  .order('created_at', { ascending: false })
+
+// WRONG — never do this
+// .select('*, users(full_name, avatar_url)')  ← NEVER join student data
+```
+
+---
+
+## Step 3: Search and Remove All Student Identity Leaks
+
+Search the entire codebase for any of the following patterns and remove them from any instructor-facing view:
+
+- `reviewer_name`
+- `student_name`
+- `full_name` (in review context)
+- `avatar_url` (in review context)
+- `users(full_name`
+- `users(avatar`
+- Any date displayed next to a review (e.g. `review.created_at` shown publicly)
+
+---
+
+## Step 4: Add Privacy Note to Reviews Section
+
+In the instructor profile page, add a small note above the reviews list:
+
+```typescript
+<p className="text-xs text-slate-400 mb-3">
+  🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+</p>
+```
+
+---
+
+## ✅ Done When:
+- [ ] No student name visible on any review card
+- [ ] No student avatar visible on any review card
+- [ ] No review date visible on any review card
+- [ ] Verified / Unverified badge still shows correctly
+- [ ] Three dimension scores still show correctly
+- [ ] Optional text comment still shows if present
+- [ ] Privacy note visible above reviews list
+- [ ] Database query does NOT join or select student identity data
+
+**Do not proceed to Prompt #04 until all checkboxes above are complete.**

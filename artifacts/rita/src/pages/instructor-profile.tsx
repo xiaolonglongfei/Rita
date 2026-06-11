@@ -79,31 +79,31 @@ export default function InstructorProfile() {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-black tracking-tight uppercase text-muted-foreground">Recent Reviews</h2>
               </div>
+              <p className="text-xs text-muted-foreground">
+                🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+              </p>
               <div className="space-y-4">
                 {reviews?.items.map(review => (
                   <div key={review.id} className="border p-6 rounded-xl bg-card shadow-sm">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                          {review.userName?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                        <div>
-                          <div className="font-bold">{review.userName || 'Anonymous'}</div>
-                          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{new Date(review.createdAt).toLocaleDateString()}</div>
-                        </div>
-                      </div>
                       <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-lg">
                         <Star size={16} className="fill-accent text-accent" />
                         <span className="font-black text-lg text-accent">{review.overallScore.toFixed(1)}</span>
                       </div>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${review.sessionId ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
+                        {review.sessionId ? '✓ Verified Session' : 'Unverified'}
+                      </span>
                     </div>
-                    {review.comment && <p className="text-muted-foreground leading-relaxed">{review.comment}</p>}
 
-                    <div className="mt-4 pt-4 border-t flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
                       <span className="flex gap-1">💰 Value: <span className="text-foreground">{review.value.toFixed(1)}</span></span>
                       <span className="flex gap-1">📈 Effectiveness: <span className="text-foreground">{review.effectiveness.toFixed(1)}</span></span>
                       <span className="flex gap-1">⏰ Punctuality: <span className="text-foreground">{review.punctuality.toFixed(1)}</span></span>
                     </div>
+
+                    {review.comment && review.comment.trim() !== '' && (
+                      <p className="text-muted-foreground leading-relaxed border-l-2 border-accent pl-3">{review.comment}</p>
+                    )}
                   </div>
                 ))}
                 {reviews?.items.length === 0 && (
