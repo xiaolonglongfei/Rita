@@ -1,6 +1,6 @@
 import { Layout } from "@/components/layout";
-import { useGetInstructor, getGetInstructorQueryKey, useGetInstructorReviews, getGetInstructorReviewsQueryKey, useGetInstructorStats, getGetInstructorStatsQueryKey } from "@workspace/api-client-react";
-import { useRoute } from "wouter";
+import { useGetInstructor, getGetInstructorQueryKey, useGetInstructorReviews, getGetInstructorReviewsQueryKey, useGetInstructorStats, getGetInstructorStatsQueryKey, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useRoute, Link } from "wouter";
 import { ScoreTriangle } from "@/components/score-triangle";
 
 function reviewBorderColor(score: number): string {
@@ -30,6 +30,8 @@ export default function InstructorProfile() {
   const { data: reviews } = useGetInstructorReviews(id, {
     query: { enabled: !!id, queryKey: getGetInstructorReviewsQueryKey(id) }
   });
+
+  const { data: me } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
 
   if (instructorLoading) {
     return <Layout><div className="flex justify-center items-center h-[50vh] text-muted-foreground font-bold tracking-widest uppercase">Loading Profile</div></Layout>;
@@ -77,6 +79,15 @@ export default function InstructorProfile() {
                 {instructor.reviewCount} reviews
               </span>
             </div>
+            {me && (
+              <Link
+                href={`/reviews/new?instructorId=${instructor.id}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm mt-3"
+                style={{ background: '#1668c8' }}
+              >
+                ✏️ Leave a Review
+              </Link>
+            )}
           </div>
         </div>
 

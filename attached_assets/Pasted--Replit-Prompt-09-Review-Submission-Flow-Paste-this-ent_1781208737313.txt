@@ -1,0 +1,477 @@
+# Replit Prompt #09 — Review Submission Flow
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #10 until this step is verified.
+
+---
+
+## What to Build
+
+A complete review submission flow with three steps:
+
+1. **Step 1 — Select Instructor:** User searches and selects which instructor to review
+2. **Step 2 — Rate with Vertical Sliders:** User rates three dimensions using vertical drag sliders
+3. **Step 3 — Confirmation:** Review submitted successfully
+
+The flow lives at `/reviews/new` and is only accessible to logged-in users.
+
+---
+
+## Step 1: Create the Vertical Slider Component
+
+Create `components/review/VerticalSlider.tsx` with the following EXACT implementation:
+
+```typescript
+'use client'
+
+import { useRef, useEffect, useState } from 'react'
+
+interface VerticalSliderProps {
+  label: string
+  emoji: string
+  value: number
+  onChange: (value: number) => void
+}
+
+const TRACK_H = 220
+const THUMB_H = 44
+
+function scoreColor(v: number): string {
+  if (v >= 4.0) return '#1668c8'
+  if (v >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+export function VerticalSlider({ label, emoji, value, onChange }: VerticalSliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const color = scoreColor(value)
+  const pct = value / 5
+  const fillH = pct * TRACK_H
+  const thumbBottom = pct * (TRACK_H - THUMB_H)
+
+  function valFromClientY(clientY: number): number {
+    if (!trackRef.current) return value
+    const rect = trackRef.current.getBoundingClientRect()
+    const relY = clientY - rect.top - THUMB_H / 2
+    const usable = TRACK_H - THUMB_H
+    const pct = 1 - relY / usable
+    const raw = pct * 5
+    return Math.max(0, Math.min(5, Math.round(raw * 10) / 10))
+  }
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (dragging.current) onChange(valFromClientY(e.clientY))
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (dragging.current) {
+        e.preventDefault()
+        onChange(valFromClientY(e.touches[0].clientY))
+      }
+    }
+    function onUp() { dragging.current = false }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onUp)
+    document.addEventListener('touchmove', onTouchMove, { passive: false })
+    document.addEventListener('touchend', onUp)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onUp)
+    }
+  }, [value])
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* Score number above slider */}
+      <div className="text-2xl font-bold transition-colors duration-200" style={{ color }}>
+        {value.toFixed(1)}
+      </div>
+
+      {/* Track */}
+      <div
+        ref={trackRef}
+        className="relative cursor-pointer"
+        style={{ width: 52, height: TRACK_H }}
+        onClick={(e) => onChange(valFromClientY(e.clientY))}
+      >
+        {/* Track background */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full"
+          style={{ width: 18, height: TRACK_H, background: '#e8f1fc' }}
+        />
+
+        {/* Track fill */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full bottom-0 transition-colors duration-200"
+          style={{ width: 18, height: fillH, background: color }}
+        />
+
+        {/* Tick marks */}
+        <div
+          className="absolute right-0.5 top-0 flex flex-col justify-between pointer-events-none"
+          style={{ height: TRACK_H }}
+        >
+          {[5,4,3,2,1,0].map(t => (
+            <span key={t} className="text-xs text-slate-300 leading-none">{t}</span>
+          ))}
+        </div>
+
+        {/* Thumb */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full bg-white flex items-center justify-center text-xs font-bold select-none transition-colors duration-200"
+          style={{
+            width: THUMB_H,
+            height: THUMB_H,
+            bottom: thumbBottom,
+            border: `3px solid ${color}`,
+            color,
+            boxShadow: '0 2px 10px rgba(26,104,200,0.2)',
+            cursor: 'grab',
+          }}
+          onMouseDown={() => { dragging.current = true }}
+          onTouchStart={(e) => {
+            dragging.current = true
+            e.preventDefault()
+          }}
+        >
+          {value.toFixed(1)}
+        </div>
+      </div>
+
+      {/* Label below slider */}
+      <div className="text-xs font-semibold text-slate-500 text-center" style={{ maxWidth: 72 }}>
+        {emoji} {label}
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 2: Create the Review Form Component
+
+Create `components/review/ReviewForm.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { VerticalSlider } from './VerticalSlider'
+import { useRouter } from 'next/navigation'
+
+interface ReviewFormProps {
+  instructorId: string
+  instructorName: string
+  onSuccess?: () => void
+}
+
+export function ReviewForm({ instructorId, instructorName, onSuccess }: ReviewFormProps) {
+  const [value, setValue] = useState(5)
+  const [effectiveness, setEffectiveness] = useState(5)
+  const [punctuality, setPunctuality] = useState(5)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+
+  const overall = ((value + effectiveness + punctuality) / 3)
+
+  function scoreColor(s: number): string {
+    if (s >= 4.0) return '#1668c8'
+    if (s >= 2.5) return '#c89000'
+    return '#c83030'
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructor_id: instructorId,
+          rating_value: value,
+          rating_effectiveness: effectiveness,
+          rating_punctuality: punctuality,
+          comment: comment.trim() || null,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit review')
+      }
+      if (onSuccess) onSuccess()
+      else router.push(`/instructors/${instructorId}?reviewed=true`)
+    } catch (err: any) {
+      setError(err.message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-md mx-auto">
+
+      {/* Instructor name */}
+      <div className="mb-6 pb-5 border-b border-slate-100">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+          Reviewing
+        </p>
+        <p className="text-lg font-bold text-slate-800">{instructorName}</p>
+        <p className="text-xs text-slate-400 mt-1">
+          🔒 Your review is completely anonymous
+        </p>
+      </div>
+
+      {/* Vertical sliders */}
+      <div className="flex justify-center gap-10 mb-6">
+        <VerticalSlider
+          label="Value"
+          emoji="💰"
+          value={value}
+          onChange={setValue}
+        />
+        <VerticalSlider
+          label="Effectiveness"
+          emoji="📈"
+          value={effectiveness}
+          onChange={setEffectiveness}
+        />
+        <VerticalSlider
+          label="Punctuality"
+          emoji="⏰"
+          value={punctuality}
+          onChange={setPunctuality}
+        />
+      </div>
+
+      {/* Overall score summary */}
+      <div
+        className="text-center rounded-xl py-3 mb-5"
+        style={{ background: scoreColor(overall) + '12' }}
+      >
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
+          Overall Score
+        </p>
+        <p className="text-3xl font-bold" style={{ color: scoreColor(overall) }}>
+          {overall.toFixed(1)}
+        </p>
+      </div>
+
+      {/* Optional comment */}
+      <div className="mb-5">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-2">
+          Comment <span className="font-normal normal-case">(optional)</span>
+        </label>
+        <textarea
+          className="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none focus:border-blue-400"
+          rows={3}
+          placeholder="Share your experience... (optional)"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          maxLength={500}
+        />
+        {comment.length > 0 && (
+          <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/500</p>
+        )}
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-sm text-red-500 mb-4 text-center">{error}</p>
+      )}
+
+      {/* Submit button */}
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50 transition-opacity"
+        style={{ background: '#1668c8' }}
+      >
+        {submitting ? 'Submitting...' : 'Submit Anonymous Review'}
+      </button>
+
+      <p className="text-xs text-slate-400 text-center mt-3">
+        🔒 Your identity is never revealed to the instructor
+      </p>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 3: Create the Review Submission Page
+
+Create `app/(main)/reviews/new/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { ReviewForm } from '@/components/review/ReviewForm'
+
+interface Props {
+  searchParams: { instructor_id?: string }
+}
+
+export default async function NewReviewPage({ searchParams }: Props) {
+  const supabase = createClient()
+
+  // Require auth
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // If instructor_id provided, fetch instructor name
+  let instructor = null
+  if (searchParams.instructor_id) {
+    const { data } = await supabase
+      .from('instructors')
+      .select('id, full_name')
+      .eq('id', searchParams.instructor_id)
+      .single()
+    instructor = data
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-lg mx-auto">
+
+        {/* Page header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Drag each slider to rate your instructor
+          </p>
+        </div>
+
+        {/* Instructor selector if no instructor_id provided */}
+        {!instructor ? (
+          <InstructorSelector />
+        ) : (
+          <ReviewForm
+            instructorId={instructor.id}
+            instructorName={instructor.full_name}
+          />
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+// Simple instructor search component for when no instructor is pre-selected
+function InstructorSelector() {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">
+      <p className="text-slate-500 text-sm mb-4">
+        Find the instructor you want to review:
+      </p>
+      <a
+        href="/instructors"
+        className="inline-block bg-rita-blue text-white font-semibold px-6 py-3 rounded-xl text-sm"
+        style={{ background: '#1668c8' }}
+      >
+        Browse Instructors →
+      </a>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 4: Create the Reviews API Route
+
+Create `app/api/reviews/route.ts`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = createClient()
+
+  // Require auth
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { instructor_id, rating_value, rating_effectiveness, rating_punctuality, comment } = body
+
+  // Validate required fields
+  if (!instructor_id || rating_value == null || rating_effectiveness == null || rating_punctuality == null) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  // Validate score ranges
+  const scores = [rating_value, rating_effectiveness, rating_punctuality]
+  if (scores.some(s => s < 0 || s > 5)) {
+    return NextResponse.json({ error: 'Scores must be between 0 and 5' }, { status: 400 })
+  }
+
+  // Insert review
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({
+      student_id: user.id,
+      instructor_id,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      comment: comment || null,
+      is_verified: false,
+      moderation_status: 'approved', // Layer 1+2 moderation to be added in future prompt
+      edit_count: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ review: data }, { status: 201 })
+}
+```
+
+---
+
+## Step 5: Add "Leave a Review" Button to Instructor Profile
+
+In `app/(main)/instructors/[id]/page.tsx`, add a review button below the instructor header (only shown to logged-in users):
+
+```typescript
+{user && (
+  <a
+    href={`/reviews/new?instructor_id=${instructor.id}`}
+    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white font-semibold text-sm mt-3"
+    style={{ background: '#1668c8' }}
+  >
+    ✏️ Leave a Review
+  </a>
+)}
+```
+
+---
+
+## ✅ Done When:
+- [ ] `VerticalSlider` component renders three sliders side by side
+- [ ] Sliders are draggable with mouse and touch
+- [ ] Slider color changes based on score (blue/amber/red)
+- [ ] Score number updates in real time inside thumb and above slider
+- [ ] Click anywhere on track also sets the score
+- [ ] Overall score summary shows correct average with correct color
+- [ ] Comment textarea is optional, has 500 char limit
+- [ ] Submit button calls POST /api/reviews
+- [ ] After successful submission, user is redirected to instructor profile
+- [ ] "Leave a Review" button appears on instructor profile page for logged-in users
+- [ ] Unauthenticated users are redirected to /login when accessing /reviews/new
+
+**Do not proceed to Prompt #10 until all checkboxes above are complete.**

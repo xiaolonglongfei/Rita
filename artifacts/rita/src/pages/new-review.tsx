@@ -1,8 +1,15 @@
 import { Layout } from "@/components/layout";
-import { useCreateReview, useListInstructors, getGetInstructorReviewsQueryKey, getListMyReviewsQueryKey } from "@workspace/api-client-react";
-import { useLocation, useSearch } from "wouter";
-import { useState } from "react";
+import { useCreateReview, useListInstructors, useGetMe, getGetInstructorReviewsQueryKey, getListMyReviewsQueryKey, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useLocation, useSearch, Link } from "wouter";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { VerticalSlider } from "@/components/vertical-slider";
+
+function scoreColor(s: number): string {
+  if (s >= 4.0) return '#1668c8'
+  if (s >= 2.5) return '#c89000'
+  return '#c83030'
+}
 
 export default function NewReview() {
   const searchString = useSearch();
@@ -11,20 +18,34 @@ export default function NewReview() {
   const initialSessionId = params.get("sessionId") || "";
 
   const [instructorId, setInstructorId] = useState(initialInstructorId);
-  const [value, setValue] = useState(3);
-  const [effectiveness, setEffectiveness] = useState(3);
-  const [punctuality, setPunctuality] = useState(3);
+  const [value, setValue] = useState(5);
+  const [effectiveness, setEffectiveness] = useState(5);
+  const [punctuality, setPunctuality] = useState(5);
   const [comment, setComment] = useState("");
 
   const [_, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const createReview = useCreateReview();
+  const { data: user, isLoading: userLoading } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
   const { data: instructors } = useListInstructors({ limit: 100 });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!instructorId) return;
+  const overall = (value + effectiveness + punctuality) / 3;
+  const selectedInstructor = instructors?.items.find(i => String(i.id) === instructorId);
 
+  useEffect(() => {
+    if (!userLoading && !user) {
+      setLocation("/login");
+    }
+  }, [userLoading, user]);
+
+  if (userLoading) {
+    return <Layout><div className="flex justify-center items-center h-[50vh] text-muted-foreground font-bold tracking-widest uppercase">Loading...</div></Layout>;
+  }
+
+  if (!user) return null;
+
+  const handleSubmit = () => {
+    if (!instructorId) return;
     createReview.mutate(
       {
         data: {
@@ -33,7 +54,7 @@ export default function NewReview() {
           value,
           effectiveness,
           punctuality,
-          comment
+          comment: comment.trim() || undefined,
         }
       },
       {
@@ -48,95 +69,100 @@ export default function NewReview() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">Submit Review</h1>
-        <div className="border p-8 bg-card rounded-xl">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
-              <label className="block text-sm font-bold mb-2">Instructor</label>
-              <select
-                className="w-full p-3 border rounded bg-background"
-                value={instructorId}
-                onChange={(e) => setInstructorId(e.target.value)}
-                required
-              >
-                <option value="" disabled>Select an instructor...</option>
-                {instructors?.items.map(inst => (
-                  <option key={inst.id} value={inst.id}>{inst.name}</option>
-                ))}
-              </select>
+      <div className="max-w-lg mx-auto py-6">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
+          <p className="text-sm text-slate-500 mt-1">Drag each slider to rate your instructor</p>
+        </div>
+
+        {!initialInstructorId && (
+          <div className="bg-white rounded-2xl p-6 mb-4 text-center" style={{ border: '1px solid #f1f5f9' }}>
+            <p className="text-sm text-slate-500 mb-4">Select an instructor to review:</p>
+            <select
+              className="w-full p-3 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:border-blue-400 mb-0"
+              value={instructorId}
+              onChange={(e) => setInstructorId(e.target.value)}
+            >
+              <option value="" disabled>Select an instructor...</option>
+              {instructors?.items.map(inst => (
+                <option key={inst.id} value={inst.id}>{inst.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {(instructorId || initialInstructorId) && (
+          <div className="bg-white rounded-2xl p-6" style={{ border: '1px solid #f1f5f9' }}>
+            <div className="mb-6 pb-5" style={{ borderBottom: '1px solid #f1f5f9' }}>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Reviewing</p>
+              <p className="text-lg font-bold text-slate-800">
+                {selectedInstructor?.name ?? 'Loading...'}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">🔒 Your review is completely anonymous</p>
             </div>
 
-            <div className="grid gap-6">
-              <h3 className="text-xl font-bold border-b pb-2">Rate Your Experience</h3>
-              <SliderField
-                label="💰 Value"
-                description="Was the lesson worth the money?"
-                value={value}
-                onChange={setValue}
-              />
-              <SliderField
-                label="📈 Effectiveness"
-                description="Did the instructor improve your game?"
-                value={effectiveness}
-                onChange={setEffectiveness}
-              />
-              <SliderField
-                label="⏰ Punctuality"
-                description="Was the instructor on time and reliable?"
-                value={punctuality}
-                onChange={setPunctuality}
-              />
+            <div className="flex justify-center gap-10 mb-6">
+              <VerticalSlider label="Value" emoji="💰" value={value} onChange={setValue} />
+              <VerticalSlider label="Effectiveness" emoji="📈" value={effectiveness} onChange={setEffectiveness} />
+              <VerticalSlider label="Punctuality" emoji="⏰" value={punctuality} onChange={setPunctuality} />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold mb-2">Comment (Optional)</label>
+            <div
+              className="text-center rounded-xl py-3 mb-5"
+              style={{ background: scoreColor(overall) + '12' }}
+            >
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Overall Score</p>
+              <p className="text-3xl font-bold" style={{ color: scoreColor(overall) }}>
+                {overall.toFixed(1)}
+              </p>
+            </div>
+
+            <div className="mb-5">
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-2">
+                Comment <span className="font-normal normal-case">(optional)</span>
+              </label>
               <textarea
-                className="w-full p-3 border rounded bg-background min-h-[120px]"
+                className="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none focus:border-blue-400"
+                rows={3}
+                placeholder="Share your experience... (optional)"
                 value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share details of your experience..."
+                onChange={e => setComment(e.target.value)}
+                maxLength={500}
               />
+              {comment.length > 0 && (
+                <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/500</p>
+              )}
             </div>
+
+            {createReview.isError && (
+              <p className="text-sm text-red-500 mb-4 text-center">
+                {(createReview.error as Error)?.message ?? 'Failed to submit review'}
+              </p>
+            )}
 
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={createReview.isPending || !instructorId}
-              className="w-full bg-primary text-primary-foreground p-4 rounded font-bold hover:bg-primary/90 disabled:opacity-50 text-lg"
+              className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50 transition-opacity"
+              style={{ background: '#1668c8' }}
             >
-              {createReview.isPending ? "Submitting..." : "Submit Review"}
+              {createReview.isPending ? 'Submitting...' : 'Submit Anonymous Review'}
             </button>
-          </form>
-        </div>
+
+            <p className="text-xs text-slate-400 text-center mt-3">
+              🔒 Your identity is never revealed to the instructor
+            </p>
+          </div>
+        )}
+
+        {!instructorId && !initialInstructorId && (
+          <div className="text-center mt-4">
+            <Link href="/instructors" className="text-sm text-blue-600 underline">
+              Browse instructors to find one to review →
+            </Link>
+          </div>
+        )}
       </div>
     </Layout>
-  );
-}
-
-function SliderField({ label, description, value, onChange }: { label: string; description: string; value: number; onChange: (val: number) => void }) {
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <div>
-          <label className="text-sm font-bold">{label}</label>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <span className="font-mono font-bold text-lg w-10 text-right text-accent">{value.toFixed(1)}</span>
-      </div>
-      <input
-        type="range"
-        min="1" max="5" step="0.5"
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-accent mt-2"
-      />
-      <div className="flex justify-between text-xs text-muted-foreground mt-1 px-1">
-        <span>1</span>
-        <span>2</span>
-        <span>3</span>
-        <span>4</span>
-        <span>5</span>
-      </div>
-    </div>
   );
 }
