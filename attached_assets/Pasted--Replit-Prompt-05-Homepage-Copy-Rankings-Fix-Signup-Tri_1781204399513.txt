@@ -1,0 +1,183 @@
+# Replit Prompt #05 — Homepage Copy + Rankings Fix + Signup + Triangle Chart
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #06 until this step is verified.
+
+---
+
+## Four Problems to Fix
+
+1. Homepage copy is too technical and not targeted at Westchester families
+2. Rankings page shows wrong locations and wrong scope ("Global Top 100")
+3. Sign Up form has an inappropriate placeholder ("e.g. Serena W.")
+4. Score triangle chart is too small on instructor profile page
+
+---
+
+## Fix 1: Update Homepage Copy
+
+In `app/(main)/page.tsx`, update the hero section text:
+
+```typescript
+// REMOVE:
+// ❌ "Data-driven instructor rankings."
+// ❌ "Rita is where serious athletes go to find and vet instructors 
+//     they can trust. Stop guessing. Start training with the best."
+
+// REPLACE WITH:
+// ✅ Headline:
+"Find the right tennis instructor for you or your child."
+
+// ✅ Subheading:
+"Real reviews from real students in Westchester County — honest, anonymous, and verified."
+
+// ✅ Badge above headline (small pill):
+"🎾 Now serving Westchester County, NY"
+
+// ✅ Primary CTA button:
+"Browse Instructors"
+
+// ✅ Secondary CTA button:
+"I'm an Instructor"
+```
+
+---
+
+## Fix 2: Update Rankings Page
+
+In `app/(main)/ranking/page.tsx` (or wherever the leaderboard page lives):
+
+**2a. Fix the page title and scope:**
+```typescript
+// REMOVE:
+// ❌ "Leaderboards"
+// ❌ "The definitive rankings of sports instructors, driven by real data."
+// ❌ "GLOBAL TOP 100" tab
+
+// REPLACE WITH:
+// ✅ Page title:
+"Westchester Tennis Rankings"
+
+// ✅ Subtitle:
+"Platform rankings based on verified student reviews — updated regularly."
+
+// ✅ Tab label:
+"Westchester Top Instructors"
+```
+
+**2b. Fix instructor locations in mock data:**
+
+Replace all non-Westchester locations in the rankings mock data with Westchester County locations:
+
+```typescript
+// REMOVE these locations from mock data:
+// ❌ "Los Angeles, CA"
+// ❌ "Chicago, IL"
+// ❌ "Miami, FL"
+// ❌ "Seattle, WA"
+// ❌ "Austin, TX"
+// ❌ Any location outside Westchester County, NY
+
+// REPLACE with Westchester County locations only:
+// ✅ "Scarsdale, NY"
+// ✅ "White Plains, NY"
+// ✅ "Rye, NY"
+// ✅ "Harrison, NY"
+// ✅ "Mamaroneck, NY"
+// ✅ "Bronxville, NY"
+// ✅ "Larchmont, NY"
+// ✅ "New Rochelle, NY"
+```
+
+**2c. Fix instructor sport labels:**
+
+All instructors in mock data must be labeled "Tennis" only:
+```typescript
+// REMOVE:
+// ❌ "Tennis / Fitness"
+// ❌ Any sport other than Tennis
+
+// REPLACE WITH:
+// ✅ "Tennis" only for all instructors
+```
+
+---
+
+## Fix 3: Update Sign Up Form
+
+In `app/(auth)/signup/page.tsx`, fix the name field placeholder:
+
+```typescript
+// REMOVE:
+// ❌ placeholder="e.g. Serena W."   ← reveals identity format, inappropriate
+
+// REPLACE WITH:
+// ✅ placeholder="Your full name"
+
+// Also update the email placeholder:
+// ❌ placeholder="athlete@example.com"
+// ✅ placeholder="your@email.com"
+```
+
+---
+
+## Fix 4: Make Score Triangle Larger and More Prominent
+
+In `app/(main)/instructors/[id]/page.tsx`, the score breakdown card is currently too small and pushed to a corner.
+
+Update the layout so the `ScoreTriangle` component:
+
+```typescript
+// Current layout (wrong):
+// ❌ Triangle squeezed into a small sidebar card in the top right
+
+// New layout (correct):
+// ✅ Triangle card sits in a dedicated right column
+// ✅ Minimum width: 320px
+// ✅ The SVG inside ScoreTriangle should be width="280" height="260"
+//    (update the viewBox and all coordinates proportionally)
+// ✅ Overall score number: text size 56px (text-6xl)
+// ✅ Card padding: p-6
+// ✅ Position: sticky top-6 so it stays visible as user scrolls reviews
+
+// Suggested two-column layout for instructor profile:
+<div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+  
+  {/* Left column: About + Reviews (takes 2/3 width) */}
+  <div className="lg:col-span-2 flex flex-col gap-6">
+    {/* About section */}
+    {/* Recent Reviews section */}
+  </div>
+
+  {/* Right column: Score Triangle (takes 1/3 width, sticky) */}
+  <div className="lg:col-span-1">
+    <div className="sticky top-6">
+      <ScoreTriangle
+        value={instructor.avg_value}
+        effectiveness={instructor.avg_effectiveness}
+        punctuality={instructor.avg_punctuality}
+        reviewCount={instructor.total_reviews}
+      />
+    </div>
+  </div>
+
+</div>
+```
+
+---
+
+## ✅ Done When:
+- [ ] Homepage headline reads "Find the right tennis instructor for you or your child."
+- [ ] Homepage subheading mentions Westchester County and anonymous reviews
+- [ ] Homepage badge reads "🎾 Now serving Westchester County, NY"
+- [ ] Rankings page title reads "Westchester Tennis Rankings"
+- [ ] Rankings tab reads "Westchester Top Instructors" (not "Global Top 100")
+- [ ] All mock instructor locations are Westchester County, NY only
+- [ ] All mock instructors are labeled "Tennis" only (no "Tennis / Fitness" etc.)
+- [ ] Sign Up name placeholder reads "Your full name"
+- [ ] Sign Up email placeholder reads "your@email.com"
+- [ ] Score triangle is displayed in a dedicated right column on instructor profile
+- [ ] Score triangle SVG is larger (width 280, height 260)
+- [ ] Overall score number is larger (text-6xl / 56px)
+- [ ] Right column is sticky on scroll
+
+**Do not proceed to Prompt #06 until all checkboxes above are complete.**

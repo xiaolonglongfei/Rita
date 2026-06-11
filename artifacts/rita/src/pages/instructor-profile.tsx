@@ -118,7 +118,7 @@ export default function InstructorProfile() {
           </div>
 
           <div>
-            <div className="sticky top-24">
+            <div className="sticky top-6">
               {stats ? (
                 <ScoreTriangle
                   value={stats.avgValue}

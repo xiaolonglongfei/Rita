@@ -2,7 +2,7 @@ import { Layout } from "@/components/layout";
 import { useGetPublicRankings, useGetPrivateRankings, useGetMe, getGetMeQueryKey, getGetPrivateRankingsQueryKey } from "@workspace/api-client-react";
 import { useState } from "react";
 import { Link } from "wouter";
-import { Trophy, Target, ShieldCheck, Star } from "lucide-react";
+import { Trophy, Target, Star } from "lucide-react";
 
 export default function Rankings() {
   const { data: user } = useGetMe({ query: { retry: false, queryKey: getGetMeQueryKey() } });
@@ -18,8 +18,8 @@ export default function Rankings() {
       <div className="space-y-8 max-w-5xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 border-b pb-6">
           <div>
-            <h1 className="text-4xl font-black tracking-tighter text-primary">Leaderboards</h1>
-            <p className="text-muted-foreground mt-2 font-medium">The definitive rankings of sports instructors, driven by real data.</p>
+            <h1 className="text-4xl font-black tracking-tighter text-primary">Westchester Tennis Rankings</h1>
+            <p className="text-muted-foreground mt-2 font-medium">Platform rankings based on verified student reviews — updated regularly.</p>
           </div>
         </div>
         
@@ -29,7 +29,7 @@ export default function Rankings() {
             onClick={() => setTab("public")}
           >
             <Trophy size={16} className={tab === "public" ? "text-accent" : ""} />
-            GLOBAL TOP 100
+            WESTCHESTER TOP INSTRUCTORS
           </button>
           {user && (
             <button 
@@ -98,7 +98,7 @@ function RankingList({ rankings, isPrivate = false }: { rankings?: any[], isPriv
               <div className="col-span-8 md:col-span-7">
                 <div className="font-black text-lg flex items-center gap-2 group-hover:text-primary transition-colors">
                   {entry.instructorName}
-                  {entry.verified && <ShieldCheck size={14} className="text-blue-600" />}
+                  {entry.claimed && <span className="text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">✓ Claimed</span>}
                 </div>
                 <div className="text-sm font-medium text-muted-foreground">{entry.specialty}</div>
               </div>

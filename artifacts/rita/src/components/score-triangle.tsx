@@ -6,13 +6,13 @@ interface ScoreTriangleProps {
 }
 
 export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }: ScoreTriangleProps) {
-  const CX = 110, CY = 105, R = 80;
+  const CX = 140, CY = 130, R = 102;
   const ANGLES = [-90, 30, 150];
   const LABELS = ['💰 Value', '📈 Effectiveness', '⏰ Punctuality'];
   const LABEL_OFFSETS = [
-    { dx: 0, dy: -18 },
-    { dx: 22, dy: 14 },
-    { dx: -22, dy: 14 },
+    { dx: 0, dy: -22 },
+    { dx: 28, dy: 18 },
+    { dx: -28, dy: 18 },
   ];
   const scores = [value, effectiveness, punctuality];
   const overall = ((value + effectiveness + punctuality) / 3).toFixed(1);
@@ -47,7 +47,7 @@ export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }
       </p>
 
       <div className="flex justify-center mb-4">
-        <svg width="220" height="210" viewBox="0 0 220 210" overflow="visible">
+        <svg width="280" height="260" viewBox="0 0 280 260" overflow="visible">
           <defs>
             <linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#1668c8" stopOpacity="0.25" />
@@ -112,7 +112,7 @@ export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }
       </div>
 
       <div className="text-center mb-5 pb-5 border-b">
-        <div className="text-5xl font-bold" style={{ color: overallColor }}>
+        <div className="text-6xl font-bold" style={{ color: overallColor }}>
           {overall}
         </div>
         <div className="text-xs text-muted-foreground mt-1">

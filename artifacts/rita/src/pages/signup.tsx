@@ -44,7 +44,7 @@ export default function Signup() {
                 className="w-full p-3 bg-background border rounded-lg font-medium focus:ring-2 focus:ring-accent outline-none transition-all" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Serena W."
+                placeholder="Your full name"
                 required
               />
             </div>
@@ -55,7 +55,7 @@ export default function Signup() {
                 className="w-full p-3 bg-background border rounded-lg font-medium focus:ring-2 focus:ring-accent outline-none transition-all" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="athlete@example.com"
+                placeholder="your@email.com"
                 required
               />
             </div>

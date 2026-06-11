@@ -22,21 +22,20 @@ export default function Home() {
     <Layout>
       <div className="flex flex-col items-center justify-center py-32 text-center max-w-4xl mx-auto space-y-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent font-bold text-sm mb-4">
-          <Star size={14} className="fill-accent" /> Now tracking top coaches
+          🎾 Now serving Westchester County, NY
         </div>
         <h1 className="text-6xl md:text-7xl font-black tracking-tighter leading-[1.1] text-primary">
-          Data-driven instructor <span className="text-accent underline decoration-8 underline-offset-8">rankings</span>.
+          Find the right tennis instructor for <span className="text-accent underline decoration-8 underline-offset-8">you or your child</span>.
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-medium">
-          Rita is where serious athletes go to find and vet instructors they can trust. 
-          Stop guessing. Start training with the best.
+          Real reviews from real students in Westchester County — honest, anonymous, and verified.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 pt-8 w-full sm:w-auto">
-          <Link href="/signup" className="flex items-center justify-center gap-2 bg-accent text-accent-foreground px-8 py-4 text-lg font-black rounded-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-accent/20">
-            Create Account <ArrowRight size={20} />
+          <Link href="/instructors" className="flex items-center justify-center gap-2 bg-accent text-accent-foreground px-8 py-4 text-lg font-black rounded-lg hover:bg-accent/90 transition-all hover:scale-105 active:scale-95 shadow-xl shadow-accent/20">
+            Browse Instructors <ArrowRight size={20} />
           </Link>
-          <Link href="/instructors" className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 text-lg font-black rounded-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95">
-            Browse Instructors
+          <Link href="/signup" className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 text-lg font-black rounded-lg hover:bg-primary/90 transition-all hover:scale-105 active:scale-95">
+            I'm an Instructor
           </Link>
         </div>
       </div>
@@ -99,7 +98,7 @@ function Dashboard({ user }: { user: any }) {
                       <div className="flex-1">
                         <div className="font-bold flex items-center gap-2">
                           {instructor.instructorName}
-                          {instructor.verified && <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-black tracking-wider">VERIFIED</span>}
+                          {instructor.claimed && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-semibold">✓ Claimed</span>}
                         </div>
                         <div className="text-sm text-muted-foreground">{instructor.specialty}</div>
                       </div>
