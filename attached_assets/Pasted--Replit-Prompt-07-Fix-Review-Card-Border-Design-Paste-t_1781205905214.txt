@@ -1,0 +1,180 @@
+# Replit Prompt #07 — Fix Review Card Border Design
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #08 until this step is verified.
+
+---
+
+## Problem to Fix
+
+The review cards currently show a full blue border around the entire card. This is incorrect.
+
+The correct design is:
+- **Left side only:** 4px solid colored border (color based on score)
+- **Other three sides:** 1px extremely light gray (#f1f5f9) — barely visible
+- **No full outline, no ring, no shadow border**
+
+---
+
+## Score Color Rules
+
+Calculate the overall score as the average of the three dimensions:
+```
+overall = (rating_value + rating_effectiveness + rating_punctuality) / 3
+```
+
+Then apply border color:
+- overall ≥ 4.0 → `#1668c8` (blue)
+- overall 2.5–3.9 → `#c89000` (amber)
+- overall < 2.5 → `#c83030` (red)
+
+---
+
+## Step 1: Update ReviewCard Component
+
+Replace `components/review/ReviewCard.tsx` with the following exact implementation:
+
+```typescript
+import { Review } from '@/types/database'
+
+interface ReviewCardProps {
+  review: Review
+}
+
+function scoreColor(score: number): string {
+  if (score >= 4.0) return '#1668c8'
+  if (score >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+function scoreBg(score: number): string {
+  if (score >= 4.0) return '#e8f1fc'
+  if (score >= 2.5) return '#fdf3dc'
+  return '#fde8e8'
+}
+
+export function ReviewCard({ review }: ReviewCardProps) {
+  const overall =
+    (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3
+  const color = scoreColor(overall)
+  const bg = scoreBg(overall)
+
+  return (
+    <div
+      className="bg-white rounded-xl p-4"
+      style={{
+        borderLeft: `4px solid ${color}`,
+        borderTop: '1px solid #f1f5f9',
+        borderRight: '1px solid #f1f5f9',
+        borderBottom: '1px solid #f1f5f9',
+      }}
+    >
+      {/* Top row: overall score pill + verified badge */}
+      <div className="flex items-center justify-between mb-3">
+        <span
+          className="inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1 rounded-full"
+          style={{ background: bg, color: color }}
+        >
+          ⭐ {overall.toFixed(1)}
+        </span>
+        {review.is_verified ? (
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">
+            ✓ Verified
+          </span>
+        ) : (
+          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-400">
+            Unverified
+          </span>
+        )}
+      </div>
+
+      {/* Three dimension scores */}
+      <div className="flex gap-4 flex-wrap mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <span>
+          💰 Value:{' '}
+          <strong className="text-slate-700">{review.rating_value.toFixed(1)}</strong>
+        </span>
+        <span>
+          📈 Effectiveness:{' '}
+          <strong className="text-slate-700">{review.rating_effectiveness.toFixed(1)}</strong>
+        </span>
+        <span>
+          ⏰ Punctuality:{' '}
+          <strong className="text-slate-700">{review.rating_punctuality.toFixed(1)}</strong>
+        </span>
+      </div>
+
+      {/* Optional text comment — only shown if present */}
+      {review.comment && review.comment.trim() !== '' && (
+        <p className="text-sm text-slate-600 leading-relaxed pl-3 border-l-2 border-slate-200">
+          {review.comment}
+        </p>
+      )}
+    </div>
+  )
+}
+```
+
+---
+
+## Step 2: Remove All Previous Border Styling
+
+Search the entire codebase for any of the following and remove them from review card contexts:
+
+```
+// REMOVE any of these patterns on review cards:
+❌ border border-blue-500
+❌ border-2 border-blue-400
+❌ ring-2 ring-blue-400
+❌ border border-rita-blue
+❌ className with any full-border color styling on review cards
+```
+
+The ONLY border styling allowed on review cards is the inline style object shown in Step 1 above.
+
+---
+
+## Step 3: Verify in Instructor Profile Page
+
+In `app/(main)/instructors/[id]/page.tsx`, confirm the reviews section:
+
+1. Uses the updated `ReviewCard` component
+2. Has the privacy note above the list:
+```typescript
+<p className="text-xs text-slate-400 mb-3">
+  🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+</p>
+```
+3. Reviews are displayed in a single column, full width of the left content area
+
+---
+
+## Visual Reference
+
+This is exactly what each card should look like:
+
+```
+┌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐
+┃  ⭐ 4.7 [blue pill]      ✓ Verified      ╎  ← top border: 1px #f1f5f9
+┃                                          ╎  ← right border: 1px #f1f5f9
+┃  💰 Value: 5.0  📈 Eff: 4.5  ⏰ Pun: 4.5╎
+┃                                          ╎
+┃  | "Review comment text here..."         ╎
+┗╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘
+  ↑ bottom border: 1px #f1f5f9
+LEFT border: 4px solid #1668c8 (blue, because overall ≥ 4.0)
+```
+
+---
+
+## ✅ Done When:
+- [ ] Review cards have ONLY a left 4px colored border
+- [ ] Other three sides of review cards have 1px light gray border (#f1f5f9)
+- [ ] High score reviews (≥4.0) have blue (#1668c8) left border
+- [ ] Mid score reviews (2.5–3.9) have amber (#c89000) left border
+- [ ] Low score reviews (<2.5) have red (#c83030) left border
+- [ ] Overall score pill color matches the left border color
+- [ ] No full outline or ring border on any review card
+- [ ] Text comment only shows when present (not empty)
+- [ ] Privacy note visible above review list
+
+**Do not proceed to Prompt #08 until all checkboxes above are complete.**

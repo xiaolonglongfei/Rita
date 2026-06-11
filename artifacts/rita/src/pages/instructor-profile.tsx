@@ -9,6 +9,12 @@ function reviewBorderColor(score: number): string {
   return '#c83030';
 }
 
+function reviewBgColor(score: number): string {
+  if (score >= 4.0) return '#e8f1fc';
+  if (score >= 2.5) return '#fdf3dc';
+  return '#fde8e8';
+}
+
 export default function InstructorProfile() {
   const [match, params] = useRoute("/instructors/:id");
   const id = match ? parseInt(params.id) : 0;
@@ -92,31 +98,43 @@ export default function InstructorProfile() {
                 {reviews?.items.map(review => (
                   <div
                     key={review.id}
-                    className="rounded-xl p-6 bg-card shadow-sm"
+                    className="rounded-xl p-4 bg-white"
                     style={{
                       borderLeft: `4px solid ${reviewBorderColor(review.overallScore)}`,
-                      borderTop: '1px solid var(--color-border)',
-                      borderRight: '1px solid var(--color-border)',
-                      borderBottom: '1px solid var(--color-border)',
+                      borderTop: '1px solid #f1f5f9',
+                      borderRight: '1px solid #f1f5f9',
+                      borderBottom: '1px solid #f1f5f9',
                     }}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-1 bg-accent/10 px-3 py-1 rounded-lg">
-                        <span className="font-black text-lg text-accent">⭐ {review.overallScore.toFixed(1)}</span>
-                      </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${review.sessionId ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
-                        {review.sessionId ? '✓ Verified Session' : 'Unverified'}
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        className="inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1 rounded-full"
+                        style={{
+                          background: reviewBgColor(review.overallScore),
+                          color: reviewBorderColor(review.overallScore),
+                        }}
+                      >
+                        ⭐ {review.overallScore.toFixed(1)}
                       </span>
+                      {review.sessionId ? (
+                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">
+                          ✓ Verified
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-400">
+                          Unverified
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
-                      <span className="flex gap-1">💰 Value: <span className="text-foreground">{review.value.toFixed(1)}</span></span>
-                      <span className="flex gap-1">📈 Effectiveness: <span className="text-foreground">{review.effectiveness.toFixed(1)}</span></span>
-                      <span className="flex gap-1">⏰ Punctuality: <span className="text-foreground">{review.punctuality.toFixed(1)}</span></span>
+                    <div className="flex gap-4 flex-wrap mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <span>💰 Value: <strong className="text-slate-700">{review.value.toFixed(1)}</strong></span>
+                      <span>📈 Effectiveness: <strong className="text-slate-700">{review.effectiveness.toFixed(1)}</strong></span>
+                      <span>⏰ Punctuality: <strong className="text-slate-700">{review.punctuality.toFixed(1)}</strong></span>
                     </div>
 
                     {review.comment && review.comment.trim() !== '' && (
-                      <p className="text-muted-foreground leading-relaxed border-l-2 border-accent pl-3">{review.comment}</p>
+                      <p className="text-sm text-slate-600 leading-relaxed pl-3 border-l-2 border-slate-200">{review.comment}</p>
                     )}
                   </div>
                 ))}
