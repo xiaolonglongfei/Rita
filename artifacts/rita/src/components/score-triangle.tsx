@@ -6,13 +6,13 @@ interface ScoreTriangleProps {
 }
 
 export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }: ScoreTriangleProps) {
-  const CX = 140, CY = 130, R = 102;
+  const CX = 120, CY = 120, R = 82;
   const ANGLES = [-90, 30, 150];
   const LABELS = ['💰 Value', '📈 Effectiveness', '⏰ Punctuality'];
   const LABEL_OFFSETS = [
-    { dx: 0, dy: -22 },
-    { dx: 28, dy: 18 },
-    { dx: -28, dy: 18 },
+    { dx: 0, dy: -24 },
+    { dx: 24, dy: 16 },
+    { dx: -24, dy: 16 },
   ];
   const scores = [value, effectiveness, punctuality];
   const overall = ((value + effectiveness + punctuality) / 3).toFixed(1);
@@ -46,8 +46,8 @@ export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }
         Score Breakdown
       </p>
 
-      <div className="flex justify-center mb-4">
-        <svg width="280" height="260" viewBox="0 0 280 260" overflow="visible">
+      <div className="flex justify-center pt-2 mb-4">
+        <svg width="240" height="230" viewBox="0 0 240 230" overflow="visible">
           <defs>
             <linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#1668c8" stopOpacity="0.25" />

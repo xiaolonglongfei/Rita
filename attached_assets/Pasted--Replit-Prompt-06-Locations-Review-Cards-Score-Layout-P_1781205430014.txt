@@ -1,0 +1,228 @@
+# Replit Prompt #06 — Locations + Review Cards + Score Layout
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #07 until this step is verified.
+
+---
+
+## Four Problems to Fix
+
+1. Instructor location display needs to be flexible (self-reported, optional)
+2. "Value" label overlaps with "Score Breakdown" title on triangle chart
+3. Review cards need a score-colored left border instead of red outline border
+4. Duplicate SCORE card in instructor profile header needs to be removed and space redesigned
+
+---
+
+## Fix 1: Instructor Location — Flexible Self-Reported Field
+
+### 1a. Update Instructor type
+In `types/database.ts`, update the location field:
+
+```typescript
+export interface Instructor {
+  // ...other fields...
+  teaching_locations?: string  // Free text, self-reported by instructor
+                               // e.g. "Scarsdale Racquet Club, Westchester County"
+                               // e.g. "Available in Westchester and NYC"
+                               // e.g. "Home courts in White Plains, travel within 20 miles"
+                               // null if not yet filled in by instructor
+}
+```
+
+### 1b. Update Instructor Card
+In `components/instructor/InstructorCard.tsx`:
+
+```typescript
+// REMOVE: any hardcoded or database-driven location pin display
+// ❌ <span>📍 {instructor.primary_location}</span>
+// ❌ <span>📍 New York, NY</span>
+// ❌ Any location display pulled from mock data
+
+// REPLACE WITH: only show location if instructor has filled it in
+{instructor.teaching_locations ? (
+  <span className="text-xs text-slate-400">
+    📍 {instructor.teaching_locations}
+  </span>
+) : null}
+// If teaching_locations is null/empty: show nothing at all
+```
+
+### 1c. Update all mock data
+Remove all hardcoded location values from mock instructor data:
+
+```typescript
+// REMOVE from all mock instructors:
+// ❌ location: "New York, NY"
+// ❌ location: "Los Angeles, CA"
+// ❌ location: "Chicago, IL"
+// ❌ location: "Miami, FL"
+// ❌ location: "Seattle, WA"
+// ❌ location: "Austin, TX"
+// ❌ Any location field in mock data
+
+// SET teaching_locations to null for all mock instructors
+// This means no location pin will appear on any card
+```
+
+### 1d. Update Instructor Profile page header
+In `app/(main)/instructors/[id]/page.tsx`:
+
+```typescript
+// REMOVE: location pin from instructor header
+// ❌ <span>📍 {instructor.primary_location}</span>
+
+// REPLACE WITH: only show if instructor has filled in their locations
+{instructor.teaching_locations ? (
+  <p className="text-sm text-slate-500 mt-1">
+    📍 {instructor.teaching_locations}
+  </p>
+) : null}
+```
+
+---
+
+## Fix 2: Fix Triangle Chart — "Value" Label Overlap
+
+In `components/shared/ScoreTriangle.tsx`, increase the top padding and adjust the SVG to give the "Value" label more breathing room:
+
+```typescript
+// Update SVG dimensions and center point:
+// OLD: width="220" height="210" CX=110 CY=105
+// NEW: width="240" height="230" CX=120 CY=120
+
+const CX = 120, CY = 120, R = 82
+
+// Update viewBox:
+<svg width="240" height="230" viewBox="0 0 240 230">
+
+// The "Value" label appears at the top axis (angle -90°)
+// Add extra vertical offset for the top label only:
+const LABEL_OFFSETS = [
+  { dx: 0, dy: -24 },   // Value (top) — increased from -18 to -24
+  { dx: 24, dy: 16 },   // Effectiveness (bottom right)
+  { dx: -24, dy: 16 },  // Punctuality (bottom left)
+]
+
+// Also add top padding to the card containing the triangle:
+// Add className="pt-2" to the svg wrapper div
+```
+
+---
+
+## Fix 3: Review Cards — Score-Colored Left Border
+
+In `components/review/ReviewCard.tsx`, replace any outline border with a left accent border that reflects the overall score:
+
+```typescript
+// Helper function — returns color based on overall score
+function scoreColor(score: number): string {
+  if (score >= 4.0) return '#1668c8'   // blue
+  if (score >= 2.5) return '#c89000'   // amber
+  return '#c83030'                      // red
+}
+
+// Calculate overall score
+const overall = (
+  (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3
+)
+
+// Update the card container:
+// REMOVE: any red border, outline border, or ring styling
+// ❌ className="... border-red-500 ..."
+// ❌ className="... ring-2 ring-red-400 ..."
+
+// REPLACE WITH: white card + colored left border only
+<div
+  className="bg-white rounded-xl p-4 mb-3"
+  style={{
+    borderLeft: `4px solid ${scoreColor(overall)}`,
+    borderTop: '1px solid #f1f5f9',
+    borderRight: '1px solid #f1f5f9',
+    borderBottom: '1px solid #f1f5f9',
+  }}
+>
+  {/* card contents stay the same */}
+</div>
+```
+
+This means:
+- High scoring reviews (≥4.0) → blue left border
+- Mid scoring reviews (2.5–3.9) → amber left border  
+- Low scoring reviews (<2.5) → red left border
+- All reviews have a subtle light gray border on the other three sides
+
+---
+
+## Fix 4: Remove Duplicate SCORE Card + Redesign Instructor Header
+
+In `app/(main)/instructors/[id]/page.tsx`:
+
+### 4a. Remove the standalone SCORE card
+```typescript
+// REMOVE this entire block from the instructor header:
+// ❌ <div className="score-card">
+// ❌   <span>⭐ SCORE</span>
+// ❌   <span>{instructor.avg_overall}</span>
+// ❌   <span>{instructor.total_reviews} REVIEWS</span>
+// ❌ </div>
+```
+
+### 4b. Redesign the instructor header
+Replace the header with a cleaner layout that integrates the key stats inline:
+
+```typescript
+<div className="bg-white border-b border-slate-100 px-6 py-6">
+  <div className="max-w-5xl mx-auto flex items-start gap-5">
+    
+    {/* Avatar */}
+    <div className="w-16 h-16 rounded-full bg-rita-blue flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+      {instructor.full_name.charAt(0)}
+    </div>
+
+    {/* Name + meta */}
+    <div className="flex-1">
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold text-slate-800">
+          {instructor.full_name}
+        </h1>
+        <InstructorBadge isClaimed={instructor.is_claimed} />
+      </div>
+      <div className="flex items-center gap-3 mt-1 text-sm text-slate-500 flex-wrap">
+        <span>🎾 Tennis</span>
+        {instructor.teaching_locations && (
+          <span>📍 {instructor.teaching_locations}</span>
+        )}
+      </div>
+      {/* Inline stats row */}
+      <div className="flex items-center gap-4 mt-3 flex-wrap">
+        <span className="text-2xl font-bold" style={{ color: '#1668c8' }}>
+          ⭐ {instructor.avg_overall?.toFixed(1) ?? '—'}
+        </span>
+        <span className="text-sm text-slate-400">
+          {instructor.total_reviews} reviews
+        </span>
+        <span className="text-sm text-slate-400">
+          ✓ {instructor.total_verified_sessions} verified sessions
+        </span>
+      </div>
+    </div>
+
+  </div>
+</div>
+```
+
+---
+
+## ✅ Done When:
+- [ ] No hardcoded locations appear on any instructor card or profile
+- [ ] Location only shows if instructor has self-reported their teaching locations
+- [ ] Mock data has no location values (teaching_locations = null)
+- [ ] "Value" label no longer overlaps with "Score Breakdown" title
+- [ ] Triangle SVG is wider (240px) with more top padding
+- [ ] Review cards have a colored left border (blue/amber/red based on score)
+- [ ] Review cards have NO red outline or ring border
+- [ ] Standalone SCORE card removed from instructor profile header
+- [ ] Instructor header shows name, badge, sport, and inline stats in one clean row
+- [ ] No duplicate score display on instructor profile page
+
+**Do not proceed to Prompt #07 until all checkboxes above are complete.**
