@@ -1,0 +1,534 @@
+# Replit Prompt #09 — Supabase Connection + Real Instructor Data
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #10 until this step is verified.
+
+---
+
+## What to Do
+
+1. Connect the app to Supabase so all pages use real data instead of mock data
+2. Run the database schema SQL to set up all tables
+3. Seed the database with real Westchester tennis instructors
+4. Verify the instructor search page shows real data
+
+---
+
+## Step 1: Run the Database Schema
+
+Go to your Supabase project → SQL Editor → paste and run this entire schema:
+
+```sql
+-- USERS
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT NOT NULL,
+  avatar_url TEXT,
+  location TEXT,
+  date_of_birth DATE,
+  is_admin BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INSTRUCTORS
+CREATE TABLE IF NOT EXISTS instructors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  full_name TEXT NOT NULL,
+  bio TEXT,
+  avatar_url TEXT,
+  teaching_locations TEXT,
+  is_claimed BOOLEAN DEFAULT FALSE,
+  claimed_by UUID REFERENCES users(id),
+  claimed_at TIMESTAMPTZ,
+  created_by UUID REFERENCES users(id),
+  created_by_source TEXT DEFAULT 'admin'
+    CHECK (created_by_source IN ('student', 'admin', 'scraper', 'self')),
+  avg_value NUMERIC(3,2) DEFAULT 0,
+  avg_effectiveness NUMERIC(3,2) DEFAULT 0,
+  avg_punctuality NUMERIC(3,2) DEFAULT 0,
+  avg_overall NUMERIC(3,2) DEFAULT 0,
+  total_reviews INT DEFAULT 0,
+  total_verified_reviews INT DEFAULT 0,
+  total_verified_sessions INT DEFAULT 0,
+  verification_rate NUMERIC(5,2) DEFAULT 0,
+  reviews_visible BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- SESSIONS
+CREATE TABLE IF NOT EXISTS sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL REFERENCES users(id),
+  instructor_id UUID NOT NULL REFERENCES instructors(id),
+  session_date DATE NOT NULL,
+  session_time TIME,
+  location TEXT,
+  status TEXT DEFAULT 'pending'
+    CHECK (status IN ('pending', 'verified', 'disputed')),
+  initiated_by TEXT NOT NULL
+    CHECK (initiated_by IN ('student', 'instructor')),
+  student_confirmed_at TIMESTAMPTZ,
+  instructor_confirmed_at TIMESTAMPTZ,
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- REVIEWS
+CREATE TABLE IF NOT EXISTS reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL REFERENCES users(id),
+  instructor_id UUID NOT NULL REFERENCES instructors(id),
+  session_id UUID REFERENCES sessions(id),
+  rating_value NUMERIC(3,1) NOT NULL CHECK (rating_value >= 0 AND rating_value <= 5),
+  rating_effectiveness NUMERIC(3,1) NOT NULL CHECK (rating_effectiveness >= 0 AND rating_effectiveness <= 5),
+  rating_punctuality NUMERIC(3,1) NOT NULL CHECK (rating_punctuality >= 0 AND rating_punctuality <= 5),
+  comment TEXT,
+  is_verified BOOLEAN DEFAULT FALSE,
+  is_flagged BOOLEAN DEFAULT FALSE,
+  flag_reason TEXT,
+  moderation_status TEXT DEFAULT 'approved'
+    CHECK (moderation_status IN ('approved', 'pending_review', 'removed')),
+  moderation_note TEXT,
+  layer1_passed BOOLEAN,
+  layer2_passed BOOLEAN,
+  layer2_response TEXT,
+  edit_count INT DEFAULT 0,
+  last_edited_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- STUDENT RANKINGS
+CREATE TABLE IF NOT EXISTS student_rankings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  student_id UUID NOT NULL REFERENCES users(id),
+  instructor_id UUID NOT NULL REFERENCES instructors(id),
+  rank_position INT NOT NULL CHECK (rank_position >= 1),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (student_id, instructor_id),
+  UNIQUE (student_id, rank_position)
+);
+
+-- PLATFORM RANKING
+CREATE TABLE IF NOT EXISTS platform_ranking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  instructor_id UUID NOT NULL REFERENCES instructors(id) UNIQUE,
+  rank_position INT NOT NULL,
+  total_students_ranked INT DEFAULT 0,
+  kemeny_score NUMERIC(10,4),
+  calculated_at TIMESTAMPTZ DEFAULT NOW(),
+  calculation_version INT DEFAULT 1
+);
+
+-- NOTIFICATIONS
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  type TEXT NOT NULL CHECK (type IN (
+    'verification_requested',
+    'verification_confirmed',
+    'review_status_updated',
+    'instructor_has_reviews'
+  )),
+  related_session_id UUID REFERENCES sessions(id),
+  related_review_id UUID REFERENCES reviews(id),
+  related_instructor_id UUID REFERENCES instructors(id),
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INSTRUCTOR CLAIMS
+CREATE TABLE IF NOT EXISTS instructor_claims (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  instructor_id UUID NOT NULL REFERENCES instructors(id),
+  user_id UUID NOT NULL REFERENCES users(id),
+  status TEXT DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected')),
+  verification_method TEXT
+    CHECK (verification_method IN ('email', 'manual_admin')),
+  verified_at TIMESTAMPTZ,
+  admin_note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- INDEXES
+CREATE INDEX IF NOT EXISTS idx_instructors_avg_overall ON instructors(avg_overall DESC);
+CREATE INDEX IF NOT EXISTS idx_instructors_reviews_visible ON instructors(reviews_visible);
+CREATE INDEX IF NOT EXISTS idx_reviews_instructor ON reviews(instructor_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_student ON reviews(student_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_verified ON reviews(is_verified);
+CREATE INDEX IF NOT EXISTS idx_sessions_student ON sessions(student_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_instructor ON sessions(instructor_id);
+CREATE INDEX IF NOT EXISTS idx_rankings_student ON student_rankings(student_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+
+-- TRIGGER: auto-update instructor stats when review is added/updated
+CREATE OR REPLACE FUNCTION update_instructor_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE instructors SET
+    avg_value = (
+      SELECT COALESCE(AVG(rating_value), 0) FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    avg_effectiveness = (
+      SELECT COALESCE(AVG(rating_effectiveness), 0) FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    avg_punctuality = (
+      SELECT COALESCE(AVG(rating_punctuality), 0) FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    avg_overall = (
+      SELECT COALESCE(AVG((rating_value + rating_effectiveness + rating_punctuality) / 3), 0)
+      FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    total_reviews = (
+      SELECT COUNT(*) FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    total_verified_reviews = (
+      SELECT COUNT(*) FROM reviews
+      WHERE instructor_id = NEW.instructor_id
+        AND is_verified = TRUE AND moderation_status = 'approved'
+    ),
+    reviews_visible = (
+      SELECT COUNT(*) >= 3 FROM reviews
+      WHERE instructor_id = NEW.instructor_id AND moderation_status = 'approved'
+    ),
+    updated_at = NOW()
+  WHERE id = NEW.instructor_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trigger_update_instructor_stats
+AFTER INSERT OR UPDATE ON reviews
+FOR EACH ROW EXECUTE FUNCTION update_instructor_stats();
+```
+
+---
+
+## Step 2: Enable Row Level Security
+
+In Supabase SQL Editor, run:
+
+```sql
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE instructors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE student_rankings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE platform_ranking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE instructor_claims ENABLE ROW LEVEL SECURITY;
+
+-- Helper function
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM users WHERE id = auth.uid() AND is_admin = TRUE
+  );
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Instructors: anyone can view
+CREATE POLICY "Anyone can view instructors"
+  ON instructors FOR SELECT USING (TRUE);
+
+-- Reviews: anyone can view approved reviews
+CREATE POLICY "Anyone can view approved reviews"
+  ON reviews FOR SELECT
+  USING (moderation_status = 'approved' OR is_admin());
+
+CREATE POLICY "Students can create reviews"
+  ON reviews FOR INSERT
+  WITH CHECK (auth.uid() = student_id);
+
+CREATE POLICY "Students can update own reviews within edit window"
+  ON reviews FOR UPDATE
+  USING (auth.uid() = student_id OR is_admin());
+
+-- Student rankings: private to owner + admin
+CREATE POLICY "Students can view own rankings"
+  ON student_rankings FOR SELECT
+  USING (auth.uid() = student_id OR is_admin());
+
+CREATE POLICY "Students can manage own rankings"
+  ON student_rankings FOR ALL
+  USING (auth.uid() = student_id OR is_admin());
+
+-- Platform ranking: public
+CREATE POLICY "Anyone can view platform ranking"
+  ON platform_ranking FOR SELECT USING (TRUE);
+
+-- Notifications: private
+CREATE POLICY "Users can view own notifications"
+  ON notifications FOR SELECT
+  USING (auth.uid() = user_id OR is_admin());
+
+-- Sessions: participants only
+CREATE POLICY "Session participants can view"
+  ON sessions FOR SELECT
+  USING (
+    auth.uid() = student_id OR is_admin() OR
+    EXISTS (
+      SELECT 1 FROM instructors
+      WHERE id = sessions.instructor_id AND claimed_by = auth.uid()
+    )
+  );
+
+CREATE POLICY "Students can create sessions"
+  ON sessions FOR INSERT
+  WITH CHECK (auth.uid() = student_id);
+```
+
+---
+
+## Step 3: Seed Real Instructor Data
+
+In Supabase SQL Editor, run this to insert real Westchester tennis instructors:
+
+```sql
+INSERT INTO instructors (full_name, bio, teaching_locations, is_claimed, created_by_source) VALUES
+
+-- Tarry Crest, Tarrytown
+(
+  'Martin Miedzowicz',
+  'Program Director at Tarry Crest Swim & Tennis. Native of Montevideo, Uruguay, former professional player ranked among the top in Uruguay and South America. Elite USPTA, PPTA, and ITF certified with 12+ years of experience in Westchester. Former Director of Tennis at Evolution Tennis Academy and Tennis Manager at Pleasantville Tennis Club. Currently works with over 300 players during the indoor season.',
+  'Tarry Crest Swim & Tennis, Tarrytown, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Claudia Bartolome',
+  'Head Tennis Professional. Born and raised in Barcelona, Spain. Former top-4 player in Spain under 16 & 18. Played college tennis at University of Pittsburgh and Southern Methodist University. Holds a Masters degree in Sports Management from SMU.',
+  'Tarry Crest Swim & Tennis, Tarrytown, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Jose Nunez Navarro',
+  'Head Tennis Professional, known as Pepe. Former Division 1 athlete at Old Dominion University. Ranked top-50 nationally in singles and doubles. 7+ years coaching experience including at Shore and Country Club in Connecticut and Soto Tennis Academy in Spain.',
+  'Tarry Crest Swim & Tennis, Tarrytown, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Santiago Kearney',
+  'Tennis Professional, known as Torito. Born and raised in Buenos Aires, Argentina. Competed at DII NCAA level, ranked top-25 in singles and top-20 in doubles nationally.',
+  'Tarry Crest Swim & Tennis, Tarrytown, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Tao Castillo Bernal',
+  'Tennis Professional. Born and raised in Spain, started playing tennis at age 6. Former top-25 junior player in Spain. Played college tennis at Georgia Southern University where he holds the record for best tennis record in program history.',
+  'Tarry Crest Swim & Tennis, Tarrytown, NY',
+  FALSE,
+  'scraper'
+),
+
+-- Pound Ridge Tennis Club
+(
+  'Patrick Hammers',
+  'Director of Racquet Sports at Pound Ridge Tennis Club. Offers individual and group lessons for all levels. Runs instructional drills for club teams and heads the Junior Clinics program in Spring, Summer, and Fall.',
+  'Pound Ridge Tennis Club, Pound Ridge, NY',
+  FALSE,
+  'scraper'
+),
+
+-- Tennis Innovators Academy, White Plains
+(
+  'Cesar Andrade',
+  'Regional Director of Operations at Tennis Innovators Academy, White Plains. Coaching professional and standard in Westchester County tennis instruction.',
+  'Tennis Innovators Academy, White Plains, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Vladimir Margalitadze',
+  'Regional Director of Tennis at Tennis Innovators Academy, White Plains. Experienced tennis professional serving Westchester County players.',
+  'Tennis Innovators Academy, White Plains, NY',
+  FALSE,
+  'scraper'
+),
+(
+  'Steve Higgins',
+  'Director of Operations at Tennis Innovators Academy, White Plains. Tennis coaching professional with experience across all age groups and skill levels.',
+  'Tennis Innovators Academy, White Plains, NY',
+  FALSE,
+  'scraper'
+),
+
+-- Grand Slam Tennis Club, Bedford
+(
+  'Grand Slam Teaching Staff',
+  'Professional teaching staff at Grand Slam Tennis Club, Bedford NY. Serving players from Bedford to Greenwich CT and all Westchester County communities. Specializing in adult and junior tennis lessons for all ages and ability levels.',
+  'Grand Slam Tennis Club, Bedford, NY',
+  FALSE,
+  'scraper'
+);
+```
+
+---
+
+## Step 4: Connect App Pages to Real Supabase Data
+
+### 4a. Update Instructor Search Page
+In `app/(main)/instructors/page.tsx`, replace all mock data with a real Supabase query:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+
+export default async function InstructorsPage({
+  searchParams,
+}: {
+  searchParams: { search?: string; location?: string }
+}) {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('instructors')
+    .select('*')
+    .order('avg_overall', { ascending: false })
+
+  if (searchParams.search) {
+    query = query.ilike('full_name', `%${searchParams.search}%`)
+  }
+
+  if (searchParams.location) {
+    query = query.ilike('teaching_locations', `%${searchParams.location}%`)
+  }
+
+  const { data: instructors, error } = await query
+
+  // render instructors list...
+}
+```
+
+### 4b. Update Instructor Profile Page
+In `app/(main)/instructors/[id]/page.tsx`, replace mock data:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { notFound } from 'next/navigation'
+
+export default async function InstructorProfilePage({
+  params,
+}: {
+  params: { id: string }
+}) {
+  const supabase = createClient()
+
+  // Fetch instructor
+  const { data: instructor, error } = await supabase
+    .from('instructors')
+    .select('*')
+    .eq('id', params.id)
+    .single()
+
+  if (!instructor || error) notFound()
+
+  // Fetch reviews (no student identity data)
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select(`
+      id,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      comment,
+      is_verified,
+      moderation_status
+    `)
+    .eq('instructor_id', params.id)
+    .eq('moderation_status', 'approved')
+    .order('created_at', { ascending: false })
+
+  // render page...
+}
+```
+
+### 4c. Update Rankings Page
+In `app/(main)/ranking/page.tsx`, replace mock data:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+
+export default async function RankingsPage() {
+  const supabase = createClient()
+
+  const { data: instructors } = await supabase
+    .from('instructors')
+    .select('id, full_name, avg_overall, total_reviews, is_claimed, teaching_locations')
+    .gt('total_reviews', 0)
+    .order('avg_overall', { ascending: false })
+    .limit(50)
+
+  // render rankings table...
+}
+```
+
+---
+
+## Step 5: Configure Supabase Auth
+
+In your Supabase project:
+1. Go to **Authentication → Providers**
+2. Enable **Email** provider (should be on by default)
+3. Enable **Google** provider:
+   - You will need a Google OAuth Client ID and Secret
+   - Go to console.cloud.google.com → Create OAuth credentials
+   - Add redirect URL: `https://your-project.supabase.co/auth/v1/callback`
+4. Go to **Authentication → URL Configuration**
+   - Set Site URL to your Replit dev URL (e.g. `https://rita.replit.app`)
+   - Add redirect URL: `https://rita.replit.app/api/auth/callback`
+
+---
+
+## Step 6: Update Auth Callback Route
+
+In `app/api/auth/callback/route.ts`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
+
+  if (code) {
+    const supabase = createClient()
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth`)
+}
+```
+
+---
+
+## ✅ Done When:
+- [ ] All database tables created in Supabase (verify in Table Editor)
+- [ ] RLS policies applied to all tables
+- [ ] 10 real instructors visible in Supabase instructors table
+- [ ] Instructor search page shows real instructors from Supabase (not mock data)
+- [ ] Instructor profile page loads real data from Supabase
+- [ ] Rankings page shows real instructors ordered by avg_overall
+- [ ] Google OAuth configured in Supabase
+- [ ] Auth callback route working
+- [ ] No mock data arrays remain in any page component
+
+**Do not proceed to Prompt #10 until all checkboxes above are complete.**
