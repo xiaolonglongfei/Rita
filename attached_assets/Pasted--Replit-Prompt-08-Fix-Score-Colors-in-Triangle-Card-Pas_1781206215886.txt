@@ -1,0 +1,123 @@
+# Replit Prompt #08 — Fix Score Colors in Triangle Card
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #09 until this step is verified.
+
+---
+
+## Two Problems to Fix
+
+1. Progress bars in Score Breakdown card are always blue regardless of score
+2. Overall score number color is not using the correct defined color values
+
+---
+
+## Correct Color Rules
+
+These are the ONLY three colors allowed for score-related elements:
+
+```
+High score (≥ 4.0)   → #1668c8  (blue)
+Mid score (2.5–3.9)  → #c89000  (amber)
+Low score (< 2.5)    → #c83030  (red)
+```
+
+This applies to ALL of the following elements:
+- Overall score large number
+- Progress bar fills (Value, Effectiveness, Punctuality)
+- Progress bar score numbers on the right
+
+---
+
+## Step 1: Update ScoreTriangle Component
+
+In `components/shared/ScoreTriangle.tsx`, update the score color function and apply it consistently:
+
+```typescript
+// Shared color function — use this everywhere in this component
+function scoreColor(score: number): string {
+  if (score >= 4.0) return '#1668c8'
+  if (score >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+// Apply to overall score number:
+const overall = (value + effectiveness + punctuality) / 3
+const overallColor = scoreColor(overall)
+
+// Overall score display:
+<div className="text-center mb-5 pb-5 border-b border-slate-100">
+  <div
+    className="text-6xl font-bold leading-none"
+    style={{ color: overallColor }}  // ← uses scoreColor(), NOT hardcoded
+  >
+    {overall.toFixed(1)}
+  </div>
+  <div className="text-xs text-slate-400 mt-2">
+    Overall Score{reviewCount ? ` · ${reviewCount} reviews` : ''}
+  </div>
+</div>
+
+// Score bars — each bar uses its OWN score for color:
+{[
+  { label: '💰 Value', score: value },
+  { label: '📈 Effectiveness', score: effectiveness },
+  { label: '⏰ Punctuality', score: punctuality },
+].map(({ label, score }) => (
+  <div key={label} className="flex items-center gap-3">
+    <span className="text-xs font-semibold text-slate-500 w-28 flex-shrink-0">
+      {label}
+    </span>
+    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-500"
+        style={{
+          width: `${(score / 5) * 100}%`,
+          background: scoreColor(score),  // ← each bar uses its own score
+        }}
+      />
+    </div>
+    <span
+      className="text-sm font-bold w-8 text-right"
+      style={{ color: scoreColor(score) }}  // ← number color matches bar
+    >
+      {score.toFixed(1)}
+    </span>
+  </div>
+))}
+```
+
+---
+
+## Step 2: Verify Color Consistency
+
+After updating, verify these scenarios work correctly:
+
+**Scenario A — High scores (e.g. Value: 4.8, Effectiveness: 4.9, Punctuality: 4.5):**
+- Overall = 4.73 → overall number: blue (#1668c8)
+- All three bars: blue (#1668c8)
+- All three score numbers: blue (#1668c8)
+
+**Scenario B — Mixed scores (e.g. Value: 3.8, Effectiveness: 4.0, Punctuality: 3.9):**
+- Overall = 3.9 → overall number: amber (#c89000)
+- Value bar (3.8): amber (#c89000)
+- Effectiveness bar (4.0): blue (#1668c8)
+- Punctuality bar (3.9): amber (#c89000)
+
+**Scenario C — Low scores (e.g. Value: 2.0, Effectiveness: 1.5, Punctuality: 2.0):**
+- Overall = 1.83 → overall number: red (#c83030)
+- All three bars: red (#c83030)
+- All three score numbers: red (#c83030)
+
+---
+
+## ✅ Done When:
+- [ ] Overall score number uses scoreColor() based on overall average
+- [ ] Overall score is NOT hardcoded orange/gold/yellow
+- [ ] Each progress bar fill color uses scoreColor() based on that dimension's own score
+- [ ] Each score number on the right of the bar uses scoreColor() based on that score
+- [ ] Blue (#1668c8) appears for scores ≥ 4.0
+- [ ] Amber (#c89000) appears for scores 2.5–3.9
+- [ ] Red (#c83030) appears for scores < 2.5
+- [ ] No hardcoded color values other than the three defined above
+
+**Do not proceed to Prompt #09 until all checkboxes above are complete.**

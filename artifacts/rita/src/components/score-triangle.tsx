@@ -127,16 +127,16 @@ export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }
           { label: '⏰ Punctuality', score: punctuality },
         ].map(({ label, score }) => (
           <div key={label} className="flex items-center gap-3">
-            <span className="text-xs font-semibold text-muted-foreground w-32 flex-shrink-0">
+            <span className="text-xs font-semibold text-slate-500 w-28 flex-shrink-0">
               {label}
             </span>
-            <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-500"
-                style={{ width: `${(score / 5) * 100}%`, backgroundColor: '#1668c8' }}
+                style={{ width: `${(score / 5) * 100}%`, background: scoreColor(score) }}
               />
             </div>
-            <span className="text-sm font-bold w-8 text-right" style={{ color: '#1668c8' }}>
+            <span className="text-sm font-bold w-8 text-right" style={{ color: scoreColor(score) }}>
               {score.toFixed(1)}
             </span>
           </div>
