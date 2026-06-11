@@ -1,0 +1,468 @@
+# Product Requirements Document: Rita
+**Version:** 2.0  
+**Date:** June 2026  
+**Status:** Active Development  
+**Soft Launch Target:** Early July 2026
+
+---
+
+## Executive Summary
+
+Rita is an anonymous review and verification platform designed specifically for private instruction. Starting with tennis instruction in Westchester County, NY, Rita solves the trust and transparency gap in the one-on-one learning market by enabling students to share honest, anonymous feedback about their instructors while maintaining accountability through mutual session verification.
+
+Unlike generic review platforms (Yelp, Google Reviews), Rita is purpose-built for the unique dynamics of private, session-based instruction where personal relationships, power imbalances, and teaching quality matter more than transactional service delivery.
+
+**Key Differentiators:**
+- Mutual verification system requiring both student and instructor confirmation
+- Anonymous reviews that protect students from retaliation while maintaining data integrity
+- Privacy-first design (reviews displayed only after 3+ collected)
+- Student private instructor rankings aggregated via Kemeny-Young algorithm into a platform-wide public ranking
+- Quantitative-first design philosophy: numbers and rankings over written text
+
+**Platform:** Web application (mobile to follow in Phase 2)  
+**Initial Market:** Tennis instruction, Westchester County, NY  
+**Brand Colors:** US Open palette — Blue (#1a56a0) + Electric Lime (#b8d400)  
+**Language:** English only (Phase 1)
+
+---
+
+## Problem Statement
+
+### Core Problems
+1. Existing platforms (Google, Yelp) are designed for businesses, not individual instructors, and lack the nuance needed to evaluate teaching quality
+2. Students hesitate to leave candid reviews when their identity is visible, especially in ongoing one-on-one relationships
+3. No standardized system for comparing instructors objectively
+4. Students rely on limited word-of-mouth recommendations
+5. **No platform allows students to rank and compare multiple instructors they have personally experienced** — Rita's unique differentiator
+
+### Rating Dimensions
+Three dimensions were selected for their comprehensive coverage of what students care most about:
+- **Value:** Whether the student feels the lesson was worth the money (outcome-oriented)
+- **Effectiveness for Improvement:** Whether the instructor's teaching style matches the student's learning needs (skill-oriented)
+- **Punctuality:** Whether the instructor is reliable, on time, and communicates well (professionalism-oriented)
+
+---
+
+## Product Vision
+
+### Long-Term Vision (3-5 Years)
+Rita will become the de facto review and verification platform for all private instruction nationally and globally, expanding from tennis to golf, music lessons, academic tutoring, fitness training, and all forms of one-on-one teaching.
+
+### Expansion Roadmap
+- **Phase 1 (Now):** Tennis · Westchester County, NY
+- **Phase 2 (Q3 2026):** Mobile app · Enhanced features · Instructor premium subscriptions
+- **Phase 3 (Q4 2026):** Geographic expansion (Connecticut, New Jersey, NYC) · Club dashboards
+- **Phase 4 (2027):** Golf, music, tutoring, fitness · National scaling
+
+---
+
+## Target Audience
+
+### Growth Strategy: Student-First Flywheel
+Rita uses a **Local Network Saturation** strategy modeled on Yelp's early growth:
+
+1. **Students/parents onboard first** → submit reviews and rankings → accumulate data
+2. **Data accumulates on instructor profiles** → system notifies instructors when they reach a threshold of reviews
+3. **Instructors are pulled in by their own interest** → claim profiles → join platform
+4. **Clubs and institutions** → access aggregated data for hiring/evaluation decisions → become paying B2B customers
+
+Students, parents, and instructors are all **free users**. Clubs and institutions are the **ultimate paying customers**.
+
+### Soft Launch Target
+- **First target:** One tennis club with ~1,500 members
+- **Expected conversion:** 10-20% → 150-300 initial students
+- **Timeline:** Early July 2026
+
+### Primary Users: Students & Parents
+- All ages — children (via parent accounts) to adults
+- Middle to upper-middle class, Westchester County
+- Motivated by finding trustworthy, high-quality instructors
+- Value transparency and peer recommendations
+
+### Secondary Users: Instructors
+- Part-time and full-time tennis instructors in Westchester
+- Motivated by reputation building, visibility, and professional credentials
+- Onboarded passively — driven by student review accumulation
+
+### Instructor Profile Creation Methods
+1. **Student-created:** When a student cannot find their instructor in the database, they can create a new profile
+2. **Admin-scraped:** Python web scraping of tennis club and academy websites to pre-populate instructor database
+3. **Self-registered:** Instructors can create or claim an existing profile themselves
+
+### Tertiary Users: Clubs & Institutions (Paying Customers)
+- Tennis clubs, academies, and facilities
+- Use Rita data for instructor hiring, evaluation, and performance monitoring
+- B2B subscription model (Phase 3+)
+
+---
+
+## Core Features — MVP (Phase 1)
+
+### Design Philosophy
+**Quantitative-first:** Numbers, rankings, and visual data take priority over written text. Free-text comments are always optional and never required — including for low ratings. The goal is to minimize friction and maximize data quality through structured inputs.
+
+### 1. User Authentication
+**Included in MVP:**
+- Email/password registration
+- Google OAuth
+
+**Deferred to later phases:**
+- Apple Sign-in
+- Phone number/SMS verification
+
+### 2. Instructor Discovery & Search
+- Search by instructor name
+- Filter by: Overall rating, Location
+- Default sort: Highest rated first
+
+**Deferred to later phases:**
+- Specialization filter
+- Verification status filter
+- Advanced sort options (most reviews, most recent activity)
+- Map view
+
+### 3. Instructor Profiles
+**Visible to all users (even with fewer than 3 reviews):**
+- Name, bio, teaching location(s)
+- Basic profile information
+
+**Visible only when 3+ reviews collected:**
+- Overall rating
+- Three-dimension scores (Value, Effectiveness, Punctuality)
+- Full review list (labeled Verified or Unverified)
+- Total verified session count
+
+**When fewer than 3 reviews:**
+- Display message: *"Reviews pending — collecting feedback to protect reviewer privacy"*
+
+### 4. Review Submission
+- Rate three dimensions (1-5 stars each): Value, Effectiveness for Improvement, Punctuality
+- Optional free-text comment (never required, including for low ratings)
+- Review labeled as "Verified" or "Unverified" based on session verification status
+- Reviews held from public display until instructor has 3+ reviews total
+- Student identity never revealed to instructor
+
+### 5. Session Verification System
+- Either student or instructor can initiate verification
+- Verification details: counterparty name, date, time, location
+- Counterparty must confirm to complete verification
+- Students can submit reviews before, during, or after verification
+- Verification only changes the review label — it does not block or gate review submission
+- Unverified reviews are clearly labeled; verification upgrades the label to Verified
+
+### 6. Student Private Instructor Ranking
+- Each student maintains a private personal ranking of all instructors they have experienced
+- Rankings are visible only to the student themselves
+- When a new instructor is encountered, student can add them to their personal ranking list
+- Student can reorder their ranking at any time
+
+**Technical implementation (approved prototype — replicate exactly in Replit):**
+```
+Layout: Single column list, max-width 420px, centered
+Each card: white background, border-radius 12px, border 1.5px #e0e8f4, padding 12px 14px
+Card contents (left to right):
+  - Rank number circle (32px): gold for #1, silver for #2, bronze for #3, blue for rest
+  - Medal emoji: 🥇🥈🥉 for top 3, empty for rest
+  - Avatar circle (40px): instructor initials, colored background
+  - Instructor info: name (14px bold) + location (12px gray)
+  - Score pills: V / E / P scores in small blue pills (#e8f1fc background)
+  - Drag handle: ⠿ icon on far right
+
+Drag behavior:
+  - Dragging card: scale(1.02), shadow, border turns #1668c8
+  - Drop target: border turns #b8d400, background #f9fde8
+  - After drop: toast notification "Name moved to #X" (dark pill, fades after 2.2s)
+  - Works on both mouse (HTML5 drag API) and touch (touchstart/touchmove/touchend)
+
+Add instructor:
+  - Dashed border section (#b8d400), below the ranking list
+  - Text input + Add button (lime green #b8d400)
+  - Supports Enter key to add
+  - New instructor appended to bottom of list with placeholder scores (—)
+
+Privacy badge: "🔒 Private — visible only to you" in amber pill at top
+Info note at bottom: explains how private ranking feeds into platform public ranking
+```
+
+### 7. Platform Public Ranking (Kemeny-Young Algorithm)
+- All student private rankings are aggregated into a single platform-wide public ranking
+- Algorithm: **Kemeny-Young method** — finds the ranking that minimizes total disagreement with all individual student rankings
+- This is Rita's core competitive differentiator — reflects true revealed preference, not just star averages
+- As data scales, approximate Kemeny-Young algorithms will be evaluated for performance optimization
+
+### 8. Notifications (Minimal MVP Version)
+**Included in MVP:**
+- Student initiates verification → notify instructor: *"A student has requested session verification"*
+- Instructor confirms verification → notify student: *"Your session has been verified — your review status has been updated to Verified"*
+- Instructor joins platform → notify instructor: *"You have X reviews waiting for you"*
+
+**Deferred to later phases:**
+- New instructor in your area
+- Weekly digest emails
+- Leaderboard updates
+- Profile view notifications
+
+---
+
+## Admin Dashboard — MVP
+
+Operated solely by the founder in the early stage.
+
+**Included in MVP:**
+- **Instructor database management:** Manually add, edit, and manage instructor profiles
+- **Content moderation queue:** View flagged reviews, decide to remove or retain
+- **User management:** Ban or suspend abusive accounts
+
+**Deferred to later phases:**
+- Data analytics and reporting
+- System health monitoring
+- Automated alerts
+
+---
+
+## Content Moderation
+
+Three-layer moderation system, designed to minimize cost and human effort while maintaining review quality:
+
+**Layer 1 — Keyword filter (free, zero latency):**
+- Pre-set blacklist scans all text comments on submission
+- Catches obvious profanity, personal information (phone numbers, emails, addresses), and spam
+- Runs instantly, no API cost
+
+**Layer 2 — Claude API deep review (triggered only if Layer 1 passes):**
+- Text comments that pass the keyword filter are sent to Claude API for nuanced judgment
+- Detects identity-revealing information, personal attacks, and subtle policy violations
+- Estimated cost: $0.001–0.003 per comment · Early stage total < $1/month
+- Slight latency acceptable given optional nature of text comments
+
+**Layer 3 — Manual review (human):**
+- Instructor flagging triggers entry into Admin moderation queue
+- Founder reviews and decides: remove, retain, or escalate
+- Appeals process available for disputed decisions
+
+**Note:** Because text comments are optional and Rita's philosophy is quantitative-first, the volume of text requiring moderation will be low, making this three-layer system highly cost-effective.
+
+---
+
+## Features Deferred to Later Phases
+
+The following features are explicitly documented for future development and are NOT included in MVP:
+
+### Phase 2
+- Native iOS and Android mobile apps
+- Gamification and leaderboards (deprioritized due to privacy concerns — competitive students do not want training frequency exposed)
+- Apple Sign-in
+- Phone number/SMS verification
+- Map view for instructor search
+- Advanced search filters (specialization, verification status)
+- Batch session verification
+- Profile sharing link generation
+
+### Phase 3
+- Club/institution B2B dashboard
+- Premium analytics for instructors (rating trends, benchmarking)
+- Organization hiring tools
+- GDPR/CCPA compliance (required for international/California expansion)
+
+### Phase 4+
+- Booking and scheduling integration
+- Payment processing
+- Expansion to golf, music, tutoring, fitness
+- Geographic expansion beyond Westchester
+- AI-powered instructor matching
+- Video testimonials
+- Certification badge system
+
+---
+
+## Technical Stack
+
+| Component | Technology | Notes |
+|---|---|---|
+| Framework | Next.js | SEO-critical for instructor discovery |
+| Database & Auth | Supabase | Free tier sufficient for MVP |
+| Email Service | Resend | Free tier (3,000 emails/month) |
+| Development Environment | Replit | Paid plan |
+| Deployment | Vercel | Free tier sufficient for MVP |
+| Ranking Algorithm | Kemeny-Young | Core differentiator |
+| Scraping (instructor DB) | Python | Pre-populate instructor profiles |
+
+### Infrastructure Budget
+- Replit: ~$20-30/month (already subscribed)
+- Supabase: Free tier
+- Vercel: Free tier
+- Resend: Free tier
+- Domain: ~$10-15/year (one-time)
+- **Total monthly: ~$30/month cap**
+
+### Performance Requirements
+- Page load time < 2 seconds
+- Search results < 500ms
+- 99.5% uptime target
+
+---
+
+## Privacy & Anonymity
+
+- Student names never shown to instructors in any review context
+- Reviews only displayed after 3+ reviews collected per instructor
+- Student private rankings visible only to the student themselves
+- Platform public ranking shows aggregated results only — no individual student data exposed
+- Content moderation: automated filtering for profanity and personal identifying information
+- Instructor flagging capability for inappropriate reviews
+
+---
+
+## Legal & Compliance
+
+**MVP approach:** Claude-generated baseline documents, to be refined by legal counsel post-launch.
+
+Required documents:
+- Terms of Service (including Section 230 protection, content guidelines, dispute resolution)
+- Privacy Policy (data collection, usage, user rights, deletion)
+- Content Moderation Policy (prohibited content, moderation process, appeals)
+
+**GDPR/CCPA:** Deferred to Phase 3 (required before international or California expansion)
+
+---
+
+## Go-to-Market Strategy
+
+### Soft Launch (July 2026)
+- Target: One Westchester tennis club (~1,500 members)
+- Expected initial users: 150-300 students (10-20% conversion)
+- Method: Personal outreach, word of mouth, in-person demos
+- Goal: Validate core functionality, accumulate first reviews, trigger instructor interest
+
+### Growth Strategy
+- **Do not actively recruit instructors** — let student review accumulation pull them in organically
+- System automatically notifies instructors when their profile reaches review threshold
+- Expand club by club within Westchester before geographic expansion
+- Marketing budget to be determined after product validation
+
+### Instructor Acquisition
+- Pre-populate database via Python scraping of club websites
+- Students can create instructor profiles when not found in database
+- Instructors self-register or claim existing profiles
+- No paid incentives for reviews (lessons from Yelp's failed early experiment)
+
+---
+
+## Success Metrics
+
+### Soft Launch (July 2026)
+- 150-300 students signed up
+- 50+ reviews submitted
+- 10+ instructor profiles created
+- Verification flow working smoothly
+- No critical bugs
+
+### Month 3 (October 2026)
+- 500+ students
+- 300+ reviews
+- 30+ instructor profiles
+- Verification rate > 70%
+- At least 10 instructors with 3+ reviews (public profiles unlocked)
+
+### Year 1 (Mid-2027)
+- 1,000+ verified reviews
+- 187+ instructors (75% Westchester market penetration)
+- 1,500+ monthly active students
+- 80%+ verification rate
+- First B2B club partnership in discussion
+
+---
+
+## Design System & UI/UX Principles
+
+### Brand Colors (US Open Palette — Enhanced)
+- **Primary Blue:** #1668c8 (more vibrant than original)
+- **Electric Lime:** #b8d400
+- **Background:** White with generous whitespace
+- **Cards:** Alternating light blue (#e8f1fc) and light lime (#f5fbcc) backgrounds
+- **Gradients:** Deep blue → bright blue for hero sections
+
+### UI Component Stack
+- **Framework:** shadcn/ui + Tailwind CSS (Next.js native, zero lock-in, Claude-friendly)
+- **Data Visualization:** Tremor (charts, KPI cards, rating displays — pairs seamlessly with shadcn/ui)
+
+### 2026 Design Principles Applied to Rita
+1. **Micro-interactions:** Subtle animations on button clicks, rating submissions, verification confirmations — makes the interface feel alive and responsive
+2. **Soft tactile feedback (Modern Neumorphism):** Rating cards and instructor profile cards have subtle depth and shadow — elements feel physical, not flat
+3. **Data visualization first:** Charts, score rings, ranking cards replace text descriptions wherever possible — aligned with Rita's quantitative-first philosophy
+4. **Accessibility as infrastructure:** High contrast, large touch targets, clear typography — essential for parent and child user base
+5. **Generous whitespace:** Colors feel more vibrant and lively against white space — avoids heaviness
+
+### Instructor Profile Labels
+- **"Claimed"** (blue badge) = instructor has registered and claimed this profile
+- **"Unclaimed"** (gray badge) = profile created by student or admin scraper; instructor not yet on platform
+- **"Verified"** = used ONLY on review cards to indicate a mutually confirmed session
+- ⚠️ Never use "Verified" as an instructor-level badge
+
+### Search & Filter (MVP)
+- **Name search:** text input, searches instructor full name
+- **Location filter:** dropdown of Westchester County locations only
+- **Sort:** highest overall rating first (default)
+- ⚠️ No specialties/sport filter in MVP — Rita only covers tennis at launch. Filter will be added when multi-sport expansion begins in Phase 4.
+
+### Review Display Rules (Instructor Profile Page)
+**What is shown on each review card:**
+
+| Field | Visible? | Notes |
+|---|---|---|
+| Student name | ❌ NEVER | Complete anonymity — core platform promise |
+| Student avatar | ❌ NEVER | Could help identify reviewer |
+| Review date | ❌ NEVER | Timing patterns could reveal identity |
+| Verified badge | ✅ YES | Shows if session was mutually confirmed |
+| Unverified label | ✅ YES | Shows if session not yet verified |
+| Value score | ✅ YES | rating_value |
+| Effectiveness score | ✅ YES | rating_effectiveness |
+| Punctuality score | ✅ YES | rating_punctuality |
+| Overall score | ✅ YES | Average of three scores |
+| Text comment | ✅ if exists | Only shown when comment is not empty |
+
+**Privacy note must appear above reviews list:**
+> 🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+
+
+Inspired by Airbnb's review editing approach, but adapted for Rita's anonymity protection needs:
+
+- **0–7 days after submission:** Locked — no edits allowed (cooling period, protects anonymity by preventing score changes that could reveal identity)
+- **7–30 days:** One edit allowed
+- **30+ days:** Permanently locked — no further changes
+
+**Rationale:** 7 days aligns with the typical weekly tennis lesson cycle, giving students time to reflect. The 30-day lock ensures long-term data stability. The cooling period also prevents instructors from identifying reviewers through timing patterns of score changes.
+
+
+**Instead of star-click buttons, Rita uses a vertical pull-up slider for rating input:**
+- Each dimension (Value, Effectiveness, Punctuality) has its own vertical slider
+- Bottom = 0, Top = 5, precision = 0.1 increments
+- User drags the thumb upward to set their score, or clicks anywhere on the track to jump to that value
+- Score displays as a real-time number inside the thumb and above the slider
+- Color changes dynamically based on score: blue (≥4.0), yellow (2.5–3.9), red (<2.5)
+- Bottom summary row shows all three scores simultaneously
+- Works on both mouse (drag/click) and touch (mobile)
+- Reinforces the quantitative-first philosophy — feels like measuring, not just clicking
+
+**Technical implementation (approved prototype — replicate exactly in Replit):**
+```
+Track: 18px wide, 220px tall, border-radius 9px, light blue background (#e8f1fc)
+Fill: same width, grows from bottom, color matches score tier
+Thumb: 44px circle, white background, colored border, score label inside
+Score tiers: ≥4.0 → #1668c8 (blue) · 2.5–3.9 → #c89000 (amber) · <2.5 → #c83030 (red)
+Layout: three sliders side by side, centered, gap 40px
+Above each slider: large score number (26px, bold)
+Below each slider: dimension label with emoji (💰 Value · 📈 Effectiveness · ⏰ Punctuality)
+Bottom summary bar: background #f4f6f9, shows all three scores in colored text
+Submit button: full width, #1668c8, white text
+Anonymous note below button: "🔒 Your identity is never revealed to the instructor"
+```
+
+---
+
+## Version History
+
+| Version | Date | Changes |
+|---|---|---|
+| 1.0 | October 2025 | Initial PRD |
+| 2.0 | June 2026 | Full revision based on founder decisions: tech stack confirmed, MVP scope defined, Kemeny-Young algorithm selected, gamification deferred, B2B monetization model confirmed, student-first growth flywheel adopted |
