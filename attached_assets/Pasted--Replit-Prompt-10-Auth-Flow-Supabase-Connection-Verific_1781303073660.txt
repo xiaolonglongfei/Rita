@@ -1,0 +1,398 @@
+# Replit Prompt #10 — Auth Flow + Supabase Connection Verification
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #11 until this step is verified.
+
+---
+
+## Two Goals
+
+1. Verify the Supabase connection is working correctly end-to-end
+2. Build and test the complete user authentication flow (Sign Up + Login)
+
+---
+
+## Part A: Verify Supabase Connection
+
+Before building anything new, confirm the database connection is working correctly by checking these five things:
+
+### Check 1: Instructors table has real data
+Make a GET request to your API and confirm it returns real instructor data from Supabase (not mock data). The response should include instructors like "Martin Miedzowicz", "Claudia Bartolome", "Patrick Hammers" etc.
+
+If the instructors table is empty, run this SQL in Supabase SQL Editor:
+
+```sql
+INSERT INTO instructors (full_name, bio, teaching_locations, is_claimed, created_by_source) VALUES
+('Martin Miedzowicz', 'Program Director at Tarry Crest Swim & Tennis. Native of Montevideo, Uruguay, former professional player ranked among the top in Uruguay and South America. Elite USPTA, PPTA, and ITF certified with 12+ years of experience in Westchester.', 'Tarry Crest Swim & Tennis, Tarrytown, NY', FALSE, 'scraper'),
+('Claudia Bartolome', 'Head Tennis Professional. Born and raised in Barcelona, Spain. Former top-4 player in Spain under 16 & 18. Played college tennis at University of Pittsburgh and Southern Methodist University.', 'Tarry Crest Swim & Tennis, Tarrytown, NY', FALSE, 'scraper'),
+('Jose Nunez Navarro', 'Head Tennis Professional, known as Pepe. Former Division 1 athlete at Old Dominion University. Ranked top-50 nationally in singles and doubles.', 'Tarry Crest Swim & Tennis, Tarrytown, NY', FALSE, 'scraper'),
+('Santiago Kearney', 'Tennis Professional, known as Torito. Born and raised in Buenos Aires, Argentina. Competed at DII NCAA level, ranked top-25 in singles and top-20 in doubles nationally.', 'Tarry Crest Swim & Tennis, Tarrytown, NY', FALSE, 'scraper'),
+('Tao Castillo Bernal', 'Tennis Professional. Born and raised in Spain, started playing tennis at age 6. Former top-25 junior player in Spain. Played college tennis at Georgia Southern University.', 'Tarry Crest Swim & Tennis, Tarrytown, NY', FALSE, 'scraper'),
+('Patrick Hammers', 'Director of Racquet Sports at Pound Ridge Tennis Club. Offers individual and group lessons for all levels. Runs instructional drills for club teams and heads the Junior Clinics program.', 'Pound Ridge Tennis Club, Pound Ridge, NY', FALSE, 'scraper'),
+('Cesar Andrade', 'Regional Director of Operations at Tennis Innovators Academy, White Plains. Coaching professional and standard in Westchester County tennis instruction.', 'Tennis Innovators Academy, White Plains, NY', FALSE, 'scraper'),
+('Vladimir Margalitadze', 'Regional Director of Tennis at Tennis Innovators Academy, White Plains. Experienced tennis professional serving Westchester County players.', 'Tennis Innovators Academy, White Plains, NY', FALSE, 'scraper'),
+('Steve Higgins', 'Director of Operations at Tennis Innovators Academy, White Plains. Tennis coaching professional with experience across all age groups and skill levels.', 'Tennis Innovators Academy, White Plains, NY', FALSE, 'scraper'),
+('Grand Slam Teaching Staff', 'Professional teaching staff at Grand Slam Tennis Club, Bedford NY. Serving players from Bedford to Greenwich CT and all Westchester County communities.', 'Grand Slam Tennis Club, Bedford, NY', FALSE, 'scraper');
+```
+
+### Check 2: RLS policies allow public reads
+Confirm the instructors table is publicly readable without authentication. Run this in Supabase SQL Editor:
+
+```sql
+-- Verify RLS policy exists for public instructor reads
+SELECT schemaname, tablename, policyname, cmd, qual
+FROM pg_policies
+WHERE tablename = 'instructors';
+```
+
+If no policy exists, run:
+
+```sql
+ALTER TABLE instructors ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Anyone can view instructors"
+  ON instructors FOR SELECT USING (TRUE);
+```
+
+### Check 3: Verify the app is using Supabase data
+In the instructor search page, confirm:
+- Data comes from Supabase (not hardcoded mock arrays)
+- Instructor names match the real data inserted above
+- If any mock data arrays still exist in the codebase, remove them
+
+### Check 4: Verify service_role key is server-side only
+Confirm that SUPABASE_SERVICE_ROLE_KEY is ONLY used in server-side code (API routes, server components). It must NEVER appear in:
+- Any client component (files with 'use client')
+- Any file that gets sent to the browser
+- Any public environment variable (NEXT_PUBLIC_*)
+
+### Check 5: Verify anon key is used for client-side
+Confirm NEXT_PUBLIC_SUPABASE_ANON_KEY is used for the browser-side Supabase client in `lib/supabase/client.ts`.
+
+---
+
+## Part B: Build Auth Flow
+
+### B1: Update Sign Up page
+In `app/(auth)/signup/page.tsx`, implement real Supabase auth:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function SignUpPage() {
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleSignUp() {
+    setLoading(true)
+    setError('')
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters')
+      setLoading(false)
+      return
+    }
+
+    const { data, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName }
+      }
+    })
+
+    if (authError) {
+      setError(authError.message)
+      setLoading(false)
+      return
+    }
+
+    // Insert user record into our users table
+    if (data.user) {
+      await supabase.from('users').insert({
+        id: data.user.id,
+        email: email,
+        full_name: fullName,
+      })
+    }
+
+    router.push('/instructors?welcome=true')
+    setLoading(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md">
+
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="text-3xl font-bold text-slate-800 mb-1">
+            Rita<span style={{ color: '#b8d400' }}>.</span>
+          </div>
+          <p className="text-sm text-slate-500">Create an account to start reviewing</p>
+        </div>
+
+        {/* Form */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+              Full Name
+            </label>
+            <input
+              type="text"
+              placeholder="Your full name"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+              value={fullName}
+              onChange={e => setFullName(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+              Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="Minimum 8 characters"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
+
+          <button
+            onClick={handleSignUp}
+            disabled={loading || !fullName || !email || !password}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2"
+            style={{ background: '#1668c8' }}
+          >
+            {loading ? 'Creating account...' : 'Get Started →'}
+          </button>
+
+          {/* Google OAuth */}
+          <button
+            onClick={() => supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: `${window.location.origin}/api/auth/callback` }
+            })}
+            className="w-full py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600 flex items-center justify-center gap-2"
+          >
+            <span>🔵</span> Continue with Google
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-slate-400 mt-6">
+          Already have an account?{' '}
+          <Link href="/login" className="text-blue-500 font-semibold">Log in</Link>
+        </p>
+      </div>
+    </div>
+  )
+}
+```
+
+### B2: Update Login page
+In `app/(auth)/login/page.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+  const supabase = createClient()
+
+  async function handleLogin() {
+    setLoading(true)
+    setError('')
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (authError) {
+      setError('Invalid email or password')
+      setLoading(false)
+      return
+    }
+
+    router.push('/instructors')
+    setLoading(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md">
+
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="text-3xl font-bold text-slate-800 mb-1">
+            Rita<span style={{ color: '#b8d400' }}>.</span>
+          </div>
+          <p className="text-sm text-slate-500">Welcome back</p>
+        </div>
+
+        {/* Form */}
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+              Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="your@email.com"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="Your password"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-500 text-center">{error}</p>
+          )}
+
+          <button
+            onClick={handleLogin}
+            disabled={loading || !email || !password}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2"
+            style={{ background: '#1668c8' }}
+          >
+            {loading ? 'Logging in...' : 'Log In →'}
+          </button>
+
+          {/* Google OAuth */}
+          <button
+            onClick={() => supabase.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo: `${window.location.origin}/api/auth/callback` }
+            })}
+            className="w-full py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600 flex items-center justify-center gap-2"
+          >
+            <span>🔵</span> Continue with Google
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-slate-400 mt-6">
+          Don't have an account?{' '}
+          <Link href="/signup" className="text-blue-500 font-semibold">Sign up free</Link>
+        </p>
+      </div>
+    </div>
+  )
+}
+```
+
+### B3: Add logout to Navbar
+In `components/shared/Navbar.tsx`, add logout functionality for logged-in users:
+
+```typescript
+// When user is logged in, show their name + logout button instead of Login/Sign Up
+// Check auth state using:
+const supabase = createClient()
+const { data: { user } } = await supabase.auth.getUser()
+
+// If logged in, show:
+<button onClick={() => {
+  supabase.auth.signOut()
+  router.push('/')
+}}>
+  Log out
+</button>
+
+// If not logged in, show:
+<Link href="/login">Login</Link>
+<Link href="/signup">Sign Up</Link>
+```
+
+### B4: Add welcome message after signup
+In `app/(main)/instructors/page.tsx`, show a welcome message when `?welcome=true` is in the URL:
+
+```typescript
+{searchParams.welcome === 'true' && (
+  <div
+    className="mb-4 px-4 py-3 rounded-xl text-sm font-medium"
+    style={{ background: '#e8f1fc', color: '#1668c8' }}
+  >
+    🎾 Welcome to Rita! Browse instructors and leave your first review.
+  </div>
+)}
+```
+
+---
+
+## Ongoing Supabase Health Check
+
+After every future prompt, verify these three things:
+
+**Check A:** Go to Supabase Table Editor → confirm new data written by the app appears in the correct tables
+
+**Check B:** In Supabase → Logs → API logs → confirm requests are coming from the app with correct auth headers
+
+**Check C:** In the app, confirm no pages are showing mock/hardcoded data — all content should come from Supabase queries
+
+---
+
+## ✅ Done When:
+- [ ] Supabase instructors table has 10 real instructors (verify in Table Editor)
+- [ ] Instructor search page shows real instructor names from Supabase
+- [ ] No mock data arrays remain anywhere in the codebase
+- [ ] RLS policy allows public reads on instructors table
+- [ ] service_role key only used server-side
+- [ ] Sign Up creates a real user in Supabase Auth + users table
+- [ ] Login authenticates against Supabase Auth
+- [ ] Google OAuth button present on both pages
+- [ ] Navbar shows logout button when user is logged in
+- [ ] After signup, user is redirected to /instructors with welcome message
+- [ ] After login, user is redirected to /instructors
+- [ ] After logout, user is redirected to homepage
+
+**Do not proceed to Prompt #11 until all checkboxes above are complete.**
