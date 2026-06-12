@@ -1,5 +1,5 @@
 {
-  "/api/instructors/route": "app/api/instructors/route.js",
   "/api/rankings/public/route": "app/api/rankings/public/route.js",
+  "/api/instructors/route": "app/api/instructors/route.js",
   "/page": "app/page.js"
 }
