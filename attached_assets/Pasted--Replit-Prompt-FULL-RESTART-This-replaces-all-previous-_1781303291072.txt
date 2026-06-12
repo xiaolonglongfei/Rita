@@ -1,0 +1,366 @@
+# Replit Prompt — FULL RESTART
+> ⚠️ This replaces all previous code entirely.
+> The current React + Vite + Express architecture is being replaced.
+> Do NOT reuse any existing code from the current project.
+
+---
+
+## Why We Are Restarting
+
+The current project uses React + Vite + Express + cookie sessions + bcryptjs.
+We are replacing it entirely with Next.js + Supabase Auth because:
+- Next.js App Router gives us server-side rendering, which is critical for SEO
+- Supabase Auth handles authentication securely without custom session management
+- This matches the approved Technical Design Document for Rita
+
+---
+
+## Step 1: Delete Everything and Start Fresh
+
+Delete the entire current project and create a brand new Next.js app:
+
+```bash
+# Delete all existing files
+rm -rf ./*
+
+# Create new Next.js project
+npx create-next-app@latest . \
+  --typescript \
+  --tailwind \
+  --eslint \
+  --app \
+  --src-dir=false \
+  --import-alias="@/*" \
+  --yes
+```
+
+---
+
+## Step 2: Install Dependencies
+
+```bash
+npm install @supabase/supabase-js @supabase/ssr
+npm install resend
+npm install @anthropic-ai/sdk
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+npm install @tremor/react
+npm install tailwindcss-animate
+npx shadcn@latest init --yes
+npx shadcn@latest add button card input label badge toast avatar separator
+```
+
+---
+
+## Step 3: Create Exact Folder Structure
+
+Create ALL of the following files with a simple placeholder comment inside each.
+Do not write any logic yet — just create the files:
+
+```
+app/
+  (auth)/
+    login/page.tsx
+    signup/page.tsx
+  (main)/
+    layout.tsx
+    page.tsx
+    instructors/
+      page.tsx
+      [id]/page.tsx
+    sessions/page.tsx
+    reviews/
+      new/page.tsx
+    ranking/page.tsx
+    profile/page.tsx
+  admin/
+    layout.tsx
+    page.tsx
+    instructors/page.tsx
+    moderation/page.tsx
+    users/page.tsx
+  api/
+    auth/callback/route.ts
+    instructors/route.ts
+    instructors/[id]/route.ts
+    sessions/route.ts
+    sessions/[id]/verify/route.ts
+    reviews/route.ts
+    reviews/[id]/route.ts
+    rankings/private/route.ts
+    rankings/public/route.ts
+    notifications/route.ts
+    moderation/route.ts
+
+components/
+  instructor/
+    InstructorCard.tsx
+    InstructorProfile.tsx
+    InstructorSearch.tsx
+  review/
+    VerticalSlider.tsx
+    ReviewCard.tsx
+    ReviewForm.tsx
+  ranking/
+    PrivateRankingList.tsx
+    PublicRankingTable.tsx
+  session/
+    SessionCard.tsx
+    VerificationFlow.tsx
+  shared/
+    Navbar.tsx
+    NotificationBell.tsx
+    ScoreDisplay.tsx
+    ScoreTriangle.tsx
+    InstructorBadge.tsx
+
+lib/
+  supabase/
+    client.ts
+    server.ts
+  kemeny-young.ts
+  moderation.ts
+  resend.ts
+  utils.ts
+
+types/
+  database.ts
+
+middleware.ts
+```
+
+---
+
+## Step 4: Configure Tailwind with Rita Brand Colors
+
+Replace `tailwind.config.ts` entirely:
+
+```typescript
+import type { Config } from "tailwindcss"
+
+const config: Config = {
+  darkMode: ["class"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        rita: {
+          blue: "#1668c8",
+          "blue-dark": "#1250a0",
+          "blue-light": "#e8f1fc",
+          lime: "#b8d400",
+          "lime-dark": "#8fa300",
+          "lime-light": "#f5fbcc",
+          charcoal: "#1e2a38",
+          gray: "#6b7a8d",
+          "gray-light": "#f4f6f9",
+        },
+        score: {
+          high: "#1668c8",
+          mid: "#c89000",
+          low: "#c83030",
+        }
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
+}
+
+export default config
+```
+
+---
+
+## Step 5: Set Up Supabase Clients
+
+**`lib/supabase/client.ts`** — browser only:
+```typescript
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+```
+
+**`lib/supabase/server.ts`** — server only:
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createClient() {
+  const cookieStore = cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+```
+
+---
+
+## Step 6: Set Up Middleware
+
+**`middleware.ts`** in project root:
+
+```typescript
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const path = request.nextUrl.pathname
+
+  const protectedRoutes = ['/sessions', '/reviews', '/ranking', '/profile']
+  const adminRoutes = ['/admin']
+
+  if (!user && protectedRoutes.some(r => path.startsWith(r))) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  if (path.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    if (!userData?.is_admin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+```
+
+---
+
+## Step 7: Set Up Environment Variables
+
+Create `.env.local` with these placeholders
+(real values already exist in Replit Secrets — just reference them):
+
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Resend
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=noreply@livdao.com
+
+# Anthropic
+ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+---
+
+## Step 8: Auth Callback Route
+
+**`app/api/auth/callback/route.ts`**:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
+
+  if (code) {
+    const supabase = createClient()
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      return NextResponse.redirect(`${origin}${next}`)
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login?error=auth`)
+}
+```
+
+---
+
+## Step 9: Verify Everything Works
+
+Run the development server:
+
+```bash
+npm run dev
+```
+
+**Expected result:**
+- No TypeScript errors
+- No missing module errors
+- Browser opens to `http://localhost:3000`
+- A blank page loads without crashing
+- All folders and files exist as listed in Step 3
+
+---
+
+## ✅ Done When:
+- [ ] All old React + Vite + Express files are completely deleted
+- [ ] `npm run dev` runs without errors
+- [ ] All folders and files created as listed in Step 3
+- [ ] Tailwind brand colors configured
+- [ ] Supabase client and server files created
+- [ ] Middleware file in place
+- [ ] `.env.local` file created
+- [ ] No references to Express, Vite, bcryptjs, or cookie-session anywhere
+- [ ] No mock data arrays anywhere in the codebase
+
+**Do not proceed to the next prompt until all checkboxes above are complete.**
+**After this is done, report back with confirmation and we will begin rebuilding features one by one.**
