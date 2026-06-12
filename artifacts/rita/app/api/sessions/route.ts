@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { query, queryOne } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -6,20 +7,20 @@ export async function GET() {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const db = createServiceClient();
-  const { data, error } = await db
-    .from("sessions")
-    .select("*, instructors(name)")
-    .eq("user_id", user.id)
-    .order("session_date", { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const rows = await query(
+    `SELECT s.*, i.name as instructor_name
+     FROM sessions s
+     LEFT JOIN instructors i ON i.id = s.instructor_id
+     WHERE s.user_id = $1
+     ORDER BY s.session_date DESC`,
+    [user.id]
+  );
 
   return NextResponse.json(
-    (data ?? []).map((s) => ({
+    rows.map((s) => ({
       id: s.id,
       instructorId: s.instructor_id,
-      instructorName: (s.instructors as { name: string } | null)?.name ?? null,
+      instructorName: s.instructor_name ?? null,
       sessionDate: s.session_date,
       verified: s.verified,
       notes: s.notes,
@@ -33,19 +34,12 @@ export async function POST(request: Request) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const db = createServiceClient();
   const body = await request.json();
-  const { data, error } = await db
-    .from("sessions")
-    .insert({
-      user_id: user.id,
-      instructor_id: body.instructorId,
-      session_date: body.sessionDate,
-      notes: body.notes ?? null,
-    })
-    .select("*, instructors(name)")
-    .single();
+  const session = await queryOne(
+    `INSERT INTO sessions (user_id, instructor_id, session_date, notes)
+     VALUES ($1, $2, $3, $4) RETURNING *`,
+    [user.id, body.instructorId, body.sessionDate, body.notes ?? null]
+  );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(session, { status: 201 });
 }

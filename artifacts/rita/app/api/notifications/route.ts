@@ -1,4 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
+import { query } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -6,15 +7,12 @@ export async function GET() {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const db = createServiceClient();
-  const { data, error } = await db
-    .from("notifications")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const rows = await query(
+    `SELECT * FROM notifications WHERE user_id = $1 ORDER BY created_at DESC`,
+    [user.id]
+  );
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data ?? []);
+  return NextResponse.json(rows);
 }
 
 export async function PATCH() {
@@ -22,7 +20,10 @@ export async function PATCH() {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const db = createServiceClient();
-  await db.from("notifications").update({ read: true }).eq("user_id", user.id);
+  await query(
+    `UPDATE notifications SET read = true WHERE user_id = $1`,
+    [user.id]
+  );
+
   return NextResponse.json({ ok: true });
 }
