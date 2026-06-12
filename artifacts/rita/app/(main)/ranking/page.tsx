@@ -1,15 +1,15 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MapPin } from "lucide-react";
 import { scoreColor } from "@/lib/utils";
 
 export default async function RankingPage() {
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
   const { data } = await supabase
     .from("instructors")
-    .select("id, name, photo_url, specialty, avg_score, review_count, verified")
-    .gt("review_count", 0)
-    .order("avg_score", { ascending: false })
+    .select("id, full_name, avatar_url, teaching_locations, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, is_claimed")
+    .gt("total_reviews", 0)
+    .order("avg_overall", { ascending: false })
     .limit(50);
 
   const rankings = (data ?? []).map((i, idx) => ({ ...i, rank: idx + 1 }));
@@ -53,25 +53,29 @@ export default async function RankingPage() {
                 {i.rank}
               </div>
               <div className="w-10 h-10 rounded-xl bg-rita-blue-light flex items-center justify-center text-rita-blue font-bold flex-shrink-0">
-                {i.name[0]}
+                {i.full_name[0]}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-rita-charcoal text-sm">{i.name}</span>
-                  {i.verified && (
+                  <span className="font-bold text-rita-charcoal text-sm">{i.full_name}</span>
+                  {i.is_claimed && (
                     <CheckCircle2 className="h-3.5 w-3.5 text-rita-blue flex-shrink-0" />
                   )}
                 </div>
-                <p className="text-xs text-rita-gray">{i.specialty}</p>
+                {i.teaching_locations && (
+                  <p className="text-xs text-rita-gray flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {i.teaching_locations}
+                  </p>
+                )}
               </div>
               <div className="text-right flex-shrink-0">
                 <div
                   className="text-lg font-extrabold"
-                  style={{ color: scoreColor(i.avg_score) }}
+                  style={{ color: scoreColor(i.avg_overall) }}
                 >
-                  {i.avg_score.toFixed(1)}
+                  {i.avg_overall.toFixed(1)}
                 </div>
-                <div className="text-xs text-slate-400">{i.review_count} reviews</div>
+                <div className="text-xs text-slate-400">{i.total_reviews} reviews</div>
               </div>
             </Link>
           ))}

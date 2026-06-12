@@ -23,6 +23,6 @@ export async function PATCH() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const db = createServiceClient();
-  await db.from("notifications").update({ read: true }).eq("user_id", user.id);
+  await db.from("notifications").update({ is_read: true }).eq("user_id", user.id);
   return NextResponse.json({ ok: true });
 }

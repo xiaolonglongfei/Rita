@@ -10,15 +10,15 @@ export default async function InstructorProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
 
   const [{ data: instructor }, { data: reviews }] = await Promise.all([
-    supabase.from("instructors").select("*").eq("id", parseInt(id)).single(),
+    supabase.from("instructors").select("*").eq("id", id).single(),
     supabase
       .from("reviews")
-      .select("*, users(name)")
-      .eq("instructor_id", parseInt(id))
-      .eq("status", "approved")
+      .select("*, users(full_name)")
+      .eq("instructor_id", id)
+      .eq("moderation_status", "approved")
       .order("created_at", { ascending: false })
       .limit(20),
   ]);
@@ -40,34 +40,33 @@ export default async function InstructorProfilePage({
       <div className="bg-white border border-slate-100 rounded-2xl p-8 mb-6">
         <div className="flex items-start gap-5">
           <div className="w-16 h-16 rounded-2xl bg-rita-blue-light flex items-center justify-center text-rita-blue font-bold text-2xl flex-shrink-0">
-            {instructor.name[0]}
+            {instructor.full_name[0]}
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-extrabold text-rita-charcoal">{instructor.name}</h1>
-              {instructor.verified && (
+              <h1 className="text-2xl font-extrabold text-rita-charcoal">{instructor.full_name}</h1>
+              {instructor.is_claimed && (
                 <span className="inline-flex items-center gap-1 text-xs text-rita-blue bg-rita-blue-light px-2 py-1 rounded-full">
-                  <CheckCircle2 className="h-3 w-3" /> Verified
+                  <CheckCircle2 className="h-3 w-3" /> Claimed
                 </span>
               )}
             </div>
-            <p className="text-sm text-rita-gray mb-1">{instructor.specialty}</p>
-            {instructor.location && (
+            {instructor.teaching_locations && (
               <p className="text-xs text-slate-400 flex items-center gap-1">
-                <MapPin className="h-3 w-3" /> {instructor.location}
+                <MapPin className="h-3 w-3" /> {instructor.teaching_locations}
               </p>
             )}
           </div>
-          {instructor.review_count > 0 && (
+          {instructor.total_reviews > 0 && (
             <div className="text-right">
               <div
                 className="text-4xl font-extrabold"
-                style={{ color: scoreColor(instructor.avg_score) }}
+                style={{ color: scoreColor(instructor.avg_overall) }}
               >
-                {instructor.avg_score.toFixed(1)}
+                {instructor.avg_overall.toFixed(1)}
               </div>
               <div className="text-xs text-slate-400">
-                {scoreLabel(instructor.avg_score)} · {instructor.review_count} reviews
+                {scoreLabel(instructor.avg_overall)} · {instructor.total_reviews} reviews
               </div>
             </div>
           )}
@@ -77,7 +76,7 @@ export default async function InstructorProfilePage({
           <p className="text-sm text-rita-gray mt-5 leading-relaxed">{instructor.bio}</p>
         )}
 
-        {instructor.review_count > 0 && (
+        {instructor.total_reviews > 0 && (
           <div className="mt-6 grid grid-cols-3 gap-3">
             {dims.map((d) => (
               <div key={d.label} className="bg-rita-gray-light rounded-xl p-3 text-center">
@@ -107,31 +106,34 @@ export default async function InstructorProfilePage({
         <div>
           <h2 className="text-lg font-bold text-rita-charcoal mb-4">Reviews</h2>
           <div className="space-y-4">
-            {reviews.map((r) => (
-              <div key={r.id} className="bg-white border border-slate-100 rounded-2xl p-5">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-rita-charcoal">
-                    {(r.users as { name: string } | null)?.name ?? "Anonymous"}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-rita-blue text-rita-blue" />
-                    <span
-                      className="font-bold text-sm"
-                      style={{ color: scoreColor(r.overall_score) }}
-                    >
-                      {r.overall_score.toFixed(1)}
+            {reviews.map((r) => {
+              const overall = (r.rating_value + r.rating_effectiveness + r.rating_punctuality) / 3;
+              return (
+                <div key={r.id} className="bg-white border border-slate-100 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-rita-charcoal">
+                      {(r.users as { full_name: string } | null)?.full_name ?? "Anonymous"}
                     </span>
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-rita-blue text-rita-blue" />
+                      <span
+                        className="font-bold text-sm"
+                        style={{ color: scoreColor(overall) }}
+                      >
+                        {overall.toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                  {r.comment && <p className="text-sm text-rita-gray">{r.comment}</p>}
+                  <div className="mt-3 flex gap-4 text-xs text-slate-400">
+                    <span>Value: {r.rating_value.toFixed(1)}</span>
+                    <span>Effectiveness: {r.rating_effectiveness.toFixed(1)}</span>
+                    <span>Punctuality: {r.rating_punctuality.toFixed(1)}</span>
+                    <span className="ml-auto">{formatDate(r.created_at)}</span>
                   </div>
                 </div>
-                {r.comment && <p className="text-sm text-rita-gray">{r.comment}</p>}
-                <div className="mt-3 flex gap-4 text-xs text-slate-400">
-                  <span>Value: {r.value.toFixed(1)}</span>
-                  <span>Effectiveness: {r.effectiveness.toFixed(1)}</span>
-                  <span>Punctuality: {r.punctuality.toFixed(1)}</span>
-                  <span className="ml-auto">{formatDate(r.created_at)}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

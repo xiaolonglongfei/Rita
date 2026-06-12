@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboard() {
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
 
   const [
     { count: instructorCount },
@@ -10,8 +10,8 @@ export default async function AdminDashboard() {
     { count: userCount },
   ] = await Promise.all([
     supabase.from("instructors").select("*", { count: "exact", head: true }),
-    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "approved"),
-    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("moderation_status", "approved"),
+    supabase.from("reviews").select("*", { count: "exact", head: true }).eq("moderation_status", "pending"),
     supabase.from("users").select("*", { count: "exact", head: true }),
   ]);
 

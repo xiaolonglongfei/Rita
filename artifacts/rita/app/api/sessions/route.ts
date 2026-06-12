@@ -9,8 +9,8 @@ export async function GET() {
   const db = createServiceClient();
   const { data, error } = await db
     .from("sessions")
-    .select("*, instructors(name)")
-    .eq("user_id", user.id)
+    .select("*, instructors(full_name)")
+    .eq("student_id", user.id)
     .order("session_date", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -19,10 +19,11 @@ export async function GET() {
     (data ?? []).map((s) => ({
       id: s.id,
       instructorId: s.instructor_id,
-      instructorName: (s.instructors as { name: string } | null)?.name ?? null,
+      instructorName: (s.instructors as { full_name: string } | null)?.full_name ?? null,
       sessionDate: s.session_date,
-      verified: s.verified,
-      notes: s.notes,
+      location: s.location,
+      status: s.status,
+      verified: !!s.verified_at,
       createdAt: s.created_at,
     }))
   );
@@ -38,12 +39,14 @@ export async function POST(request: Request) {
   const { data, error } = await db
     .from("sessions")
     .insert({
-      user_id: user.id,
+      student_id: user.id,
       instructor_id: body.instructorId,
       session_date: body.sessionDate,
-      notes: body.notes ?? null,
+      location: body.location ?? null,
+      status: "pending",
+      initiated_by: "student",
     })
-    .select("*, instructors(name)")
+    .select("*, instructors(full_name)")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

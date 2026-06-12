@@ -4,26 +4,27 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { CalendarDays, CheckCircle2 } from "lucide-react";
+import { CalendarDays, CheckCircle2, MapPin } from "lucide-react";
 
 type Session = {
-  id: number;
-  instructorId: number;
+  id: string;
+  instructorId: string;
   instructorName: string | null;
   sessionDate: string;
+  location: string | null;
+  status: string;
   verified: boolean;
-  notes: string | null;
   createdAt: string;
 };
 
 export default function SessionsPage() {
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [instructors, setInstructors] = useState<{ id: number; name: string }[]>([]);
+  const [instructors, setInstructors] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [instructorId, setInstructorId] = useState("");
   const [sessionDate, setSessionDate] = useState("");
-  const [notes, setNotes] = useState("");
+  const [sessionLocation, setSessionLocation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const supabase = createClient();
@@ -32,8 +33,13 @@ export default function SessionsPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) router.push("/login");
     });
-    fetch("/api/sessions").then((r) => r.json()).then(setSessions).finally(() => setLoading(false));
-    fetch("/api/instructors?limit=100").then((r) => r.json()).then((d) => setInstructors(d.items ?? []));
+    fetch("/api/sessions")
+      .then((r) => r.json())
+      .then(setSessions)
+      .finally(() => setLoading(false));
+    fetch("/api/instructors?limit=100")
+      .then((r) => r.json())
+      .then((d) => setInstructors(d.items ?? []));
   }, [supabase, router]);
 
   async function handleLog() {
@@ -41,14 +47,18 @@ export default function SessionsPage() {
     await fetch("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ instructorId: parseInt(instructorId), sessionDate, notes: notes || null }),
+      body: JSON.stringify({
+        instructorId,
+        sessionDate,
+        location: sessionLocation || null,
+      }),
     });
     const data = await fetch("/api/sessions").then((r) => r.json());
     setSessions(data);
     setShowForm(false);
     setInstructorId("");
     setSessionDate("");
-    setNotes("");
+    setSessionLocation("");
     setSubmitting(false);
   }
 
@@ -76,7 +86,9 @@ export default function SessionsPage() {
             onChange={(e) => setInstructorId(e.target.value)}
           >
             <option value="">Select instructor…</option>
-            {instructors.map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+            {instructors.map((i) => (
+              <option key={i.id} value={i.id}>{i.name}</option>
+            ))}
           </select>
           <input
             type="date"
@@ -84,12 +96,12 @@ export default function SessionsPage() {
             value={sessionDate}
             onChange={(e) => setSessionDate(e.target.value)}
           />
-          <textarea
-            placeholder="Notes (optional)"
-            rows={2}
-            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue resize-none"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+          <input
+            type="text"
+            placeholder="Location (optional)"
+            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+            value={sessionLocation}
+            onChange={(e) => setSessionLocation(e.target.value)}
           />
           <button
             onClick={handleLog}
@@ -103,11 +115,13 @@ export default function SessionsPage() {
 
       {loading ? (
         <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />)}
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-20 bg-slate-100 rounded-2xl animate-pulse" />
+          ))}
         </div>
       ) : sessions.length === 0 ? (
         <div className="text-center py-16 text-rita-gray">
-          No sessions logged yet. Click &quot;Log Session&quot; to get started.
+          No sessions logged yet. Click &ldquo;Log Session&rdquo; to get started.
         </div>
       ) : (
         <div className="space-y-3">
@@ -119,10 +133,16 @@ export default function SessionsPage() {
               <div className="flex-1">
                 <div className="font-semibold text-rita-charcoal text-sm">{s.instructorName ?? "Unknown"}</div>
                 <div className="text-xs text-rita-gray">{formatDate(s.sessionDate)}</div>
-                {s.notes && <div className="text-xs text-slate-400 mt-0.5">{s.notes}</div>}
+                {s.location && (
+                  <div className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" /> {s.location}
+                  </div>
+                )}
               </div>
-              {s.verified && (
+              {s.verified ? (
                 <CheckCircle2 className="h-5 w-5 text-rita-blue flex-shrink-0" />
+              ) : (
+                <span className="text-xs text-slate-400 px-2 py-0.5 bg-slate-100 rounded-full">{s.status}</span>
               )}
             </div>
           ))}

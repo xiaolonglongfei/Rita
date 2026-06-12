@@ -8,10 +8,10 @@ export async function GET(request: Request) {
   const db = createServiceClient();
   const { data, error } = await db
     .from("instructors")
-    .select("id, name, photo_url, specialty, avg_score, review_count, verified")
-    .gt("review_count", 0)
-    .order("avg_score", { ascending: false })
-    .order("review_count", { ascending: false })
+    .select("id, full_name, avatar_url, teaching_locations, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, is_claimed")
+    .gt("total_reviews", 0)
+    .order("avg_overall", { ascending: false })
+    .order("total_reviews", { ascending: false })
     .limit(limit);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -20,12 +20,15 @@ export async function GET(request: Request) {
     (data ?? []).map((i, idx) => ({
       rank: idx + 1,
       instructorId: i.id,
-      instructorName: i.name,
-      instructorPhotoUrl: i.photo_url,
-      specialty: i.specialty,
-      avgScore: i.avg_score,
-      reviewCount: i.review_count,
-      verified: i.verified,
+      instructorName: i.full_name,
+      instructorPhotoUrl: i.avatar_url,
+      location: i.teaching_locations,
+      avgScore: i.avg_overall,
+      avgValue: i.avg_value,
+      avgEffectiveness: i.avg_effectiveness,
+      avgPunctuality: i.avg_punctuality,
+      reviewCount: i.total_reviews,
+      claimed: i.is_claimed,
     }))
   );
 }

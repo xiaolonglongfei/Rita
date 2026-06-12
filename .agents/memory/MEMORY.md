@@ -1,2 +1,2 @@
-- [Rita session auth](rita-session-auth.md) — uses express-session + connect-pg-simple; frontend needs credentials:include on all API calls
-- [OpenAPI query+path param collision](orval-params-collision.md) — endpoints with BOTH path params AND query params can cause GetXxxParams TS2308 collision; remove query params from those endpoints
+- [Supabase new schema mapping](supabase-schema.md) — new project uses UUID ids, full_name, teaching_locations, avg_overall, total_reviews, moderation_status throughout
+- [Supabase URL normalizer](supabase-url-normalizer.md) — getSupabaseUrl() in lib/supabase/url.ts strips path suffix; must be used in middleware too

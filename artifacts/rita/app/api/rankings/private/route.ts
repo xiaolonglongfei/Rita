@@ -8,34 +8,51 @@ export async function GET() {
 
   const db = createServiceClient();
   const [{ data: myReviews }, { data: allInstructors }] = await Promise.all([
-    db.from("reviews").select("instructor_id, overall_score").eq("user_id", user.id).eq("status", "approved"),
-    db.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").gt("review_count", 0),
+    db
+      .from("reviews")
+      .select("instructor_id, rating_value, rating_effectiveness, rating_punctuality")
+      .eq("student_id", user.id)
+      .eq("moderation_status", "approved"),
+    db
+      .from("instructors")
+      .select("id, full_name, avatar_url, teaching_locations, avg_overall, total_reviews, is_claimed")
+      .gt("total_reviews", 0),
   ]);
 
-  const reviews = myReviews ?? [];
+  const reviews = (myReviews ?? []).map((r) => ({
+    instructor_id: r.instructor_id,
+    overall_score: (r.rating_value + r.rating_effectiveness + r.rating_punctuality) / 3,
+  }));
   const instructors = allInstructors ?? [];
 
   if (!reviews.length) {
     return NextResponse.json(
-      [...instructors].sort((a, b) => b.avg_score - a.avg_score).slice(0, 50).map((i, idx) => ({
-        rank: idx + 1,
-        instructorId: i.id,
-        instructorName: i.name,
-        instructorPhotoUrl: i.photo_url,
-        specialty: i.specialty,
-        avgScore: i.avg_score,
-        reviewCount: i.review_count,
-        verified: i.verified,
-      }))
+      [...instructors]
+        .sort((a, b) => b.avg_overall - a.avg_overall)
+        .slice(0, 50)
+        .map((i, idx) => ({
+          rank: idx + 1,
+          instructorId: i.id,
+          instructorName: i.full_name,
+          instructorPhotoUrl: i.avatar_url,
+          location: i.teaching_locations,
+          avgScore: i.avg_overall,
+          reviewCount: i.total_reviews,
+          claimed: i.is_claimed,
+        }))
     );
   }
 
   const reviewedIds = [...new Set(reviews.map((r) => r.instructor_id))];
   const scored = instructors.map((i) => {
     const mine = reviews.filter((r) => r.instructor_id === i.id);
-    const myScore = mine.length ? mine.reduce((s, r) => s + r.overall_score, 0) / mine.length : 0;
+    const myScore = mine.length
+      ? mine.reduce((s, r) => s + r.overall_score, 0) / mine.length
+      : 0;
     const hasMyReview = reviewedIds.includes(i.id);
-    const blendedScore = hasMyReview ? myScore * 0.7 + i.avg_score * 0.3 : i.avg_score * 0.5;
+    const blendedScore = hasMyReview
+      ? myScore * 0.7 + i.avg_overall * 0.3
+      : i.avg_overall * 0.5;
     return { i, blendedScore, hasMyReview };
   });
 
@@ -49,12 +66,12 @@ export async function GET() {
     scored.slice(0, 50).map(({ i }, idx) => ({
       rank: idx + 1,
       instructorId: i.id,
-      instructorName: i.name,
-      instructorPhotoUrl: i.photo_url,
-      specialty: i.specialty,
-      avgScore: i.avg_score,
-      reviewCount: i.review_count,
-      verified: i.verified,
+      instructorName: i.full_name,
+      instructorPhotoUrl: i.avatar_url,
+      location: i.teaching_locations,
+      avgScore: i.avg_overall,
+      reviewCount: i.total_reviews,
+      claimed: i.is_claimed,
     }))
   );
 }

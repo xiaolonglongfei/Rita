@@ -1,7 +1,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
 export default async function AdminUsersPage() {
-  const supabase = await createServiceClient();
+  const supabase = createServiceClient();
   const { data } = await supabase
     .from("users")
     .select("*")
@@ -22,10 +22,10 @@ export default async function AdminUsersPage() {
               }`}
             >
               <div className="w-8 h-8 rounded-full bg-rita-blue-light flex items-center justify-center text-rita-blue font-bold text-sm flex-shrink-0">
-                {u.name?.[0]?.toUpperCase() ?? u.email?.[0]?.toUpperCase() ?? "?"}
+                {u.full_name?.[0]?.toUpperCase() ?? u.email?.[0]?.toUpperCase() ?? "?"}
               </div>
               <div className="flex-1">
-                <div className="text-sm font-semibold text-rita-charcoal">{u.name ?? u.email}</div>
+                <div className="text-sm font-semibold text-rita-charcoal">{u.full_name ?? u.email}</div>
                 <div className="text-xs text-rita-gray">{u.email}</div>
               </div>
               {u.is_admin && (

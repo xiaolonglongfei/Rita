@@ -44,7 +44,7 @@ function NewReviewForm() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [instructors, setInstructors] = useState<{ id: number; name: string }[]>([]);
+  const [instructors, setInstructors] = useState<{ id: string; name: string }[]>([]);
   const [instructorId, setInstructorId] = useState(
     searchParams.get("instructorId") ?? ""
   );
@@ -72,7 +72,7 @@ function NewReviewForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        instructorId: parseInt(instructorId),
+        instructorId,
         value,
         effectiveness,
         punctuality,

@@ -5,13 +5,12 @@ import Link from "next/link";
 import { MapPin, Star, CheckCircle2, Search } from "lucide-react";
 
 type Instructor = {
-  id: number;
+  id: string;
   name: string;
   bio: string | null;
-  specialty: string;
   photoUrl: string | null;
   location: string | null;
-  verified: boolean;
+  claimed: boolean;
   avgScore: number;
   reviewCount: number;
 };
@@ -83,13 +82,12 @@ export default function InstructorsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="font-bold text-rita-charcoal">{i.name}</span>
-                    {i.verified && (
+                    {i.claimed && (
                       <span className="inline-flex items-center gap-1 text-xs text-rita-blue bg-rita-blue-light px-2 py-0.5 rounded-full">
                         <CheckCircle2 className="h-3 w-3" /> Claimed
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-rita-gray">{i.specialty}</p>
                   {i.location && (
                     <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
                       <MapPin className="h-3 w-3" /> {i.location}
