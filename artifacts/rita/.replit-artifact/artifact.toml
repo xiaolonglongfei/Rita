@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/" ]
+paths = [ "/", "/api" ]
 localPort = 24211
 
 [services.development]
@@ -19,12 +19,8 @@ run = "pnpm --filter @workspace/rita run dev"
 
 [services.production]
 build = [ "pnpm", "--filter", "@workspace/rita", "run", "build" ]
-publicDir = "artifacts/rita/dist/public"
+publicDir = "artifacts/rita/.next"
 serve = "static"
-
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
 
 [services.env]
 PORT = "24211"
