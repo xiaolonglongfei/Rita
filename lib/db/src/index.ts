@@ -11,7 +11,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Strip any trailing path (e.g. /rest/v1/) — the client only needs the base URL
+const baseUrl = supabaseUrl.replace(/\/(rest\/v1\/?|graphql\/v1\/?)$/, "").replace(/\/$/, "");
+export const supabase = createClient(baseUrl, supabaseAnonKey);
 
 // Local pg pool — used only for connect-pg-simple session store
 const { Pool } = pg;
