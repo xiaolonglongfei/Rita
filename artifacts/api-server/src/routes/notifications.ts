@@ -1,28 +1,38 @@
 import { Router, type IRouter } from "express";
-import { db, notificationsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { supabase } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
-function formatNotification(n: typeof notificationsTable.$inferSelect) {
+type NotificationRow = {
+  id: number;
+  user_id: number;
+  type: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+};
+
+function formatNotification(n: NotificationRow) {
   return {
     id: n.id,
-    userId: n.userId,
+    userId: n.user_id,
     type: n.type,
     message: n.message,
     read: n.read,
-    createdAt: n.createdAt.toISOString(),
+    createdAt: n.created_at,
   };
 }
 
 router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
-  const notifications = await db
-    .select()
-    .from(notificationsTable)
-    .where(eq(notificationsTable.userId, req.session.userId!))
-    .orderBy(notificationsTable.createdAt);
-  res.json(notifications.map(formatNotification).reverse());
+  const { data, error } = await supabase
+    .from("notifications")
+    .select("*")
+    .eq("user_id", req.session.userId!)
+    .order("created_at", { ascending: false });
+
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json((data as NotificationRow[]).map(formatNotification));
 });
 
 router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<void> => {
@@ -30,21 +40,25 @@ router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<v
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [notification] = await db
-    .update(notificationsTable)
-    .set({ read: true })
-    .where(and(eq(notificationsTable.id, id), eq(notificationsTable.userId, req.session.userId!)))
-    .returning();
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("id", id)
+    .eq("user_id", req.session.userId!)
+    .select("*")
+    .single();
 
-  if (!notification) { res.status(404).json({ error: "Notification not found" }); return; }
-  res.json(formatNotification(notification));
+  if (error || !data) { res.status(404).json({ error: "Notification not found" }); return; }
+  res.json(formatNotification(data as NotificationRow));
 });
 
 router.patch("/notifications/read-all", requireAuth, async (req, res): Promise<void> => {
-  await db
-    .update(notificationsTable)
-    .set({ read: true })
-    .where(eq(notificationsTable.userId, req.session.userId!));
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read: true })
+    .eq("user_id", req.session.userId!);
+
+  if (error) { res.status(500).json({ error: error.message }); return; }
   res.json({ ok: true });
 });
 

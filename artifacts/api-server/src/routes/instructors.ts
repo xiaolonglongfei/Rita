@@ -1,54 +1,80 @@
 import { Router, type IRouter } from "express";
-import { db, instructorsTable, reviewsTable, usersTable } from "@workspace/db";
-import { eq, ilike, or, and, gte, sql } from "drizzle-orm";
-import { ListInstructorsQueryParams, AdminCreateInstructorBody, AdminUpdateInstructorBody, AdminUpdateInstructorParams, AdminDeleteInstructorParams } from "@workspace/api-zod";
-import { requireAuth } from "../lib/auth";
+import { supabase } from "@workspace/db";
+import { ListInstructorsQueryParams } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-function formatInstructor(instructor: typeof instructorsTable.$inferSelect) {
+type InstructorRow = {
+  id: number;
+  name: string;
+  bio: string | null;
+  specialty: string;
+  photo_url: string | null;
+  location: string | null;
+  verified: boolean;
+  avg_score: number;
+  avg_value: number;
+  avg_effectiveness: number;
+  avg_punctuality: number;
+  review_count: number;
+  public_rank: number | null;
+  created_at: string;
+};
+
+type ReviewRow = {
+  id: number;
+  user_id: number;
+  instructor_id: number;
+  session_id: number | null;
+  value: number;
+  effectiveness: number;
+  punctuality: number;
+  overall_score: number;
+  comment: string | null;
+  status: string;
+  created_at: string;
+};
+
+function formatInstructor(i: InstructorRow) {
   return {
-    id: instructor.id,
-    name: instructor.name,
-    bio: instructor.bio ?? null,
-    specialty: instructor.specialty,
-    photoUrl: instructor.photoUrl ?? null,
-    location: instructor.location ?? null,
-    claimed: instructor.verified,
-    avgScore: instructor.avgScore,
-    avgValue: instructor.avgValue,
-    avgEffectiveness: instructor.avgEffectiveness,
-    avgPunctuality: instructor.avgPunctuality,
-    reviewCount: instructor.reviewCount,
-    publicRank: instructor.publicRank ?? null,
-    createdAt: instructor.createdAt.toISOString(),
+    id: i.id,
+    name: i.name,
+    bio: i.bio ?? null,
+    specialty: i.specialty,
+    photoUrl: i.photo_url ?? null,
+    location: i.location ?? null,
+    claimed: i.verified,
+    avgScore: i.avg_score,
+    avgValue: i.avg_value,
+    avgEffectiveness: i.avg_effectiveness,
+    avgPunctuality: i.avg_punctuality,
+    reviewCount: i.review_count,
+    publicRank: i.public_rank ?? null,
+    createdAt: i.created_at,
   };
 }
 
 router.get("/instructors", async (req, res): Promise<void> => {
   const params = ListInstructorsQueryParams.safeParse(req.query);
-  const search = params.success ? params.data.search : undefined;
+  const search    = params.success ? params.data.search    : undefined;
   const specialty = params.success ? params.data.specialty : undefined;
-  const location = params.success ? params.data.location : undefined;
-  const minScore = params.success ? params.data.minScore : undefined;
-  const page = params.success && params.data.page ? Number(params.data.page) : 1;
+  const location  = params.success ? params.data.location  : undefined;
+  const minScore  = params.success ? params.data.minScore  : undefined;
+  const page  = params.success && params.data.page  ? Number(params.data.page)  : 1;
   const limit = params.success && params.data.limit ? Number(params.data.limit) : 20;
   const offset = (page - 1) * limit;
 
-  const conditions = [];
-  if (search) conditions.push(or(ilike(instructorsTable.name, `%${search}%`), ilike(instructorsTable.bio, `%${search}%`)));
-  if (specialty) conditions.push(ilike(instructorsTable.specialty, `%${specialty}%`));
-  if (location) conditions.push(ilike(instructorsTable.location, `%${location}%`));
-  if (minScore !== undefined) conditions.push(gte(instructorsTable.avgScore, Number(minScore)));
+  let query = supabase.from("instructors").select("*", { count: "exact" });
 
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
+  if (search) query = query.or(`name.ilike.%${search}%,bio.ilike.%${search}%`);
+  if (specialty) query = query.ilike("specialty", `%${specialty}%`);
+  if (location)  query = query.ilike("location",  `%${location}%`);
+  if (minScore !== undefined) query = query.gte("avg_score", Number(minScore));
 
-  const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(instructorsTable).where(where);
-  const total = Number(countResult.count);
+  const { data, error, count } = await query.range(offset, offset + limit - 1);
 
-  const items = await db.select().from(instructorsTable).where(where).limit(limit).offset(offset);
-
-  res.json({ items: items.map(formatInstructor), total, page, limit });
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json({ items: (data as InstructorRow[]).map(formatInstructor), total: count ?? 0, page, limit });
 });
 
 router.get("/instructors/:id", async (req, res): Promise<void> => {
@@ -56,10 +82,9 @@ router.get("/instructors/:id", async (req, res): Promise<void> => {
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [instructor] = await db.select().from(instructorsTable).where(eq(instructorsTable.id, id));
-  if (!instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
-
-  res.json(formatInstructor(instructor));
+  const { data, error } = await supabase.from("instructors").select("*").eq("id", id).single();
+  if (error || !data) { res.status(404).json({ error: "Instructor not found" }); return; }
+  res.json(formatInstructor(data as InstructorRow));
 });
 
 router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
@@ -67,36 +92,33 @@ router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
   const instructorId = parseInt(raw, 10);
   if (isNaN(instructorId)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const rows = await db
-    .select({
-      review: reviewsTable,
-      userName: usersTable.name,
-      userAvatarUrl: usersTable.avatarUrl,
-      instructorName: instructorsTable.name,
-    })
-    .from(reviewsTable)
-    .leftJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
-    .leftJoin(instructorsTable, eq(reviewsTable.instructorId, instructorsTable.id))
-    .where(and(eq(reviewsTable.instructorId, instructorId), eq(reviewsTable.status, "approved")))
-    .orderBy(sql`${reviewsTable.createdAt} DESC`)
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*, users(name, avatar_url), instructors(name)")
+    .eq("instructor_id", instructorId)
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
     .limit(50);
 
-  const items = rows.map(({ review, userName, userAvatarUrl, instructorName }) => ({
-    id: review.id,
-    userId: review.userId,
-    userName: userName ?? null,
-    userAvatarUrl: userAvatarUrl ?? null,
-    instructorId: review.instructorId,
-    instructorName: instructorName ?? null,
-    sessionId: review.sessionId ?? null,
-    value: review.value,
-    effectiveness: review.effectiveness,
-    punctuality: review.punctuality,
-    overallScore: review.overallScore,
-    comment: review.comment ?? null,
-    status: review.status as "pending" | "approved" | "rejected",
-    createdAt: review.createdAt.toISOString(),
-  }));
+  if (error) { res.status(500).json({ error: error.message }); return; }
+
+  const items = (data as (ReviewRow & { users: { name: string; avatar_url: string | null } | null; instructors: { name: string } | null })[])
+    .map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      userName: r.users?.name ?? null,
+      userAvatarUrl: r.users?.avatar_url ?? null,
+      instructorId: r.instructor_id,
+      instructorName: r.instructors?.name ?? null,
+      sessionId: r.session_id ?? null,
+      value: r.value,
+      effectiveness: r.effectiveness,
+      punctuality: r.punctuality,
+      overallScore: r.overall_score,
+      comment: r.comment ?? null,
+      status: r.status as "pending" | "approved" | "rejected",
+      createdAt: r.created_at,
+    }));
 
   res.json({ items, total: items.length, page: 1, limit: 50 });
 });
@@ -106,41 +128,53 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
   const instructorId = parseInt(raw, 10);
   if (isNaN(instructorId)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [instructor] = await db.select().from(instructorsTable).where(eq(instructorsTable.id, instructorId));
-  if (!instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
+  const { data: instructor, error: ie } = await supabase.from("instructors").select("*").eq("id", instructorId).single();
+  if (ie || !instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const reviews = await db.select().from(reviewsTable).where(and(eq(reviewsTable.instructorId, instructorId), eq(reviewsTable.status, "approved")));
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("overall_score")
+    .eq("instructor_id", instructorId)
+    .eq("status", "approved");
 
+  const i = instructor as InstructorRow;
   const scoreDistribution = [1, 2, 3, 4, 5].map(score => ({
     score,
-    count: reviews.filter(r => Math.round(r.overallScore) === score).length,
+    count: (reviews ?? []).filter((r: { overall_score: number }) => Math.round(r.overall_score) === score).length,
   }));
 
   res.json({
     instructorId,
-    avgValue: instructor.avgValue,
-    avgEffectiveness: instructor.avgEffectiveness,
-    avgPunctuality: instructor.avgPunctuality,
-    avgScore: instructor.avgScore,
-    reviewCount: instructor.reviewCount,
+    avgValue: i.avg_value,
+    avgEffectiveness: i.avg_effectiveness,
+    avgPunctuality: i.avg_punctuality,
+    avgScore: i.avg_score,
+    reviewCount: i.review_count,
     scoreDistribution,
   });
 });
 
 export async function recomputeInstructorStats(instructorId: number) {
-  const reviews = await db.select().from(reviewsTable).where(and(eq(reviewsTable.instructorId, instructorId), eq(reviewsTable.status, "approved")));
-  if (reviews.length === 0) {
-    await db.update(instructorsTable).set({ avgScore: 0, avgValue: 0, avgEffectiveness: 0, avgPunctuality: 0, reviewCount: 0 }).where(eq(instructorsTable.id, instructorId));
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("value, effectiveness, punctuality, overall_score")
+    .eq("instructor_id", instructorId)
+    .eq("status", "approved");
+
+  const rows = (reviews ?? []) as { value: number; effectiveness: number; punctuality: number; overall_score: number }[];
+
+  if (rows.length === 0) {
+    await supabase.from("instructors").update({ avg_score: 0, avg_value: 0, avg_effectiveness: 0, avg_punctuality: 0, review_count: 0 }).eq("id", instructorId);
     return;
   }
   const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
-  await db.update(instructorsTable).set({
-    reviewCount: reviews.length,
-    avgValue: avg(reviews.map(r => r.value)),
-    avgEffectiveness: avg(reviews.map(r => r.effectiveness)),
-    avgPunctuality: avg(reviews.map(r => r.punctuality)),
-    avgScore: avg(reviews.map(r => r.overallScore)),
-  }).where(eq(instructorsTable.id, instructorId));
+  await supabase.from("instructors").update({
+    review_count: rows.length,
+    avg_value: avg(rows.map(r => r.value)),
+    avg_effectiveness: avg(rows.map(r => r.effectiveness)),
+    avg_punctuality: avg(rows.map(r => r.punctuality)),
+    avg_score: avg(rows.map(r => r.overall_score)),
+  }).eq("id", instructorId);
 }
 
 export default router;

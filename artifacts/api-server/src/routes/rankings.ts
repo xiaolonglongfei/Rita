@@ -1,20 +1,35 @@
 import { Router, type IRouter } from "express";
-import { db, instructorsTable, reviewsTable } from "@workspace/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { supabase } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
 
 const router: IRouter = Router();
 
-function formatRankingEntry(rank: number, instructor: typeof instructorsTable.$inferSelect) {
+type InstructorRow = {
+  id: number;
+  name: string;
+  photo_url: string | null;
+  specialty: string;
+  avg_score: number;
+  review_count: number;
+  verified: boolean;
+};
+
+type ReviewRow = {
+  instructor_id: number;
+  overall_score: number;
+  status: string;
+};
+
+function formatRankingEntry(rank: number, i: InstructorRow) {
   return {
     rank,
-    instructorId: instructor.id,
-    instructorName: instructor.name,
-    instructorPhotoUrl: instructor.photoUrl ?? null,
-    specialty: instructor.specialty,
-    avgScore: instructor.avgScore,
-    reviewCount: instructor.reviewCount,
-    verified: instructor.verified,
+    instructorId: i.id,
+    instructorName: i.name,
+    instructorPhotoUrl: i.photo_url ?? null,
+    specialty: i.specialty,
+    avgScore: i.avg_score,
+    reviewCount: i.review_count,
+    verified: i.verified,
   };
 }
 
@@ -22,56 +37,47 @@ router.get("/rankings/public", async (req, res): Promise<void> => {
   const limitParam = req.query.limit;
   const limit = limitParam ? Math.min(Number(limitParam), 100) : 50;
 
-  const instructors = await db
-    .select()
-    .from(instructorsTable)
-    .where(sql`${instructorsTable.reviewCount} > 0`)
-    .orderBy(desc(instructorsTable.avgScore), desc(instructorsTable.reviewCount))
+  const { data, error } = await supabase
+    .from("instructors")
+    .select("id, name, photo_url, specialty, avg_score, review_count, verified")
+    .gt("review_count", 0)
+    .order("avg_score", { ascending: false })
+    .order("review_count", { ascending: false })
     .limit(limit);
 
-  const entries = instructors.map((instructor, index) => formatRankingEntry(index + 1, instructor));
-  res.json(entries);
+  if (error) { res.status(500).json({ error: error.message }); return; }
+  res.json((data as InstructorRow[]).map((i, idx) => formatRankingEntry(idx + 1, i)));
 });
 
 router.get("/rankings/private", requireAuth, async (req, res): Promise<void> => {
   const userId = req.session.userId!;
 
-  const myReviews = await db
-    .select()
-    .from(reviewsTable)
-    .where(and(eq(reviewsTable.userId, userId), eq(reviewsTable.status, "approved")));
+  const [{ data: myReviews }, { data: allInstructors }] = await Promise.all([
+    supabase.from("reviews").select("instructor_id, overall_score").eq("user_id", userId).eq("status", "approved"),
+    supabase.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").gt("review_count", 0),
+  ]);
 
-  if (myReviews.length === 0) {
-    const instructors = await db
-      .select()
-      .from(instructorsTable)
-      .where(sql`${instructorsTable.reviewCount} > 0`)
-      .orderBy(desc(instructorsTable.avgScore))
-      .limit(50);
-    res.json(instructors.map((instructor, i) => formatRankingEntry(i + 1, instructor)));
+  const reviews = (myReviews ?? []) as ReviewRow[];
+  const instructors = (allInstructors ?? []) as InstructorRow[];
+
+  if (reviews.length === 0) {
+    const sorted = [...instructors].sort((a, b) => b.avg_score - a.avg_score).slice(0, 50);
+    res.json(sorted.map((i, idx) => formatRankingEntry(idx + 1, i)));
     return;
   }
 
-  const reviewedInstructorIds = [...new Set(myReviews.map(r => r.instructorId))];
-
+  const reviewedIds = [...new Set(reviews.map(r => r.instructor_id))];
   const computeScore = (instructorId: number) => {
-    const reviews = myReviews.filter(r => r.instructorId === instructorId);
-    if (reviews.length === 0) return 0;
-    return reviews.reduce((sum, r) => sum + r.overallScore, 0) / reviews.length;
+    const mine = reviews.filter(r => r.instructor_id === instructorId);
+    if (!mine.length) return 0;
+    return mine.reduce((sum, r) => sum + r.overall_score, 0) / mine.length;
   };
 
-  const allInstructors = await db
-    .select()
-    .from(instructorsTable)
-    .where(sql`${instructorsTable.reviewCount} > 0`);
-
-  const scored = allInstructors.map(instructor => {
-    const myScore = computeScore(instructor.id);
-    const hasMyReview = reviewedInstructorIds.includes(instructor.id);
-    const blendedScore = hasMyReview
-      ? myScore * 0.7 + instructor.avgScore * 0.3
-      : instructor.avgScore * 0.5;
-    return { instructor, blendedScore, hasMyReview };
+  const scored = instructors.map(i => {
+    const myScore = computeScore(i.id);
+    const hasMyReview = reviewedIds.includes(i.id);
+    const blendedScore = hasMyReview ? myScore * 0.7 + i.avg_score * 0.3 : i.avg_score * 0.5;
+    return { i, blendedScore, hasMyReview };
   });
 
   scored.sort((a, b) => {
@@ -80,7 +86,7 @@ router.get("/rankings/private", requireAuth, async (req, res): Promise<void> => 
     return b.blendedScore - a.blendedScore;
   });
 
-  res.json(scored.slice(0, 50).map(({ instructor }, i) => formatRankingEntry(i + 1, instructor)));
+  res.json(scored.slice(0, 50).map(({ i }, idx) => formatRankingEntry(idx + 1, i)));
 });
 
 export default router;

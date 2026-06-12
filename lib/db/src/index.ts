@@ -1,18 +1,24 @@
-import { drizzle } from "drizzle-orm/node-postgres";
+import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
 import * as schema from "./schema";
 
-const { Pool } = pg;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const connectionString = process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
-
-if (!connectionString) {
+if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY must be set.",
   );
 }
 
-export const pool = new Pool({ connectionString, ssl: process.env.SUPABASE_DATABASE_URL ? { rejectUnauthorized: false } : undefined });
-export const db = drizzle(pool, { schema });
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Local pg pool — used only for connect-pg-simple session store
+const { Pool } = pg;
+const localUrl = process.env.DATABASE_URL;
+if (!localUrl) {
+  throw new Error("DATABASE_URL must be set for session storage.");
+}
+export const pool = new Pool({ connectionString: localUrl });
 
 export * from "./schema";

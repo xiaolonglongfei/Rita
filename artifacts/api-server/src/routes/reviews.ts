@@ -1,74 +1,101 @@
 import { Router, type IRouter } from "express";
-import { db, reviewsTable, instructorsTable, usersTable, notificationsTable } from "@workspace/db";
-import { eq, and, sql } from "drizzle-orm";
-import { CreateReviewBody, AdminModerateReviewBody, AdminModerateReviewParams } from "@workspace/api-zod";
+import { supabase } from "@workspace/db";
+import { CreateReviewBody } from "@workspace/api-zod";
 import { requireAuth } from "../lib/auth";
 import { recomputeInstructorStats } from "./instructors";
 
 const router: IRouter = Router();
 
-function formatReview(review: typeof reviewsTable.$inferSelect, userName?: string | null, userAvatarUrl?: string | null, instructorName?: string | null) {
+type ReviewRow = {
+  id: number;
+  user_id: number;
+  instructor_id: number;
+  session_id: number | null;
+  value: number;
+  effectiveness: number;
+  punctuality: number;
+  overall_score: number;
+  comment: string | null;
+  status: string;
+  moderation_note: string | null;
+  created_at: string;
+};
+
+function formatReview(
+  r: ReviewRow,
+  userName?: string | null,
+  userAvatarUrl?: string | null,
+  instructorName?: string | null,
+) {
   return {
-    id: review.id,
-    userId: review.userId,
+    id: r.id,
+    userId: r.user_id,
     userName: userName ?? null,
     userAvatarUrl: userAvatarUrl ?? null,
-    instructorId: review.instructorId,
+    instructorId: r.instructor_id,
     instructorName: instructorName ?? null,
-    sessionId: review.sessionId ?? null,
-    value: review.value,
-    effectiveness: review.effectiveness,
-    punctuality: review.punctuality,
-    overallScore: review.overallScore,
-    comment: review.comment ?? null,
-    status: review.status as "pending" | "approved" | "rejected",
-    createdAt: review.createdAt.toISOString(),
+    sessionId: r.session_id ?? null,
+    value: r.value,
+    effectiveness: r.effectiveness,
+    punctuality: r.punctuality,
+    overallScore: r.overall_score,
+    comment: r.comment ?? null,
+    status: r.status as "pending" | "approved" | "rejected",
+    createdAt: r.created_at,
   };
 }
 
 router.get("/reviews", requireAuth, async (req, res): Promise<void> => {
-  const rows = await db
-    .select({ review: reviewsTable, instructorName: instructorsTable.name, userName: usersTable.name, userAvatarUrl: usersTable.avatarUrl })
-    .from(reviewsTable)
-    .leftJoin(instructorsTable, eq(reviewsTable.instructorId, instructorsTable.id))
-    .leftJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
-    .where(eq(reviewsTable.userId, req.session.userId!))
-    .orderBy(sql`${reviewsTable.createdAt} DESC`);
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*, instructors(name), users(name, avatar_url)")
+    .eq("user_id", req.session.userId!)
+    .order("created_at", { ascending: false });
 
-  res.json(rows.map(({ review, instructorName, userName, userAvatarUrl }) => formatReview(review, userName, userAvatarUrl, instructorName)));
+  if (error) { res.status(500).json({ error: error.message }); return; }
+
+  res.json((data as (ReviewRow & { instructors: { name: string } | null; users: { name: string; avatar_url: string | null } | null })[])
+    .map(r => formatReview(r, r.users?.name, r.users?.avatar_url, r.instructors?.name)));
 });
 
 router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateReviewBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: parsed.error.message });
-    return;
-  }
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
   const { instructorId, sessionId, value, effectiveness, punctuality, comment } = parsed.data;
   const overallScore = (value + effectiveness + punctuality) / 3;
 
-  const [review] = await db.insert(reviewsTable).values({
-    userId: req.session.userId!,
-    instructorId,
-    sessionId: sessionId ?? null,
-    value,
-    effectiveness,
-    punctuality,
-    overallScore,
-    comment: comment ?? null,
-    status: "pending",
-  }).returning();
+  const { data: review, error } = await supabase
+    .from("reviews")
+    .insert({
+      user_id: req.session.userId!,
+      instructor_id: instructorId,
+      session_id: sessionId ?? null,
+      value,
+      effectiveness,
+      punctuality,
+      overall_score: overallScore,
+      comment: comment ?? null,
+      status: "pending",
+    })
+    .select("*")
+    .single();
 
-  const [instructor] = await db.select().from(instructorsTable).where(eq(instructorsTable.id, instructorId));
-  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, req.session.userId!));
+  if (error || !review) { res.status(500).json({ error: "Failed to submit review" }); return; }
 
-  await db.insert(notificationsTable).values({
-    userId: req.session.userId!,
+  const [{ data: instructor }, { data: user }] = await Promise.all([
+    supabase.from("instructors").select("name").eq("id", instructorId).single(),
+    supabase.from("users").select("name, avatar_url").eq("id", req.session.userId!).single(),
+  ]);
+
+  await supabase.from("notifications").insert({
+    user_id: req.session.userId!,
     type: "review_submitted",
-    message: `Your review for ${instructor?.name ?? "instructor"} has been submitted and is awaiting moderation.`,
+    message: `Your review for ${(instructor as { name: string } | null)?.name ?? "instructor"} has been submitted and is awaiting moderation.`,
   });
 
-  res.status(201).json(formatReview(review, user?.name, user?.avatarUrl, instructor?.name));
+  const u = user as { name: string; avatar_url: string | null } | null;
+  res.status(201).json(formatReview(review as ReviewRow, u?.name, u?.avatar_url, (instructor as { name: string } | null)?.name));
 });
 
 router.get("/reviews/:id", requireAuth, async (req, res): Promise<void> => {
@@ -76,36 +103,38 @@ router.get("/reviews/:id", requireAuth, async (req, res): Promise<void> => {
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const [row] = await db
-    .select({ review: reviewsTable, instructorName: instructorsTable.name, userName: usersTable.name, userAvatarUrl: usersTable.avatarUrl })
-    .from(reviewsTable)
-    .leftJoin(instructorsTable, eq(reviewsTable.instructorId, instructorsTable.id))
-    .leftJoin(usersTable, eq(reviewsTable.userId, usersTable.id))
-    .where(eq(reviewsTable.id, id));
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*, instructors(name), users(name, avatar_url)")
+    .eq("id", id)
+    .single();
 
-  if (!row) { res.status(404).json({ error: "Review not found" }); return; }
-  res.json(formatReview(row.review, row.userName, row.userAvatarUrl, row.instructorName));
+  if (error || !data) { res.status(404).json({ error: "Review not found" }); return; }
+  const r = data as ReviewRow & { instructors: { name: string } | null; users: { name: string; avatar_url: string | null } | null };
+  res.json(formatReview(r, r.users?.name, r.users?.avatar_url, r.instructors?.name));
 });
 
 export async function moderateReview(reviewId: number, status: "approved" | "rejected", moderationNote?: string) {
-  const [review] = await db.update(reviewsTable).set({ status, moderationNote: moderationNote ?? null }).where(eq(reviewsTable.id, reviewId)).returning();
-  if (review) {
-    await recomputeInstructorStats(review.instructorId);
-    if (status === "approved") {
-      await db.insert(notificationsTable).values({
-        userId: review.userId,
-        type: "review_approved",
-        message: `Your review has been approved and is now visible.`,
-      });
-    } else {
-      await db.insert(notificationsTable).values({
-        userId: review.userId,
-        type: "review_rejected",
-        message: `Your review was not approved${moderationNote ? `: ${moderationNote}` : "."}`,
-      });
-    }
-  }
-  return review;
+  await supabase
+    .from("reviews")
+    .update({ status, moderation_note: moderationNote ?? null })
+    .eq("id", reviewId);
+
+  const { data: review } = await supabase.from("reviews").select("*").eq("id", reviewId).single();
+  if (!review) return undefined;
+
+  const r = review as ReviewRow;
+  await recomputeInstructorStats(r.instructor_id);
+
+  await supabase.from("notifications").insert({
+    user_id: r.user_id,
+    type: status === "approved" ? "review_approved" : "review_rejected",
+    message: status === "approved"
+      ? "Your review has been approved and is now visible."
+      : `Your review was not approved${moderationNote ? `: ${moderationNote}` : "."}`,
+  });
+
+  return r;
 }
 
 export default router;
