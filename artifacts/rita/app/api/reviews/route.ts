@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { query, queryOne } from "@/lib/db";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -7,20 +6,20 @@ export async function GET() {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await query(
-    `SELECT r.*, i.name as instructor_name
-     FROM reviews r
-     LEFT JOIN instructors i ON i.id = r.instructor_id
-     WHERE r.user_id = $1
-     ORDER BY r.created_at DESC`,
-    [user.id]
-  );
+  const db = createServiceClient();
+  const { data, error } = await db
+    .from("reviews")
+    .select("*, instructors(name)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json(
-    rows.map((r) => ({
+    (data ?? []).map((r) => ({
       id: r.id,
       instructorId: r.instructor_id,
-      instructorName: r.instructor_name ?? null,
+      instructorName: (r.instructors as { name: string } | null)?.name ?? null,
       value: r.value,
       effectiveness: r.effectiveness,
       punctuality: r.punctuality,
@@ -37,26 +36,36 @@ export async function POST(request: Request) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const db = createServiceClient();
   const body = await request.json();
   const { instructorId, sessionId, value, effectiveness, punctuality, comment } = body;
   const overallScore = (value + effectiveness + punctuality) / 3;
 
-  const review = await queryOne(
-    `INSERT INTO reviews (user_id, instructor_id, session_id, value, effectiveness, punctuality, overall_score, comment, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') RETURNING *`,
-    [user.id, instructorId, sessionId ?? null, value, effectiveness, punctuality, overallScore, comment ?? null]
-  );
+  const { data: review, error } = await db
+    .from("reviews")
+    .insert({
+      user_id: user.id,
+      instructor_id: instructorId,
+      session_id: sessionId ?? null,
+      value,
+      effectiveness,
+      punctuality,
+      overall_score: overallScore,
+      comment: comment ?? null,
+      status: "pending",
+    })
+    .select("*")
+    .single();
 
-  const instructor = await queryOne<{ name: string }>(
-    "SELECT name FROM instructors WHERE id = $1",
-    [instructorId]
-  );
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  await query(
-    `INSERT INTO notifications (user_id, type, message)
-     VALUES ($1, 'review_submitted', $2)`,
-    [user.id, `Your review for ${instructor?.name ?? "instructor"} has been submitted and is awaiting moderation.`]
-  );
+  const { data: instructor } = await db.from("instructors").select("name").eq("id", instructorId).single();
+
+  await db.from("notifications").insert({
+    user_id: user.id,
+    type: "review_submitted",
+    message: `Your review for ${(instructor as { name: string } | null)?.name ?? "instructor"} has been submitted and is awaiting moderation.`,
+  });
 
   return NextResponse.json(review, { status: 201 });
 }

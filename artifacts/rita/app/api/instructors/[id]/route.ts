@@ -1,4 +1,4 @@
-import { query, queryOne } from "@/lib/db";
+import { createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -6,21 +6,21 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const instructorId = parseInt(id);
+  const db = createServiceClient();
 
-  const [instructor, reviews] = await Promise.all([
-    queryOne(`SELECT * FROM instructors WHERE id = $1`, [instructorId]),
-    query(
-      `SELECT r.*, u.name as user_name, u.avatar_url as user_avatar
-       FROM reviews r
-       LEFT JOIN users u ON u.id = r.user_id
-       WHERE r.instructor_id = $1 AND r.status = 'approved'
-       ORDER BY r.created_at DESC LIMIT 50`,
-      [instructorId]
-    ),
+  const [{ data: instructor, error }, { data: reviews }] = await Promise.all([
+    db.from("instructors").select("*").eq("id", parseInt(id)).single(),
+    db
+      .from("reviews")
+      .select("*, users(name, avatar_url)")
+      .eq("instructor_id", parseInt(id))
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(50),
   ]);
 
-  if (!instructor) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (error || !instructor)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   return NextResponse.json({
     instructor: {
@@ -39,10 +39,10 @@ export async function GET(
       publicRank: instructor.public_rank,
       createdAt: instructor.created_at,
     },
-    reviews: reviews.map((r) => ({
+    reviews: (reviews ?? []).map((r) => ({
       id: r.id,
       userId: r.user_id,
-      userName: r.user_name ?? "Anonymous",
+      userName: (r.users as { name: string } | null)?.name ?? "Anonymous",
       value: r.value,
       effectiveness: r.effectiveness,
       punctuality: r.punctuality,

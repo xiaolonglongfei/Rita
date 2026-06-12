@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
-import { query } from "@/lib/db";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -12,45 +11,22 @@ export async function GET(request: Request) {
   const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
   const offset = (page - 1) * limit;
 
-  const conditions: string[] = [];
-  const params: unknown[] = [];
-  let p = 1;
+  const supabase = createServiceClient();
+  let query = supabase.from("instructors").select("*", { count: "exact" });
 
-  if (search) {
-    conditions.push(`(name ILIKE $${p} OR bio ILIKE $${p})`);
-    params.push(`%${search}%`);
-    p++;
-  }
-  if (specialty) {
-    conditions.push(`specialty ILIKE $${p}`);
-    params.push(`%${specialty}%`);
-    p++;
-  }
-  if (location) {
-    conditions.push(`location ILIKE $${p}`);
-    params.push(`%${location}%`);
-    p++;
-  }
-  if (minScore) {
-    conditions.push(`avg_score >= $${p}`);
-    params.push(parseFloat(minScore));
-    p++;
-  }
+  if (search) query = query.or(`name.ilike.%${search}%,bio.ilike.%${search}%`);
+  if (specialty) query = query.ilike("specialty", `%${specialty}%`);
+  if (location) query = query.ilike("location", `%${location}%`);
+  if (minScore) query = query.gte("avg_score", parseFloat(minScore));
 
-  const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const { data, error, count } = await query
+    .order("avg_score", { ascending: false })
+    .range(offset, offset + limit - 1);
 
-  const [countRows, rows] = await Promise.all([
-    query<{ count: string }>(`SELECT COUNT(*) as count FROM instructors ${where}`, params),
-    query(
-      `SELECT * FROM instructors ${where} ORDER BY avg_score DESC NULLS LAST LIMIT $${p} OFFSET $${p + 1}`,
-      [...params, limit, offset]
-    ),
-  ]);
-
-  const total = parseInt(countRows[0]?.count ?? "0");
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({
-    items: rows.map((i) => ({
+    items: (data ?? []).map((i) => ({
       id: i.id,
       name: i.name,
       bio: i.bio,
@@ -66,7 +42,7 @@ export async function GET(request: Request) {
       publicRank: i.public_rank,
       createdAt: i.created_at,
     })),
-    total,
+    total: count ?? 0,
     page,
     limit,
   });
@@ -77,18 +53,23 @@ export async function POST(request: Request) {
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [profile] = await query<{ is_admin: boolean }>(
-    "SELECT is_admin FROM users WHERE id = $1",
-    [user.id]
-  );
+  const db = createServiceClient();
+  const { data: profile } = await db.from("users").select("is_admin").eq("id", user.id).single();
   if (!profile?.is_admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await request.json();
-  const [instructor] = await query(
-    `INSERT INTO instructors (name, specialty, bio, photo_url, location)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [body.name, body.specialty ?? "Tennis", body.bio ?? null, body.photoUrl ?? null, body.location ?? null]
-  );
+  const { data, error } = await db
+    .from("instructors")
+    .insert({
+      name: body.name,
+      specialty: body.specialty ?? "Tennis",
+      bio: body.bio ?? null,
+      photo_url: body.photoUrl ?? null,
+      location: body.location ?? null,
+    })
+    .select("*")
+    .single();
 
-  return NextResponse.json(instructor, { status: 201 });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data, { status: 201 });
 }
