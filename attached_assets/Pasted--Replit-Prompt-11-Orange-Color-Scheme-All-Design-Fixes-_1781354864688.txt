@@ -1,0 +1,321 @@
+# Replit Prompt #11 — Orange Color Scheme + All Design Fixes
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #12 until this step is verified.
+
+---
+
+## Overview
+
+This prompt does two things:
+1. Changes the entire color scheme from blue to orange
+2. Restores all previously approved design improvements
+
+---
+
+## Part A: Color Scheme — Replace All Blue with Orange
+
+### A1: Update Tailwind Config
+
+Replace `tailwind.config.ts` color definitions:
+
+```typescript
+colors: {
+  rita: {
+    primary: "#f97316",        // main orange (buttons, links, accents)
+    "primary-dark": "#ea580c", // darker orange (hover states)
+    "primary-light": "#fff7ed", // light orange background
+    secondary: "#1e2a38",      // dark navy (navbar, dark buttons)
+    lime: "#b8d400",           // kept as accent
+    "lime-dark": "#8fa300",
+    "lime-light": "#f5fbcc",
+    charcoal: "#1e2a38",
+    gray: "#6b7a8d",
+    "gray-light": "#f4f6f9",
+  },
+  score: {
+    high: "#f97316",   // orange for high scores (≥ 4.0)
+    mid: "#c89000",    // amber for mid scores (2.5–3.9)
+    low: "#c83030",    // red for low scores (< 2.5)
+  }
+}
+```
+
+### A2: Global Color Replacements
+
+Search the entire codebase and replace ALL instances of:
+
+```
+#1668c8  →  #f97316
+#1250a0  →  #ea580c
+#e8f1fc  →  #fff7ed
+#1668c8/12 → #f97316/12
+#1668c8/18 → #f97316/18
+bg-rita-blue → bg-rita-primary  (or style={{ background: '#f97316' }})
+text-rita-blue → text-rita-primary (or style={{ color: '#f97316' }})
+border-rita-blue → border-rita-primary
+text-blue-400 → text-orange-400
+bg-blue-50 → bg-orange-50
+border-blue-200 → border-orange-200
+text-blue-500 → text-orange-500
+```
+
+### A3: Score Color Function
+
+Update the `scoreColor()` function used throughout the app:
+
+```typescript
+function scoreColor(score: number): string {
+  if (score >= 4.0) return '#f97316'  // orange (was blue)
+  if (score >= 2.5) return '#c89000'  // amber
+  return '#c83030'                     // red
+}
+
+function scoreBg(score: number): string {
+  if (score >= 4.0) return '#fff7ed'  // light orange (was light blue)
+  if (score >= 2.5) return '#fdf3dc'  // light amber
+  return '#fde8e8'                     // light red
+}
+```
+
+---
+
+## Part B: Restore All Approved Design Improvements
+
+### B1: Instructor Labels (Claimed / Unclaimed)
+
+In `components/instructor/InstructorBadge.tsx`:
+
+```typescript
+export function InstructorBadge({ isClaimed }: { isClaimed: boolean }) {
+  if (isClaimed) {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+        style={{ background: '#fff7ed', color: '#f97316', border: '1px solid #fed7aa' }}>
+        ✓ Claimed
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+      Unclaimed
+    </span>
+  )
+}
+```
+
+⚠️ "Verified" is ONLY used on review cards. NEVER on instructor profiles or cards.
+
+### B2: Score Triangle Chart
+
+In `components/shared/ScoreTriangle.tsx`, ensure:
+- Three axes ONLY: 💰 Value (top), 📈 Effectiveness (bottom-right), ⏰ Punctuality (bottom-left)
+- Triangle fill color: orange (#f97316) at 25% opacity
+- Data point dots: orange (#f97316)
+- Score labels use scoreColor() function
+- Progress bars use scoreColor() per dimension
+- Overall score number uses scoreColor() based on average
+- SVG size: width=240, height=230, CX=120, CY=120, R=82
+- "Value" label has extra top offset (dy: -24) to prevent overlap with title
+
+```typescript
+// Triangle fill gradient:
+<linearGradient id="fillGrad">
+  <stop offset="0%" stopColor="#f97316" stopOpacity="0.25"/>
+  <stop offset="100%" stopColor="#b8d400" stopOpacity="0.20"/>
+</linearGradient>
+
+// Dot color:
+<circle fill="#f97316" stroke="white" strokeWidth="2" r="5"/>
+```
+
+### B3: Review Cards — Colored Left Border
+
+In `components/review/ReviewCard.tsx`:
+
+```typescript
+// Card container — left border color based on overall score
+<div
+  className="bg-white rounded-xl p-4"
+  style={{
+    borderLeft: `4px solid ${scoreColor(overall)}`,
+    borderTop: '1px solid #f1f5f9',
+    borderRight: '1px solid #f1f5f9',
+    borderBottom: '1px solid #f1f5f9',
+  }}
+>
+  {/* Top row: overall score pill + verified badge */}
+  <div className="flex items-center justify-between mb-3">
+    <span
+      className="inline-flex items-center gap-1.5 text-sm font-bold px-3 py-1 rounded-full"
+      style={{ background: scoreBg(overall), color: scoreColor(overall) }}
+    >
+      ⭐ {overall.toFixed(1)}
+    </span>
+    {review.is_verified ? (
+      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">
+        ✓ Verified
+      </span>
+    ) : (
+      <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-400">
+        Unverified
+      </span>
+    )}
+  </div>
+
+  {/* Three dimension scores */}
+  <div className="flex gap-4 flex-wrap mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+    <span>💰 Value: <strong className="text-slate-700">{review.rating_value.toFixed(1)}</strong></span>
+    <span>📈 Effectiveness: <strong className="text-slate-700">{review.rating_effectiveness.toFixed(1)}</strong></span>
+    <span>⏰ Punctuality: <strong className="text-slate-700">{review.rating_punctuality.toFixed(1)}</strong></span>
+  </div>
+
+  {/* Optional comment only — NO student name, NO date */}
+  {review.comment && review.comment.trim() !== '' && (
+    <p className="text-sm text-slate-600 leading-relaxed pl-3 border-l-2 border-slate-200">
+      {review.comment}
+    </p>
+  )}
+</div>
+```
+
+### B4: Instructor Profile Page Layout
+
+In `app/(main)/instructors/[id]/page.tsx`:
+
+**Header (no duplicate SCORE card):**
+```typescript
+<div className="bg-white border-b border-slate-100 px-6 py-6">
+  <div className="max-w-5xl mx-auto flex items-start gap-5">
+    <div className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
+      style={{ background: '#f97316' }}>
+      {instructor.full_name.charAt(0)}
+    </div>
+    <div className="flex-1">
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-2xl font-bold text-slate-800">{instructor.full_name}</h1>
+        <InstructorBadge isClaimed={instructor.is_claimed} />
+      </div>
+      <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+        <span>🎾 Tennis</span>
+        {instructor.teaching_locations && (
+          <span>📍 {instructor.teaching_locations}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-4 mt-3 flex-wrap">
+        <span className="text-2xl font-bold" style={{ color: '#f97316' }}>
+          ⭐ {instructor.avg_overall?.toFixed(1) ?? '—'}
+        </span>
+        <span className="text-sm text-slate-400">{instructor.total_reviews} reviews</span>
+        <span className="text-sm text-slate-400">✓ {instructor.total_verified_sessions} verified sessions</span>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+**Two-column layout:**
+```typescript
+<div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+  {/* Left: About + Reviews */}
+  <div className="lg:col-span-2 flex flex-col gap-6">
+    {/* About section */}
+    {/* Reviews section with privacy note */}
+    <p className="text-xs text-slate-400 mb-3">
+      🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+    </p>
+    {/* ReviewCard components */}
+  </div>
+
+  {/* Right: Score Triangle (sticky) */}
+  <div className="lg:col-span-1">
+    <div className="sticky top-6">
+      <ScoreTriangle
+        value={instructor.avg_value}
+        effectiveness={instructor.avg_effectiveness}
+        punctuality={instructor.avg_punctuality}
+        reviewCount={instructor.total_reviews}
+      />
+    </div>
+  </div>
+</div>
+```
+
+### B5: Reviews Visibility Gate
+
+```typescript
+// If instructor has fewer than 3 reviews, show pending message instead of reviews
+{instructor.reviews_visible ? (
+  <div className="flex flex-col gap-3">
+    {reviews.map(review => <ReviewCard key={review.id} review={review} />)}
+  </div>
+) : (
+  <div className="bg-slate-50 rounded-xl p-6 text-center">
+    <p className="text-sm text-slate-500">
+      Reviews pending — collecting feedback to protect reviewer privacy
+    </p>
+    <p className="text-xs text-slate-400 mt-1">
+      Reviews are shown once 3 or more have been collected
+    </p>
+  </div>
+)}
+```
+
+### B6: Instructor Search Page
+
+- Remove Specialties/sport filter completely
+- Keep only: name search + location filter
+- Location filter shows Westchester County locations only:
+  Scarsdale · White Plains · Rye · Harrison · Mamaroneck · Bronxville · Larchmont · New Rochelle · Tarrytown · Pound Ridge · Bedford
+- If instructor has no teaching_locations: show nothing (no placeholder)
+- Sort: highest avg_overall first by default
+
+### B7: Rankings Page
+
+- Title: "Westchester Tennis Rankings"
+- Subtitle: "Platform rankings based on verified student reviews — updated regularly."
+- Tab: "Westchester Top Instructors"
+- Only show instructors with total_reviews > 0 OR list all instructors ordered by avg_overall
+- All data comes from Supabase — NO hardcoded mock names
+
+### B8: Homepage Stats
+
+Replace hardcoded stats with real counts from Supabase:
+
+```typescript
+// Fetch real counts
+const { count: instructorCount } = await supabase
+  .from('instructors')
+  .select('*', { count: 'exact', head: true })
+
+const { count: reviewCount } = await supabase
+  .from('reviews')
+  .select('*', { count: 'exact', head: true })
+  .eq('moderation_status', 'approved')
+
+// Display:
+// "{instructorCount} Instructors"
+// "{reviewCount} Reviews"
+// "3 Dimensions Rated"  ← this one can stay hardcoded
+```
+
+---
+
+## ✅ Done When:
+- [ ] All orange colors (#f97316) replace blue (#1668c8) throughout
+- [ ] Buttons, links, accents, score indicators all orange
+- [ ] scoreColor() returns orange for high scores (≥4.0)
+- [ ] Triangle chart uses orange fill and dots
+- [ ] Progress bars use scoreColor() per dimension (orange/amber/red)
+- [ ] Review cards have colored left border (orange/amber/red)
+- [ ] NO student name or date on any review card
+- [ ] Instructor profile shows "Claimed" or "Unclaimed" badge (NOT "Verified")
+- [ ] No duplicate SCORE card on instructor profile
+- [ ] Triangle chart visible in right column, sticky on scroll
+- [ ] Value label not overlapping Score Breakdown title
+- [ ] Reviews hidden until instructor has 3+ reviews (shows pending message)
+- [ ] No location shown if instructor hasn't set teaching_locations
+- [ ] No Specialties filter on search page
+- [ ] Rankings page shows real Supabase data only
+- [ ] Homepage stats show real counts from Supabase
+
+**Do not proceed to Prompt #12 until all checkboxes above are complete.**

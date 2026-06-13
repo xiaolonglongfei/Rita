@@ -21,6 +21,11 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/instructors/page.js"
     ],
+    "/api/instructors/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/instructors/route.js"
+    ],
     "/(auth)/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -31,35 +36,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(auth)/signup/page.js"
     ],
-    "/api/instructors/route": [
+    "/(main)/instructors/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/instructors/route.js"
+      "static/chunks/app/(main)/instructors/[id]/page.js"
     ],
-    "/api/rankings/public/route": [
+    "/(main)/ranking/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/rankings/public/route.js"
-    ],
-    "/api/moderation/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/moderation/route.js"
-    ],
-    "/api/reviews/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/reviews/route.js"
-    ],
-    "/api/sessions/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/sessions/route.js"
-    ],
-    "/api/notifications/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/notifications/route.js"
+      "static/chunks/app/(main)/ranking/page.js"
     ]
   }
 }

@@ -2,22 +2,34 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MapPin, Star, CheckCircle2, Search } from "lucide-react";
+import { MapPin, Search, ChevronDown } from "lucide-react";
+
+const WESTCHESTER_LOCATIONS = [
+  "Scarsdale",
+  "White Plains",
+  "Rye",
+  "Harrison",
+  "Mamaroneck",
+  "Bronxville",
+  "Larchmont",
+  "New Rochelle",
+  "Tarrytown",
+  "Pound Ridge",
+  "Bedford",
+];
 
 type Instructor = {
   id: string;
   name: string;
-  bio: string | null;
-  photoUrl: string | null;
   location: string | null;
   claimed: boolean;
-  avgScore: number;
+  avgScore: number | null;
   reviewCount: number;
 };
 
 function scoreColor(s: number) {
-  if (s >= 4.5) return "#1668c8";
-  if (s >= 3.5) return "#c89000";
+  if (s >= 4.0) return "#f97316";
+  if (s >= 2.5) return "#c89000";
   return "#c83030";
 }
 
@@ -25,12 +37,14 @@ export default function InstructorsPage() {
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
+  const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ limit: "20" });
+    const params = new URLSearchParams({ limit: "50" });
     if (search) params.set("search", search);
+    if (location) params.set("location", location);
     fetch(`/api/instructors?${params}`)
       .then((r) => r.json())
       .then((d) => {
@@ -38,7 +52,7 @@ export default function InstructorsPage() {
         setTotal(d.total ?? 0);
         setLoading(false);
       });
-  }, [search]);
+  }, [search, location]);
 
   return (
     <div>
@@ -47,16 +61,32 @@ export default function InstructorsPage() {
         <p className="text-rita-gray">Find and vet top-tier coaches based on real athlete data.</p>
       </div>
 
-      <div className="flex gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by name…"
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rita-blue"
+            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rita-primary"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+
+        <div className="relative">
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <select
+            className="appearance-none pl-4 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rita-primary bg-white text-slate-700"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          >
+            <option value="">All Locations</option>
+            {WESTCHESTER_LOCATIONS.map((loc) => (
+              <option key={loc} value={loc}>
+                {loc}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -74,17 +104,23 @@ export default function InstructorsPage() {
               <Link
                 key={i.id}
                 href={`/instructors/${i.id}`}
-                className="flex items-center gap-4 p-5 border border-slate-100 rounded-2xl hover:border-rita-blue hover:shadow-sm transition-all bg-white"
+                className="flex items-center gap-4 p-5 border border-slate-100 rounded-2xl hover:border-rita-primary hover:shadow-sm transition-all bg-white"
               >
-                <div className="w-12 h-12 rounded-xl bg-rita-blue-light flex items-center justify-center text-rita-blue font-bold text-lg flex-shrink-0">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
+                  style={{ background: "#f97316" }}
+                >
                   {i.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <span className="font-bold text-rita-charcoal">{i.name}</span>
                     {i.claimed && (
-                      <span className="inline-flex items-center gap-1 text-xs text-rita-blue bg-rita-blue-light px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="h-3 w-3" /> Claimed
+                      <span
+                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold"
+                        style={{ background: "#fff7ed", color: "#f97316", border: "1px solid #fed7aa" }}
+                      >
+                        ✓ Claimed
                       </span>
                     )}
                   </div>
@@ -94,7 +130,7 @@ export default function InstructorsPage() {
                     </p>
                   )}
                 </div>
-                {i.reviewCount > 0 ? (
+                {i.reviewCount > 0 && i.avgScore != null ? (
                   <div className="text-right flex-shrink-0">
                     <div
                       className="text-xl font-extrabold"
@@ -102,8 +138,7 @@ export default function InstructorsPage() {
                     >
                       {i.avgScore.toFixed(1)}
                     </div>
-                    <div className="text-xs text-slate-400 flex items-center justify-end gap-0.5">
-                      <Star className="h-3 w-3" />
+                    <div className="text-xs text-slate-400">
                       {i.reviewCount} {i.reviewCount === 1 ? "review" : "reviews"}
                     </div>
                   </div>

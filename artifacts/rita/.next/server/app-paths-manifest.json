@@ -1,12 +1,9 @@
 {
   "/api/instructors/route": "app/api/instructors/route.js",
-  "/api/rankings/public/route": "app/api/rankings/public/route.js",
-  "/api/moderation/route": "app/api/moderation/route.js",
-  "/api/reviews/route": "app/api/reviews/route.js",
-  "/api/sessions/route": "app/api/sessions/route.js",
-  "/api/notifications/route": "app/api/notifications/route.js",
   "/page": "app/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
   "/(auth)/signup/page": "app/(auth)/signup/page.js",
-  "/(main)/instructors/page": "app/(main)/instructors/page.js"
+  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js",
+  "/(main)/instructors/page": "app/(main)/instructors/page.js",
+  "/(main)/ranking/page": "app/(main)/ranking/page.js"
 }

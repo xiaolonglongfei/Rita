@@ -1,6 +1,23 @@
 import Link from "next/link";
+import { createServiceClient } from "@/lib/supabase/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = createServiceClient();
+
+  const [{ count: instructorCount }, { count: reviewCount }] = await Promise.all([
+    supabase.from("instructors").select("*", { count: "exact", head: true }),
+    supabase
+      .from("reviews")
+      .select("*", { count: "exact", head: true })
+      .eq("moderation_status", "approved"),
+  ]);
+
+  const stats = [
+    { label: "Instructors", value: String(instructorCount ?? 0) },
+    { label: "Reviews", value: String(reviewCount ?? 0) },
+    { label: "Dimensions Rated", value: "3" },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
       <nav className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
@@ -21,7 +38,7 @@ export default function HomePage() {
           </Link>
           <Link
             href="/signup"
-            className="text-sm bg-rita-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-rita-blue-dark transition-colors"
+            className="text-sm bg-rita-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-rita-primary-dark transition-colors"
           >
             Sign Up
           </Link>
@@ -35,7 +52,10 @@ export default function HomePage() {
         <h1 className="text-5xl font-extrabold text-rita-charcoal leading-tight mb-6">
           Find the right tennis<br />
           instructor for{" "}
-          <span className="text-rita-blue underline decoration-rita-lime decoration-4 underline-offset-4">
+          <span
+            className="underline decoration-rita-lime decoration-4 underline-offset-4"
+            style={{ color: "#f97316" }}
+          >
             you or your child
           </span>
           .
@@ -47,7 +67,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/instructors"
-            className="bg-rita-blue text-white font-bold px-8 py-4 rounded-xl text-base hover:bg-rita-blue-dark transition-colors"
+            className="bg-rita-primary text-white font-bold px-8 py-4 rounded-xl text-base hover:bg-rita-primary-dark transition-colors"
           >
             Browse Instructors →
           </Link>
@@ -60,13 +80,11 @@ export default function HomePage() {
         </div>
 
         <div className="mt-24 grid grid-cols-3 gap-8 text-center">
-          {[
-            { label: "Instructors", value: "10+" },
-            { label: "Verified Reviews", value: "12" },
-            { label: "Dimensions Rated", value: "3" },
-          ].map((stat) => (
+          {stats.map((stat) => (
             <div key={stat.label} className="bg-rita-gray-light rounded-2xl p-6">
-              <div className="text-3xl font-extrabold text-rita-blue mb-1">{stat.value}</div>
+              <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
+                {stat.value}
+              </div>
               <div className="text-sm text-rita-gray">{stat.label}</div>
             </div>
           ))}

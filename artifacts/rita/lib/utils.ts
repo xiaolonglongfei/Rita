@@ -6,9 +6,15 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function scoreColor(score: number): string {
-  if (score >= 4.5) return "#1668c8";
-  if (score >= 3.5) return "#c89000";
+  if (score >= 4.0) return "#f97316";
+  if (score >= 2.5) return "#c89000";
   return "#c83030";
+}
+
+export function scoreBg(score: number): string {
+  if (score >= 4.0) return "#fff7ed";
+  if (score >= 2.5) return "#fdf3dc";
+  return "#fde8e8";
 }
 
 export function scoreLabel(score: number): string {
