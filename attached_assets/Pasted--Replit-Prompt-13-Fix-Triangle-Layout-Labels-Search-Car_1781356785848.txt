@@ -1,0 +1,181 @@
+# Replit Prompt #13 — Fix Triangle Layout + Labels + Search Cards
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #14 until this step is verified.
+
+---
+
+## Three Problems to Fix
+
+1. Score Triangle is not in a proper right column — it appears beside "About" instead of being in a dedicated sticky right column
+2. Triangle axis labels are truncated ("Punc." "Eff.") — should show full emoji + text
+3. Instructor search cards show "No reviews yet" text in wrong position — should show a clean subtle gray label
+
+---
+
+## Fix 1: Instructor Profile — Correct Two-Column Layout
+
+In `app/(main)/instructors/[id]/page.tsx`, replace the entire page body below the header with this exact layout:
+
+```typescript
+{/* Page body — two column grid */}
+<div className="max-w-5xl mx-auto px-4 py-8">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+    {/* LEFT COLUMN: About + Reviews (takes 2/3 of width) */}
+    <div className="lg:col-span-2 flex flex-col gap-8">
+
+      {/* About */}
+      <section>
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+          About
+        </h2>
+        <p className="text-sm text-slate-700 leading-relaxed">
+          {instructor.bio ?? 'No bio available.'}
+        </p>
+      </section>
+
+      {/* Reviews */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+            Recent Reviews
+          </h2>
+          <a
+            href={`/reviews/new?instructor_id=${instructor.id}`}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+            style={{ background: '#f97316' }}
+          >
+            Write a Review
+          </a>
+        </div>
+
+        <p className="text-xs text-slate-400 mb-4">
+          🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+        </p>
+
+        {instructor.reviews_visible ? (
+          <div className="flex flex-col gap-3">
+            {reviews?.map(review => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-slate-50 rounded-xl p-6 text-center border border-slate-100">
+            <p className="text-sm text-slate-500 font-medium">
+              Reviews pending — collecting feedback to protect reviewer privacy
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Reviews are shown once 3 or more have been collected
+            </p>
+          </div>
+        )}
+      </section>
+
+    </div>
+
+    {/* RIGHT COLUMN: Score Triangle (takes 1/3 of width, sticky) */}
+    <div className="lg:col-span-1">
+      <div className="sticky top-6">
+        <ScoreTriangle
+          value={instructor.avg_value ?? 0}
+          effectiveness={instructor.avg_effectiveness ?? 0}
+          punctuality={instructor.avg_punctuality ?? 0}
+          reviewCount={instructor.total_reviews ?? 0}
+        />
+      </div>
+    </div>
+
+  </div>
+</div>
+```
+
+---
+
+## Fix 2: Triangle Axis Labels — Full Text, Not Truncated
+
+In `components/shared/ScoreTriangle.tsx`, update the LABELS array and ensure they render fully:
+
+```typescript
+// REMOVE:
+// ❌ const LABELS = ['Value', 'Eff.', 'Punc.']
+// ❌ const LABELS = ['Value', 'Effectiveness', 'Punctuality']
+
+// REPLACE WITH — emoji + full label:
+const LABELS = ['💰 Value', '📈 Effectiveness', '⏰ Punctuality']
+
+// IMPORTANT: The SVG needs enough space for the full labels.
+// Update SVG dimensions:
+// width="280" height="260" viewBox="0 0 280 260"
+// CX = 140, CY = 130, R = 90
+
+const CX = 140, CY = 130, R = 90
+
+// Update label offsets to give more breathing room:
+const LABEL_OFFSETS = [
+  { dx: 0, dy: -28 },    // 💰 Value — top, more space above
+  { dx: 28, dy: 18 },    // 📈 Effectiveness — bottom right
+  { dx: -28, dy: 18 },   // ⏰ Punctuality — bottom left
+]
+
+// Label font size: 11px (keep small so it fits)
+<text
+  fontSize="11"
+  fontWeight="600"
+  fill="#1e2a38"
+  textAnchor="middle"
+  fontFamily="-apple-system, sans-serif"
+>
+  {LABELS[i]}
+</text>
+
+// Also update the SVG element:
+<svg width="280" height="260" viewBox="0 0 280 260">
+```
+
+---
+
+## Fix 3: Instructor Search Cards — Clean "No reviews yet" Display
+
+In `components/instructor/InstructorCard.tsx`, update how the review count is displayed on search result cards:
+
+```typescript
+// REMOVE any awkward "No reviews yet" text placement
+
+// REPLACE WITH this clean display:
+<div className="flex items-center justify-between mt-2">
+  <div className="flex items-center gap-2">
+    {instructor.total_reviews > 0 ? (
+      <>
+        <span className="font-bold" style={{ color: '#f97316' }}>
+          ⭐ {instructor.avg_overall?.toFixed(1)}
+        </span>
+        <span className="text-xs text-slate-400">
+          {instructor.total_reviews} {instructor.total_reviews === 1 ? 'review' : 'reviews'}
+        </span>
+      </>
+    ) : (
+      <span className="text-xs text-slate-400 italic">No reviews yet</span>
+    )}
+  </div>
+</div>
+```
+
+This means:
+- If instructor HAS reviews → show orange star + score + review count (e.g. "⭐ 4.7 · 23 reviews")
+- If instructor has NO reviews → show subtle gray italic "No reviews yet"
+- In both cases, the text is right-aligned to the card, clean and minimal
+
+---
+
+## ✅ Done When:
+- [ ] Instructor Profile has clear two-column layout: About+Reviews on LEFT, Triangle on RIGHT
+- [ ] Score Breakdown card is in the RIGHT column, NOT beside About section
+- [ ] Score Breakdown is sticky (stays visible when scrolling reviews)
+- [ ] Triangle labels show full text: "💰 Value", "📈 Effectiveness", "⏰ Punctuality"
+- [ ] No truncated labels ("Punc.", "Eff.", etc.)
+- [ ] SVG is wide enough (280px) that labels don't get cut off
+- [ ] Search cards show "⭐ 4.7 · 23 reviews" when instructor has reviews
+- [ ] Search cards show subtle gray "No reviews yet" when no reviews
+- [ ] "No reviews yet" is NOT displayed in a prominent or awkward position on cards
+
+**Do not proceed to Prompt #14 until all checkboxes above are complete.**

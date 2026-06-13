@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { ScoreTriangle } from "@/components/shared/ScoreTriangle";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { InstructorBadge } from "@/components/instructor/InstructorBadge";
-import Link from "next/link";
 
 export default async function InstructorProfilePage({
   params,
@@ -76,62 +75,74 @@ export default async function InstructorProfilePage({
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: About + Reviews */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {instructor.bio && (
-            <div className="bg-white rounded-2xl border border-slate-100 p-5">
-              <h2 className="text-sm font-bold text-rita-charcoal mb-2">About</h2>
-              <p className="text-sm text-rita-gray leading-relaxed">{instructor.bio}</p>
-            </div>
-          )}
+      {/* Page body — two-column grid */}
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-rita-charcoal">Reviews</h2>
-              <Link
-                href={`/reviews/new?instructorId=${instructor.id}`}
-                className="text-sm font-semibold px-4 py-2 rounded-lg text-white transition-colors"
-                style={{ background: "#f97316" }}
-              >
-                Write a Review
-              </Link>
-            </div>
+          {/* LEFT COLUMN: About + Reviews (2/3 width) */}
+          <div className="lg:col-span-2 flex flex-col gap-8">
 
-            <p className="text-xs text-slate-400 mb-3">
-              🔒 All reviews are anonymous. Reviewer identities are never disclosed.
-            </p>
+            {/* About */}
+            <section>
+              <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+                About
+              </h2>
+              <p className="text-sm text-slate-700 leading-relaxed">
+                {instructor.bio ?? "No bio available."}
+              </p>
+            </section>
 
-            {reviewsVisible ? (
-              <div className="flex flex-col gap-3">
-                {enrichedReviews.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
-                ))}
+            {/* Reviews */}
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                  Recent Reviews
+                </h2>
+                <a
+                  href={`/reviews/new?instructor_id=${instructor.id}`}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+                  style={{ background: "#f97316" }}
+                >
+                  Write a Review
+                </a>
               </div>
-            ) : (
-              <div className="bg-slate-50 rounded-xl p-6 text-center">
-                <p className="text-sm text-slate-500">
-                  Reviews pending — collecting feedback to protect reviewer privacy
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Reviews are shown once 3 or more have been collected
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Right: Score Triangle (sticky) */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-6">
-            <ScoreTriangle
-              value={instructor.avg_value ?? null}
-              effectiveness={instructor.avg_effectiveness ?? null}
-              punctuality={instructor.avg_punctuality ?? null}
-              reviewCount={instructor.total_reviews ?? 0}
-            />
+              <p className="text-xs text-slate-400 mb-4">
+                🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+              </p>
+
+              {reviewsVisible ? (
+                <div className="flex flex-col gap-3">
+                  {enrichedReviews.map((review) => (
+                    <ReviewCard key={review.id} review={review} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-slate-50 rounded-xl p-6 text-center border border-slate-100">
+                  <p className="text-sm text-slate-500 font-medium">
+                    Reviews pending — collecting feedback to protect reviewer privacy
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Reviews are shown once 3 or more have been collected
+                  </p>
+                </div>
+              )}
+            </section>
+
           </div>
+
+          {/* RIGHT COLUMN: Score Triangle (1/3 width, sticky) */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-6">
+              <ScoreTriangle
+                value={instructor.avg_value ?? 0}
+                effectiveness={instructor.avg_effectiveness ?? 0}
+                punctuality={instructor.avg_punctuality ?? 0}
+                reviewCount={instructor.total_reviews ?? 0}
+              />
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

@@ -130,21 +130,20 @@ export default function InstructorsPage() {
                     </p>
                   )}
                 </div>
-                {i.reviewCount > 0 && i.avgScore != null ? (
-                  <div className="text-right flex-shrink-0">
-                    <div
-                      className="text-xl font-extrabold"
-                      style={{ color: scoreColor(i.avgScore) }}
-                    >
-                      {i.avgScore.toFixed(1)}
+                <div className="flex-shrink-0 text-right">
+                  {i.reviewCount > 0 && i.avgScore != null ? (
+                    <div>
+                      <span className="font-bold text-base" style={{ color: "#f97316" }}>
+                        ⭐ {i.avgScore.toFixed(1)}
+                      </span>
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        {i.reviewCount} {i.reviewCount === 1 ? "review" : "reviews"}
+                      </div>
                     </div>
-                    <div className="text-xs text-slate-400">
-                      {i.reviewCount} {i.reviewCount === 1 ? "review" : "reviews"}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs text-slate-300 flex-shrink-0">No reviews yet</div>
-                )}
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">No reviews yet</span>
+                  )}
+                </div>
               </Link>
             ))}
           </div>
