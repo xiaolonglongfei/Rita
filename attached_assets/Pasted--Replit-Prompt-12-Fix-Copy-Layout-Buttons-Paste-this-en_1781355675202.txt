@@ -1,0 +1,214 @@
+# Replit Prompt #12 — Fix Copy + Layout + Buttons
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #13 until this step is verified.
+
+---
+
+## Four Problems to Fix
+
+1. Homepage second CTA button says "Write a Review" — should say "I'm an Instructor"
+2. Instructor Search page title and subtitle are wrong
+3. Instructor Profile Score Breakdown is on the left — should be on the right in a sticky column
+4. Score Breakdown shows "No reviews yet" text — should show the triangle chart always (with zero/empty state when no data)
+
+---
+
+## Fix 1: Homepage Buttons
+
+In `app/(main)/page.tsx`, update the two CTA buttons:
+
+```typescript
+// REMOVE:
+// ❌ "Write a Review" button
+
+// REPLACE WITH these exact two buttons:
+<div className="flex gap-4 justify-center flex-wrap mt-8">
+  <a
+    href="/instructors"
+    className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-white font-bold text-base"
+    style={{ background: '#f97316' }}
+  >
+    Browse Instructors →
+  </a>
+  <a
+    href="/signup?role=instructor"
+    className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-base border-2"
+    style={{ borderColor: '#1e2a38', color: '#1e2a38', background: 'transparent' }}
+  >
+    I'm an Instructor
+  </a>
+</div>
+```
+
+---
+
+## Fix 2: Instructor Search Page Copy
+
+In `app/(main)/instructors/page.tsx`, update the page title and subtitle:
+
+```typescript
+// REMOVE:
+// ❌ "Scout Instructors"
+// ❌ "Find and vet top-tier coaches based on real athlete data."
+
+// REPLACE WITH:
+<div className="mb-6">
+  <h1 className="text-2xl font-bold text-slate-800">Find a Tennis Instructor</h1>
+  <p className="text-sm text-slate-500 mt-1">
+    Browse verified instructors in Westchester County
+  </p>
+</div>
+```
+
+---
+
+## Fix 3: Instructor Profile — Move Score Breakdown to Right Column
+
+In `app/(main)/instructors/[id]/page.tsx`, update the page layout to a two-column grid:
+
+```typescript
+// REMOVE the current single-column or left-side Score Breakdown layout
+
+// REPLACE WITH this two-column layout:
+<div className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+  {/* LEFT COLUMN: About + Reviews (2/3 width) */}
+  <div className="lg:col-span-2 flex flex-col gap-6">
+
+    {/* About section */}
+    <div>
+      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">About</h2>
+      <p className="text-sm text-slate-700 leading-relaxed">{instructor.bio}</p>
+    </div>
+
+    {/* Reviews section */}
+    <div>
+      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Recent Reviews</h2>
+      <p className="text-xs text-slate-400 mb-3">
+        🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+      </p>
+
+      {instructor.reviews_visible ? (
+        <div className="flex flex-col gap-3">
+          {reviews.map(review => (
+            <ReviewCard key={review.id} review={review} />
+          ))}
+        </div>
+      ) : (
+        <div className="bg-slate-50 rounded-xl p-6 text-center">
+          <p className="text-sm text-slate-500">
+            Reviews pending — collecting feedback to protect reviewer privacy
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Reviews are shown once 3 or more have been collected
+          </p>
+        </div>
+      )}
+    </div>
+
+  </div>
+
+  {/* RIGHT COLUMN: Score Triangle (1/3 width, sticky) */}
+  <div className="lg:col-span-1">
+    <div className="sticky top-6">
+      <ScoreTriangle
+        value={instructor.avg_value ?? 0}
+        effectiveness={instructor.avg_effectiveness ?? 0}
+        punctuality={instructor.avg_punctuality ?? 0}
+        reviewCount={instructor.total_reviews ?? 0}
+      />
+    </div>
+  </div>
+
+</div>
+```
+
+---
+
+## Fix 4: Score Triangle — Always Show, Handle Zero State
+
+In `components/shared/ScoreTriangle.tsx`, update the component to always render even when scores are 0:
+
+```typescript
+export function ScoreTriangle({ value, effectiveness, punctuality, reviewCount }: ScoreTriangleProps) {
+  // Use 0 as default — triangle will appear as a dot at center when no data
+  const v = value ?? 0
+  const e = effectiveness ?? 0
+  const p = punctuality ?? 0
+  const overall = ((v + e + p) / 3)
+  const hasData = reviewCount > 0
+
+  // ... rest of triangle SVG code stays the same ...
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest text-center mb-4">
+        Score Breakdown
+      </p>
+
+      {/* Always show triangle SVG */}
+      <div className="flex justify-center mb-4">
+        {/* Triangle SVG here — same as before */}
+      </div>
+
+      {/* Overall score — show dash if no reviews yet */}
+      <div className="text-center mb-5 pb-5 border-b border-slate-100">
+        <div
+          className="text-6xl font-bold leading-none"
+          style={{ color: hasData ? scoreColor(overall) : '#cbd5e1' }}
+        >
+          {hasData ? overall.toFixed(1) : '—'}
+        </div>
+        <div className="text-xs text-slate-400 mt-2">
+          {hasData ? `Overall Score · ${reviewCount} reviews` : 'No reviews yet'}
+        </div>
+      </div>
+
+      {/* Score bars — show empty bars if no data */}
+      <div className="flex flex-col gap-3">
+        {[
+          { label: '💰 Value', score: v },
+          { label: '📈 Effectiveness', score: e },
+          { label: '⏰ Punctuality', score: p },
+        ].map(({ label, score }) => (
+          <div key={label} className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-500 w-28 flex-shrink-0">
+              {label}
+            </span>
+            <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: hasData ? `${(score / 5) * 100}%` : '0%',
+                  background: hasData ? scoreColor(score) : '#cbd5e1',
+                }}
+              />
+            </div>
+            <span
+              className="text-sm font-bold w-8 text-right"
+              style={{ color: hasData ? scoreColor(score) : '#cbd5e1' }}
+            >
+              {hasData ? score.toFixed(1) : '—'}
+            </span>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  )
+}
+```
+
+---
+
+## ✅ Done When:
+- [ ] Homepage has "Browse Instructors" + "I'm an Instructor" buttons (NOT "Write a Review")
+- [ ] Instructor Search page title reads "Find a Tennis Instructor"
+- [ ] Instructor Search subtitle reads "Browse verified instructors in Westchester County"
+- [ ] Instructor Profile has two-column layout (About+Reviews left, Triangle right)
+- [ ] Score Breakdown is in the RIGHT sticky column
+- [ ] Score Breakdown always shows (triangle + bars), even when no reviews
+- [ ] When no reviews: scores show "—", bars are empty gray, overall shows "—"
+- [ ] When reviews exist: scores show correctly with orange/amber/red colors
+
+**Do not proceed to Prompt #13 until all checkboxes above are complete.**

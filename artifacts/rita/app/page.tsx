@@ -64,19 +64,21 @@ export default async function HomePage() {
           Real reviews from real students in Westchester County — honest,
           anonymous, and verified.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
+        <div className="flex gap-4 justify-center flex-wrap mt-8">
+          <a
             href="/instructors"
-            className="bg-rita-primary text-white font-bold px-8 py-4 rounded-xl text-base hover:bg-rita-primary-dark transition-colors"
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-xl text-white font-bold text-base"
+            style={{ background: "#f97316" }}
           >
             Browse Instructors →
-          </Link>
-          <Link
-            href="/signup"
-            className="bg-rita-charcoal text-white font-bold px-8 py-4 rounded-xl text-base hover:bg-slate-700 transition-colors"
+          </a>
+          <a
+            href="/signup?role=instructor"
+            className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-base border-2"
+            style={{ borderColor: "#1e2a38", color: "#1e2a38", background: "transparent" }}
           >
-            Write a Review
-          </Link>
+            I'm an Instructor
+          </a>
         </div>
 
         <div className="mt-24 grid grid-cols-3 gap-8 text-center">

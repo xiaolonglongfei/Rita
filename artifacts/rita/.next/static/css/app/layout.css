@@ -605,6 +605,12 @@ video {
 .mt-1 {
   margin-top: 0.25rem;
 }
+.mt-8 {
+  margin-top: 2rem;
+}
+.mb-5 {
+  margin-bottom: 1.25rem;
+}
 .block {
   display: block;
 }
@@ -665,6 +671,9 @@ video {
 .h-full {
   height: 100%;
 }
+.h-2 {
+  height: 0.5rem;
+}
 .min-h-screen {
   min-height: 100vh;
 }
@@ -700,6 +709,9 @@ video {
 }
 .w-32 {
   width: 8rem;
+}
+.w-28 {
+  width: 7rem;
 }
 .min-w-0 {
   min-width: 0px;
@@ -846,6 +858,9 @@ video {
 }
 .border {
   border-width: 1px;
+}
+.border-2 {
+  border-width: 2px;
 }
 .border-b {
   border-bottom-width: 1px;
@@ -1022,6 +1037,10 @@ video {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
 }
+.px-7 {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
 .pl-10 {
   padding-left: 2.5rem;
 }
@@ -1039,6 +1058,9 @@ video {
 }
 .pr-10 {
   padding-right: 2.5rem;
+}
+.pb-5 {
+  padding-bottom: 1.25rem;
 }
 .text-center {
   text-align: center;
@@ -1106,8 +1128,14 @@ video {
 .leading-tight {
   line-height: 1.25;
 }
+.leading-none {
+  line-height: 1;
+}
 .tracking-wide {
   letter-spacing: 0.025em;
+}
+.tracking-widest {
+  letter-spacing: 0.1em;
 }
 .text-green-700 {
   --tw-text-opacity: 1;
@@ -1213,6 +1241,9 @@ video {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+.duration-500 {
+  transition-duration: 500ms;
 }
 
 :root {

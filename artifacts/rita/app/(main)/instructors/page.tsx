@@ -56,9 +56,9 @@ export default function InstructorsPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-rita-charcoal mb-2">Scout Instructors</h1>
-        <p className="text-rita-gray">Find and vet top-tier coaches based on real athlete data.</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Find a Tennis Instructor</h1>
+        <p className="text-sm text-slate-500 mt-1">Browse verified instructors in Westchester County</p>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">
