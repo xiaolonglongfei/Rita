@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SignUpPage() {
@@ -11,7 +10,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
+  const [emailSent, setEmailSent] = useState(false);
   const supabase = createClient();
 
   async function handleSignUp() {
@@ -36,8 +35,9 @@ export default function SignUpPage() {
       return;
     }
 
+    // Insert user profile row regardless of confirmation state
     if (data.user) {
-      await supabase.from("users").insert({
+      await supabase.from("users").upsert({
         id: data.user.id,
         email,
         full_name: fullName,
@@ -45,8 +45,39 @@ export default function SignUpPage() {
       });
     }
 
-    router.push("/instructors?welcome=true");
-    router.refresh();
+    if (data.session) {
+      // Email confirmation disabled — session is live immediately
+      // Full reload so middleware reads the fresh session cookie
+      window.location.href = "/instructors?welcome=true";
+    } else {
+      // Supabase requires email confirmation
+      setEmailSent(true);
+      setLoading(false);
+    }
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md shadow-sm text-center">
+          <div className="text-3xl font-bold text-rita-charcoal mb-1">
+            Rita<span className="text-rita-lime">.</span>
+          </div>
+          <p className="text-4xl mt-6 mb-3">📬</p>
+          <h2 className="text-lg font-bold text-slate-800 mb-2">Check your email</h2>
+          <p className="text-sm text-slate-500">
+            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block mt-6 text-sm font-semibold"
+            style={{ color: "#f97316" }}
+          >
+            Back to Login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -103,8 +134,9 @@ export default function SignUpPage() {
 
           <button
             onClick={handleSignUp}
-            disabled={loading || !fullName || !email || !password}
-            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 bg-rita-blue hover:bg-rita-blue-dark transition-colors"
+            disabled={loading}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-colors"
+            style={{ background: "#f97316" }}
           >
             {loading ? "Creating account…" : "Get Started →"}
           </button>
@@ -112,7 +144,7 @@ export default function SignUpPage() {
 
         <p className="text-center text-xs text-slate-400 mt-6">
           Already have an account?{" "}
-          <Link href="/login" className="text-rita-blue font-semibold">
+          <Link href="/login" className="font-semibold" style={{ color: "#f97316" }}>
             Log in
           </Link>
         </p>

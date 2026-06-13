@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -10,7 +9,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const router = useRouter();
   const supabase = createClient();
 
   async function handleLogin() {
@@ -28,8 +26,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/instructors");
-    router.refresh();
+    // Full reload so middleware reads the fresh session cookie
+    window.location.href = "/instructors";
   }
 
   return (
@@ -75,8 +73,9 @@ export default function LoginPage() {
 
           <button
             onClick={handleLogin}
-            disabled={loading || !email || !password}
-            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 bg-rita-blue hover:bg-rita-blue-dark transition-colors"
+            disabled={loading}
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-colors"
+            style={{ background: "#f97316" }}
           >
             {loading ? "Logging in…" : "Log In →"}
           </button>
@@ -84,7 +83,7 @@ export default function LoginPage() {
 
         <p className="text-center text-xs text-slate-400 mt-6">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-rita-blue font-semibold">
+          <Link href="/signup" className="font-semibold" style={{ color: "#f97316" }}>
             Sign up
           </Link>
         </p>
