@@ -1,19 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
-export default function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
-  const router = useRouter();
+interface NavbarProps {
+  initialUser: User | null;
+}
+
+export default function Navbar({ initialUser }: NavbarProps) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    // Sync any client-side auth changes (login on another tab, token refresh, etc.)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
     return () => subscription.unsubscribe();
@@ -21,8 +25,7 @@ export default function Navbar() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    window.location.href = "/";
   }
 
   return (
@@ -33,18 +36,30 @@ export default function Navbar() {
             Rita<span className="text-rita-lime">.</span>
           </Link>
           <div className="hidden sm:flex items-center gap-6">
-            <Link href="/instructors" className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors">
+            <Link
+              href="/instructors"
+              className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
+            >
               Instructors
             </Link>
-            <Link href="/ranking" className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors">
+            <Link
+              href="/ranking"
+              className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
+            >
               Rankings
             </Link>
             {user && (
               <>
-                <Link href="/sessions" className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors">
+                <Link
+                  href="/sessions"
+                  className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
+                >
                   My Sessions
                 </Link>
-                <Link href="/reviews/new" className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors">
+                <Link
+                  href="/reviews/new"
+                  className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
+                >
                   Write Review
                 </Link>
               </>
@@ -55,7 +70,13 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {user ? (
             <>
-              <Link href="/profile" className="text-sm text-rita-gray hover:text-rita-charcoal">
+              <span className="hidden sm:block text-xs text-slate-400 max-w-[140px] truncate">
+                {user.email}
+              </span>
+              <Link
+                href="/profile"
+                className="text-sm text-rita-gray hover:text-rita-charcoal"
+              >
                 Profile
               </Link>
               <button
@@ -67,12 +88,16 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm text-rita-gray hover:text-rita-charcoal">
+              <Link
+                href="/login"
+                className="text-sm text-rita-gray hover:text-rita-charcoal"
+              >
                 Login
               </Link>
               <Link
                 href="/signup"
-                className="text-sm bg-rita-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-rita-blue-dark transition-colors"
+                className="text-sm text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                style={{ background: "#f97316" }}
               >
                 Sign Up
               </Link>

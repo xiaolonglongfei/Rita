@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -26,19 +26,26 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // IMPORTANT: always call getUser() — this refreshes the session token if needed
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
+
+  // /reviews/new and /sessions and /profile are auth-protected; /ranking is public
   const protectedRoutes = ["/sessions", "/reviews", "/profile"];
 
   if (!user && protectedRoutes.some((r) => path.startsWith(r))) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", path);
+    return NextResponse.redirect(loginUrl);
   }
 
   if (path.startsWith("/admin")) {
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
     const { data: userData } = await supabase
       .from("users")
       .select("is_admin")
@@ -53,5 +60,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

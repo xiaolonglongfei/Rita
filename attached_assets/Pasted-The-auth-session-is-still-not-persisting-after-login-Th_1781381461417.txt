@@ -1,0 +1,117 @@
+The auth session is still not persisting after login. The root cause is that the Supabase SSR client is not correctly reading and writing cookies in Next.js App Router.
+
+Please completely replace the Supabase client setup with the official Supabase SSR pattern for Next.js:
+
+1. Replace lib/supabase/client.ts with:
+import { createBrowserClient } from '@supabase/ssr'
+
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+2. Replace lib/supabase/server.ts with:
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export function createClient() {
+  const cookieStore = cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+
+3. Replace middleware.ts with:
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const protectedRoutes = ['/sessions', '/reviews', '/ranking', '/profile']
+  const path = request.nextUrl.pathname
+
+  if (!user && protectedRoutes.some(r => path.startsWith(r))) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  if (path.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    if (!userData?.is_admin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+
+4. Update the login page handler:
+After successful supabase.auth.signInWithPassword(), do NOT use router.push or window.location.href immediately. Instead:
+- Check if there is an error
+- If no error, use window.location.href = '/instructors' for a full page reload
+
+5. Update the navbar to check auth server-side:
+In the main layout (app/(main)/layout.tsx), fetch the user server-side:
+import { createClient } from '@/lib/supabase/server'
+
+const supabase = createClient()
+const { data: { user } } = await supabase.auth.getUser()
+
+Then pass the user to the Navbar component and show:
+- If user exists: show user email/name + Logout button
+- If no user: show Login + Sign Up buttons
+
+6. Also check: in Supabase Dashboard → Authentication → URL Configuration, make sure:
+- Site URL is set to your Replit app URL
+- Redirect URLs includes your Replit app URL
+
+This is the official Supabase SSR pattern for Next.js App Router. Do not use any other approach.
