@@ -1,162 +1,76 @@
-"use client";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { ReviewForm } from "@/components/review/ReviewForm";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Suspense } from "react";
-
-function ScoreSlider({
-  label,
-  value,
-  onChange,
+export default async function NewReviewPage({
+  searchParams,
 }: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
+  searchParams: Promise<{ instructor_id?: string }>;
 }) {
-  return (
-    <div>
-      <div className="flex justify-between mb-1.5">
-        <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-          {label}
-        </label>
-        <span className="text-sm font-bold text-rita-blue">{value.toFixed(1)}</span>
-      </div>
-      <input
-        type="range"
-        min="1"
-        max="5"
-        step="0.5"
-        value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full accent-rita-blue"
-      />
-      <div className="flex justify-between text-xs text-slate-400 mt-0.5">
-        <span>Poor</span>
-        <span>Excellent</span>
-      </div>
-    </div>
-  );
-}
+  const { instructor_id } = await searchParams;
+  const supabase = await createClient();
 
-function NewReviewForm() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const [instructors, setInstructors] = useState<{ id: string; name: string }[]>([]);
-  const [instructorId, setInstructorId] = useState(
-    searchParams.get("instructorId") ?? ""
-  );
-  const [value, setValue] = useState(4);
-  const [effectiveness, setEffectiveness] = useState(4);
-  const [punctuality, setPunctuality] = useState(4);
-  const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    fetch("/api/instructors?limit=100")
-      .then((r) => r.json())
-      .then((d) => setInstructors(d.items ?? []));
-  }, []);
-
-  async function handleSubmit() {
-    setLoading(true);
-    setError("");
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { router.push("/login"); return; }
-
-    const res = await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        instructorId,
-        value,
-        effectiveness,
-        punctuality,
-        comment: comment.trim() || null,
-      }),
-    });
-
-    if (!res.ok) {
-      setError("Failed to submit review. Please try again.");
-      setLoading(false);
-      return;
-    }
-
-    router.push(`/instructors/${instructorId}?reviewed=true`);
+  if (!user) {
+    redirect(
+      `/login?next=/reviews/new${instructor_id ? `?instructor_id=${instructor_id}` : ""}`
+    );
   }
 
-  const overall = ((value + effectiveness + punctuality) / 3).toFixed(1);
+  let instructor: { id: string; full_name: string } | null = null;
+  if (instructor_id) {
+    const { data } = await supabase
+      .from("instructors")
+      .select("id, full_name")
+      .eq("id", instructor_id)
+      .single();
+    instructor = data;
+  }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-3xl font-extrabold text-rita-charcoal mb-2">Write a Review</h1>
-      <p className="text-rita-gray mb-8">
-        Your review is anonymous and will be verified before publishing.
-      </p>
-
-      <div className="bg-white border border-slate-100 rounded-2xl p-6 space-y-6">
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
-            Instructor
-          </label>
-          <select
-            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
-            value={instructorId}
-            onChange={(e) => setInstructorId(e.target.value)}
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-lg mx-auto">
+        {/* Back link */}
+        {instructor && (
+          <a
+            href={`/instructors/${instructor.id}`}
+            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6"
           >
-            <option value="">Select an instructor…</option>
-            {instructors.map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-              </option>
-            ))}
-          </select>
+            ← Back to {instructor.full_name}
+          </a>
+        )}
+
+        {/* Page header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Drag each slider up to rate your instructor
+          </p>
         </div>
 
-        <ScoreSlider label="Value for Money" value={value} onChange={setValue} />
-        <ScoreSlider label="Teaching Effectiveness" value={effectiveness} onChange={setEffectiveness} />
-        <ScoreSlider label="Punctuality" value={punctuality} onChange={setPunctuality} />
-
-        <div className="bg-rita-blue-light rounded-xl p-4 text-center">
-          <div className="text-3xl font-extrabold text-rita-blue">{overall}</div>
-          <div className="text-xs text-rita-gray mt-0.5">Overall Score</div>
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
-            Comment (optional)
-          </label>
-          <textarea
-            placeholder="Share your experience…"
-            rows={4}
-            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue resize-none"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
+        {instructor ? (
+          <ReviewForm
+            instructorId={instructor.id}
+            instructorName={instructor.full_name}
           />
-        </div>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !instructorId}
-          className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 bg-rita-blue hover:bg-rita-blue-dark transition-colors"
-        >
-          {loading ? "Submitting…" : "Submit Review →"}
-        </button>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">
+            <p className="text-slate-500 text-sm mb-4">
+              Find the instructor you want to review:
+            </p>
+            <a
+              href="/instructors"
+              className="inline-block text-white font-semibold px-6 py-3 rounded-xl text-sm"
+              style={{ background: "#f97316" }}
+            >
+              Browse Instructors →
+            </a>
+          </div>
+        )}
       </div>
     </div>
-  );
-}
-
-export default function NewReviewPage() {
-  return (
-    <Suspense>
-      <NewReviewForm />
-    </Suspense>
   );
 }

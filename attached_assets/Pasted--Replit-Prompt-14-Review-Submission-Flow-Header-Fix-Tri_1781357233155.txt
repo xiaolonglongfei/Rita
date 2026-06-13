@@ -1,0 +1,551 @@
+# Replit Prompt #14 — Review Submission Flow + Header Fix + Triangle Labels
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #15 until this step is verified.
+
+---
+
+## Overview
+
+This prompt does three things:
+1. Fix two small UI issues from the previous prompt
+2. Build the complete review submission flow with vertical drag sliders
+
+---
+
+## Fix 1: Instructor Profile Header — Clean Rating Display
+
+In `app/(main)/instructors/[id]/page.tsx`, update the rating display in the header:
+
+```typescript
+// REMOVE: star + dash when no reviews
+// ❌ ⭐ — · 0 reviews
+
+// REPLACE WITH: only show rating if reviews exist
+<div className="flex items-center gap-4 mt-3 flex-wrap">
+  {instructor.total_reviews > 0 ? (
+    <>
+      <span className="text-2xl font-bold" style={{ color: '#f97316' }}>
+        ⭐ {instructor.avg_overall?.toFixed(1)}
+      </span>
+      <span className="text-sm text-slate-400">
+        {instructor.total_reviews} reviews
+      </span>
+      {instructor.total_verified_sessions > 0 && (
+        <span className="text-sm text-slate-400">
+          ✓ {instructor.total_verified_sessions} verified sessions
+        </span>
+      )}
+    </>
+  ) : (
+    <span className="text-sm text-slate-400 italic">No reviews yet</span>
+  )}
+</div>
+```
+
+---
+
+## Fix 2: Triangle Labels — Show Full Emoji + Text
+
+In `components/shared/ScoreTriangle.tsx`, the labels need more horizontal space. Update as follows:
+
+```typescript
+// SVG dimensions — wider to fit full labels
+// width="300" height="270" viewBox="0 0 300 270"
+const CX = 150, CY = 135, R = 88
+
+// Full labels with emoji
+const LABELS = ['💰 Value', '📈 Effectiveness', '⏰ Punctuality']
+
+// Label offsets — push labels further from triangle edges
+const LABEL_OFFSETS = [
+  { dx: 0, dy: -30 },    // top — Value
+  { dx: 32, dy: 20 },    // bottom right — Effectiveness
+  { dx: -32, dy: 20 },   // bottom left — Punctuality
+]
+
+// Render label as TWO lines: emoji on first line, text on second
+// This prevents truncation on narrow displays
+{ANGLES.map((angle, i) => {
+  const tip = getPoint(angle, R + 24)
+  const emoji = ['💰', '📈', '⏰'][i]
+  const text = ['Value', 'Effectiveness', 'Punctuality'][i]
+  return (
+    <g key={i}>
+      <text
+        x={tip.x + LABEL_OFFSETS[i].dx}
+        y={tip.y + LABEL_OFFSETS[i].dy}
+        textAnchor="middle"
+        fontSize="13"
+        fontFamily="-apple-system, sans-serif"
+      >
+        {emoji}
+      </text>
+      <text
+        x={tip.x + LABEL_OFFSETS[i].dx}
+        y={tip.y + LABEL_OFFSETS[i].dy + 14}
+        textAnchor="middle"
+        fontSize="10"
+        fontWeight="600"
+        fill="#1e2a38"
+        fontFamily="-apple-system, sans-serif"
+      >
+        {text}
+      </text>
+    </g>
+  )
+})}
+
+// Update SVG element:
+<svg width="300" height="270" viewBox="0 0 300 270">
+```
+
+---
+
+## Fix 3: Build the Vertical Slider Component
+
+Create `components/review/VerticalSlider.tsx` with this EXACT implementation:
+
+```typescript
+'use client'
+
+import { useRef, useEffect } from 'react'
+
+interface VerticalSliderProps {
+  label: string
+  emoji: string
+  value: number
+  onChange: (value: number) => void
+}
+
+const TRACK_H = 220
+const THUMB_H = 44
+
+function scoreColor(v: number): string {
+  if (v >= 4.0) return '#f97316'
+  if (v >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+export function VerticalSlider({ label, emoji, value, onChange }: VerticalSliderProps) {
+  const trackRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const color = scoreColor(value)
+  const pct = value / 5
+  const fillH = pct * TRACK_H
+  const thumbBottom = pct * (TRACK_H - THUMB_H)
+
+  function valFromClientY(clientY: number): number {
+    if (!trackRef.current) return value
+    const rect = trackRef.current.getBoundingClientRect()
+    const relY = clientY - rect.top - THUMB_H / 2
+    const usable = TRACK_H - THUMB_H
+    const raw = (1 - relY / usable) * 5
+    return Math.max(0, Math.min(5, Math.round(raw * 10) / 10))
+  }
+
+  useEffect(() => {
+    function onMouseMove(e: MouseEvent) {
+      if (dragging.current) onChange(valFromClientY(e.clientY))
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (dragging.current) {
+        e.preventDefault()
+        onChange(valFromClientY(e.touches[0].clientY))
+      }
+    }
+    function onUp() { dragging.current = false }
+
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onUp)
+    document.addEventListener('touchmove', onTouchMove, { passive: false })
+    document.addEventListener('touchend', onUp)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onUp)
+      document.removeEventListener('touchmove', onTouchMove)
+      document.removeEventListener('touchend', onUp)
+    }
+  }, [value])
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      {/* Score number above */}
+      <div className="text-2xl font-bold transition-colors duration-200" style={{ color }}>
+        {value.toFixed(1)}
+      </div>
+
+      {/* Track */}
+      <div
+        ref={trackRef}
+        className="relative cursor-pointer select-none"
+        style={{ width: 52, height: TRACK_H }}
+        onClick={e => onChange(valFromClientY(e.clientY))}
+      >
+        {/* Background track */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full"
+          style={{ width: 18, height: TRACK_H, background: '#fff7ed' }}
+        />
+
+        {/* Fill */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full bottom-0 transition-colors duration-200"
+          style={{ width: 18, height: fillH, background: color }}
+        />
+
+        {/* Tick marks */}
+        <div
+          className="absolute right-0 top-0 flex flex-col justify-between pointer-events-none"
+          style={{ height: TRACK_H }}
+        >
+          {[5, 4, 3, 2, 1, 0].map(t => (
+            <span key={t} className="text-xs leading-none" style={{ color: '#cbd5e1' }}>{t}</span>
+          ))}
+        </div>
+
+        {/* Thumb */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 rounded-full bg-white flex items-center justify-center text-xs font-bold select-none transition-colors duration-200"
+          style={{
+            width: THUMB_H,
+            height: THUMB_H,
+            bottom: thumbBottom,
+            border: `3px solid ${color}`,
+            color,
+            boxShadow: '0 2px 10px rgba(249,115,22,0.2)',
+            cursor: 'grab',
+          }}
+          onMouseDown={() => { dragging.current = true }}
+          onTouchStart={e => {
+            dragging.current = true
+            e.preventDefault()
+          }}
+        >
+          {value.toFixed(1)}
+        </div>
+      </div>
+
+      {/* Label below */}
+      <div className="text-xs font-semibold text-slate-500 text-center" style={{ maxWidth: 72 }}>
+        {emoji} {label}
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Fix 4: Build the Review Form Component
+
+Create `components/review/ReviewForm.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { VerticalSlider } from './VerticalSlider'
+import { useRouter } from 'next/navigation'
+
+interface ReviewFormProps {
+  instructorId: string
+  instructorName: string
+}
+
+function scoreColor(s: number): string {
+  if (s >= 4.0) return '#f97316'
+  if (s >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
+  const [value, setValue] = useState(5)
+  const [effectiveness, setEffectiveness] = useState(5)
+  const [punctuality, setPunctuality] = useState(5)
+  const [comment, setComment] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+
+  const overall = (value + effectiveness + punctuality) / 3
+
+  async function handleSubmit() {
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructor_id: instructorId,
+          rating_value: value,
+          rating_effectiveness: effectiveness,
+          rating_punctuality: punctuality,
+          comment: comment.trim() || null,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit review')
+      }
+      router.push(`/instructors/${instructorId}?reviewed=true`)
+    } catch (err: any) {
+      setError(err.message)
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-md mx-auto shadow-sm">
+
+      {/* Instructor name */}
+      <div className="mb-6 pb-5 border-b border-slate-100 text-center">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
+          Reviewing
+        </p>
+        <p className="text-lg font-bold text-slate-800">{instructorName}</p>
+        <p className="text-xs text-slate-400 mt-1">
+          🔒 Your review is completely anonymous
+        </p>
+      </div>
+
+      {/* Vertical sliders */}
+      <div className="flex justify-center gap-10 mb-6">
+        <VerticalSlider label="Value" emoji="💰" value={value} onChange={setValue} />
+        <VerticalSlider label="Effectiveness" emoji="📈" value={effectiveness} onChange={setEffectiveness} />
+        <VerticalSlider label="Punctuality" emoji="⏰" value={punctuality} onChange={setPunctuality} />
+      </div>
+
+      {/* Overall score */}
+      <div
+        className="text-center rounded-xl py-3 mb-5"
+        style={{ background: scoreColor(overall) + '15' }}
+      >
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">
+          Overall Score
+        </p>
+        <p className="text-3xl font-bold" style={{ color: scoreColor(overall) }}>
+          {overall.toFixed(1)}
+        </p>
+      </div>
+
+      {/* Optional comment */}
+      <div className="mb-5">
+        <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-2">
+          Comment <span className="font-normal normal-case text-slate-400">(optional)</span>
+        </label>
+        <textarea
+          className="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none focus:border-orange-300"
+          rows={3}
+          placeholder="Share your experience... (optional)"
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          maxLength={500}
+        />
+        {comment.length > 0 && (
+          <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/500</p>
+        )}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <p className="text-sm text-red-500 mb-4 text-center">{error}</p>
+      )}
+
+      {/* Submit */}
+      <button
+        onClick={handleSubmit}
+        disabled={submitting}
+        className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50 transition-opacity"
+        style={{ background: '#f97316' }}
+      >
+        {submitting ? 'Submitting...' : 'Submit Anonymous Review'}
+      </button>
+
+      <p className="text-xs text-slate-400 text-center mt-3">
+        🔒 Your identity is never revealed to the instructor
+      </p>
+    </div>
+  )
+}
+```
+
+---
+
+## Fix 5: Build the Review Submission Page
+
+Create `app/(main)/reviews/new/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { ReviewForm } from '@/components/review/ReviewForm'
+
+export default async function NewReviewPage({
+  searchParams,
+}: {
+  searchParams: { instructor_id?: string }
+}) {
+  const supabase = createClient()
+
+  // Require auth — redirect to login if not signed in
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect(`/login?next=/reviews/new${searchParams.instructor_id ? `?instructor_id=${searchParams.instructor_id}` : ''}`)
+  }
+
+  // Fetch instructor if id provided
+  let instructor = null
+  if (searchParams.instructor_id) {
+    const { data } = await supabase
+      .from('instructors')
+      .select('id, full_name')
+      .eq('id', searchParams.instructor_id)
+      .single()
+    instructor = data
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-lg mx-auto">
+
+        {/* Back link */}
+        {instructor && (
+          <a
+            href={`/instructors/${instructor.id}`}
+            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6"
+          >
+            ← Back to {instructor.full_name}
+          </a>
+        )}
+
+        {/* Page header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Drag each slider up to rate your instructor
+          </p>
+        </div>
+
+        {instructor ? (
+          <ReviewForm
+            instructorId={instructor.id}
+            instructorName={instructor.full_name}
+          />
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">
+            <p className="text-slate-500 text-sm mb-4">
+              Find the instructor you want to review:
+            </p>
+            <a
+              href="/instructors"
+              className="inline-block text-white font-semibold px-6 py-3 rounded-xl text-sm"
+              style={{ background: '#f97316' }}
+            >
+              Browse Instructors →
+            </a>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Fix 6: Create the Reviews API Route
+
+Create `app/api/reviews/route.ts`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = createClient()
+
+  // Require auth
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { instructor_id, rating_value, rating_effectiveness, rating_punctuality, comment } = body
+
+  // Validate
+  if (!instructor_id || rating_value == null || rating_effectiveness == null || rating_punctuality == null) {
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  }
+
+  const scores = [rating_value, rating_effectiveness, rating_punctuality]
+  if (scores.some((s: number) => s < 0 || s > 5)) {
+    return NextResponse.json({ error: 'Scores must be between 0 and 5' }, { status: 400 })
+  }
+
+  // Insert review
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({
+      student_id: user.id,
+      instructor_id,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      comment: comment || null,
+      is_verified: false,
+      moderation_status: 'approved',
+      edit_count: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ review: data }, { status: 201 })
+}
+```
+
+---
+
+## Fix 7: Add "Write a Review" Button to Instructor Profile
+
+In `app/(main)/instructors/[id]/page.tsx`, the "Write a Review" button in the Reviews section header should link correctly:
+
+```typescript
+<a
+  href={`/reviews/new?instructor_id=${instructor.id}`}
+  className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+  style={{ background: '#f97316' }}
+>
+  Write a Review
+</a>
+```
+
+If user is NOT logged in, this link should still work — the `/reviews/new` page will redirect them to login automatically.
+
+---
+
+## ✅ Done When:
+- [ ] Instructor header shows "No reviews yet" (italic gray) when total_reviews = 0
+- [ ] Instructor header shows ⭐ score + review count when reviews exist
+- [ ] Triangle labels show emoji on first line, text on second line (two-line format)
+- [ ] All three labels fully visible: 💰 Value, 📈 Effectiveness, ⏰ Punctuality
+- [ ] `/reviews/new?instructor_id=xxx` page loads correctly
+- [ ] Three vertical sliders render side by side
+- [ ] Sliders are draggable with mouse (click + drag)
+- [ ] Sliders are tappable (click anywhere on track sets score)
+- [ ] Slider color changes: orange (≥4.0), amber (2.5–3.9), red (<2.5)
+- [ ] Score number updates in real time inside thumb and above slider
+- [ ] Overall score summary shows correct average with correct color
+- [ ] Comment textarea is optional, max 500 chars
+- [ ] Submit button calls POST /api/reviews successfully
+- [ ] After submission, user redirected to instructor profile page
+- [ ] Unauthenticated users redirected to /login when accessing /reviews/new
+- [ ] "Write a Review" button on instructor profile links to correct URL
+
+**Do not proceed to Prompt #15 until all checkboxes above are complete.**

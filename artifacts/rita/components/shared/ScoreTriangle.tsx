@@ -7,27 +7,27 @@ type ScoreTriangleProps = {
   reviewCount: number;
 };
 
-// SVG canvas
-const W = 300;
-const H = 250;
 const CX = 150;
-const CY = 132;
-const R = 82;
+const CY = 135;
+const R = 88;
 
 const ANGLES = [
-  -Math.PI / 2,       // Value — top
-  Math.PI / 6,        // Effectiveness — bottom right
-  (5 * Math.PI) / 6, // Punctuality — bottom left
+  -Math.PI / 2,        // Value — top
+  Math.PI / 6,         // Effectiveness — bottom right
+  (5 * Math.PI) / 6,  // Punctuality — bottom left
 ];
 
-// Fixed label anchor positions — chosen so no label clips the SVG edges
+// Fixed absolute label positions — pre-computed so labels never clip SVG edges.
+// textAnchor="middle" for all; emoji line then text line 14px below.
+// SVG is 300×270.
 const LABEL_POS = [
-  { x: CX,       y: 16,  anchor: "middle" },  // 💰 Value — top center
-  { x: W - 4,    y: 188, anchor: "end"    },  // 📈 Effectiveness — bottom right
-  { x: 4,        y: 188, anchor: "start"  },  // ⏰ Punctuality — bottom left
-] as const;
+  { x: 150, y: 22  },  // 💰 Value — top center
+  { x: 252, y: 196 },  // 📈 Effectiveness — bottom right
+  { x:  48, y: 196 },  // ⏰ Punctuality — bottom left
+];
 
-const LABELS = ["💰 Value", "📈 Effectiveness", "⏰ Punctuality"];
+const EMOJIS = ["💰", "📈", "⏰"];
+const TEXTS  = ["Value", "Effectiveness", "Punctuality"];
 
 function bgPt(angle: number): [number, number] {
   return [CX + R * Math.cos(angle), CY + R * Math.sin(angle)];
@@ -63,9 +63,8 @@ export function ScoreTriangle({
         Score Breakdown
       </p>
 
-      {/* Triangle SVG — always rendered */}
       <div className="flex justify-center mb-4">
-        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
+        <svg width="300" height="270" viewBox="0 0 300 270">
           <defs>
             <linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#f97316" stopOpacity="0.25" />
@@ -89,7 +88,7 @@ export function ScoreTriangle({
             strokeWidth={hasData ? "2" : "1"}
           />
 
-          {/* Dots at data vertices */}
+          {/* Dots */}
           {dataPts.map((pt, i) => (
             <circle
               key={i}
@@ -102,20 +101,30 @@ export function ScoreTriangle({
             />
           ))}
 
-          {/* Axis labels — fixed positions to prevent clipping */}
-          {LABEL_POS.map(({ x, y, anchor }, i) => (
-            <text
-              key={i}
-              x={x}
-              y={y}
-              textAnchor={anchor}
-              fontSize="11"
-              fontWeight="600"
-              fill="#1e2a38"
-              fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
-            >
-              {LABELS[i]}
-            </text>
+          {/* Two-line labels at fixed safe positions */}
+          {LABEL_POS.map(({ x, y }, i) => (
+            <g key={i}>
+              <text
+                x={x}
+                y={y}
+                textAnchor="middle"
+                fontSize="13"
+                fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
+              >
+                {EMOJIS[i]}
+              </text>
+              <text
+                x={x}
+                y={y + 14}
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="600"
+                fill="#1e2a38"
+                fontFamily="-apple-system, BlinkMacSystemFont, sans-serif"
+              >
+                {TEXTS[i]}
+              </text>
+            </g>
           ))}
         </svg>
       </div>

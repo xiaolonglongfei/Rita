@@ -61,14 +61,22 @@ export default async function InstructorProfilePage({
               )}
             </div>
             <div className="flex items-center gap-4 mt-3 flex-wrap">
-              <span className="text-2xl font-bold" style={{ color: "#f97316" }}>
-                ⭐ {(instructor.total_reviews ?? 0) > 0 ? instructor.avg_overall?.toFixed(1) : "—"}
-              </span>
-              <span className="text-sm text-slate-400">{instructor.total_reviews ?? 0} reviews</span>
-              {(verifiedSessions ?? 0) > 0 && (
-                <span className="text-sm text-slate-400">
-                  ✓ {verifiedSessions} verified {verifiedSessions === 1 ? "session" : "sessions"}
-                </span>
+              {(instructor.total_reviews ?? 0) > 0 ? (
+                <>
+                  <span className="text-2xl font-bold" style={{ color: "#f97316" }}>
+                    ⭐ {instructor.avg_overall?.toFixed(1)}
+                  </span>
+                  <span className="text-sm text-slate-400">
+                    {instructor.total_reviews} reviews
+                  </span>
+                  {(verifiedSessions ?? 0) > 0 && (
+                    <span className="text-sm text-slate-400">
+                      ✓ {verifiedSessions} verified {verifiedSessions === 1 ? "session" : "sessions"}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-sm text-slate-400 italic">No reviews yet</span>
               )}
             </div>
           </div>
