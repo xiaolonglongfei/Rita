@@ -1,2 +1,3 @@
 - [Supabase new schema mapping](supabase-schema.md) — new project uses UUID ids, full_name, teaching_locations, avg_overall, total_reviews, moderation_status throughout
 - [Supabase URL normalizer](supabase-url-normalizer.md) — getSupabaseUrl() in lib/supabase/url.ts strips path suffix; must be used in middleware too
+- [Supabase service key env var workaround](supabase-svc-key.md) — Replit secrets don't propagate to running workflows; use SUPABASE_SVC_KEY in .env.local + code fallback

@@ -28,7 +28,8 @@ export async function createClient() {
 }
 
 export function createServiceClient() {
-  return createSupabaseClient(getUrl(), process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  const key = process.env.SUPABASE_SVC_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createSupabaseClient(getUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
