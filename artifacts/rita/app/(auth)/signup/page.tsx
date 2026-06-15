@@ -35,7 +35,6 @@ export default function SignUpPage() {
       return;
     }
 
-    // Insert user profile row regardless of confirmation state
     if (data.user) {
       await supabase.from("users").upsert({
         id: data.user.id,
@@ -46,11 +45,10 @@ export default function SignUpPage() {
     }
 
     if (data.session) {
-      // Email confirmation disabled — session is live immediately
-      // Full reload so middleware reads the fresh session cookie
+      // Email confirmation disabled — session live immediately
+      await new Promise((resolve) => setTimeout(resolve, 150));
       window.location.href = "/instructors?welcome=true";
     } else {
-      // Supabase requires email confirmation
       setEmailSent(true);
       setLoading(false);
     }
@@ -66,14 +64,14 @@ export default function SignUpPage() {
           <p className="text-4xl mt-6 mb-3">📬</p>
           <h2 className="text-lg font-bold text-slate-800 mb-2">Check your email</h2>
           <p className="text-sm text-slate-500">
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then log in.
           </p>
           <Link
             href="/login"
             className="inline-block mt-6 text-sm font-semibold"
             style={{ color: "#f97316" }}
           >
-            Back to Login
+            Back to Login →
           </Link>
         </div>
       </div>
@@ -98,7 +96,7 @@ export default function SignUpPage() {
             <input
               type="text"
               placeholder="Your full name"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
@@ -111,7 +109,7 @@ export default function SignUpPage() {
             <input
               type="email"
               placeholder="your@email.com"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -124,7 +122,7 @@ export default function SignUpPage() {
             <input
               type="password"
               placeholder="Minimum 8 characters"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -135,7 +133,7 @@ export default function SignUpPage() {
           <button
             onClick={handleSignUp}
             disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-colors"
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-opacity"
             style={{ background: "#f97316" }}
           >
             {loading ? "Creating account…" : "Get Started →"}

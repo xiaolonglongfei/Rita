@@ -1,0 +1,135 @@
+The session is being lost after login redirect. This is a Supabase SSR 
+cookie synchronization issue. Please follow these exact steps:
+
+STEP 1: Check if the Supabase URL secret has a trailing slash.
+In your code, wherever you initialize the Supabase client, 
+normalize the URL like this:
+
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '')
+  .replace(/\/+$/, '')
+  .replace(/\/rest\/v1\/?$/, '')
+
+Apply this normalization in BOTH lib/supabase/client.ts 
+AND lib/supabase/server.ts.
+
+STEP 2: In lib/supabase/server.ts, make sure cookies are 
+handled correctly for Next.js 15. Use this exact implementation:
+
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+
+export async function createClient() {
+  const cookieStore = await cookies()
+  
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '')
+    .replace(/\/+$/, '')
+    .replace(/\/rest\/v1\/?$/, '')
+  
+  return createServerClient(
+    supabaseUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+
+STEP 3: Update middleware.ts to correctly refresh the session 
+on every request. This is critical — without this, the cookie 
+gets set on login but never refreshed:
+
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '')
+    .replace(/\/+$/, '')
+    .replace(/\/rest\/v1\/?$/, '')
+
+  const supabase = createServerClient(
+    supabaseUrl,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // IMPORTANT: This refreshes the session and writes updated 
+  // cookies to the response. Do not remove this line.
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const path = request.nextUrl.pathname
+  const protectedRoutes = ['/reviews', '/sessions', '/profile', '/ranking']
+
+  if (!user && protectedRoutes.some(r => path.startsWith(r))) {
+    const redirectUrl = new URL('/login', request.url)
+    redirectUrl.searchParams.set('next', path)
+    return NextResponse.redirect(redirectUrl)
+  }
+
+  if (path.startsWith('/admin')) {
+    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    const { data: userData } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    if (!userData?.is_admin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
+  // CRITICAL: Always return supabaseResponse, never a new NextResponse
+  // This ensures the updated auth cookies are sent back to the browser
+  return supabaseResponse
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+}
+
+STEP 4: In the login page, after successful signInWithPassword,
+add a small delay before redirect to ensure cookies are written:
+
+const { error } = await supabase.auth.signInWithPassword({ email, password })
+if (!error) {
+  // Small delay to ensure cookie is written before redirect
+  await new Promise(resolve => setTimeout(resolve, 100))
+  window.location.href = '/instructors'
+}
+
+STEP 5: Verify in Supabase Dashboard:
+Go to Authentication → URL Configuration and confirm:
+- Site URL = your exact Replit app URL (no trailing slash)
+- Add to Redirect URLs: your Replit app URL + "/**"
+
+After making all these changes, restart the Next.js server 
+completely and test login again.

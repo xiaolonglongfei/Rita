@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/instructors";
   const supabase = createClient();
 
   async function handleLogin() {
@@ -26,8 +29,10 @@ export default function LoginPage() {
       return;
     }
 
-    // Full reload so middleware reads the fresh session cookie
-    window.location.href = "/instructors";
+    // Small delay so @supabase/ssr can finish writing the auth cookie
+    // before the full-page reload triggers the middleware session check
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    window.location.href = next;
   }
 
   return (
@@ -48,7 +53,7 @@ export default function LoginPage() {
             <input
               type="email"
               placeholder="your@email.com"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -62,7 +67,7 @@ export default function LoginPage() {
             <input
               type="password"
               placeholder="Your password"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-rita-blue"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLogin()}
@@ -74,7 +79,7 @@ export default function LoginPage() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-colors"
+            className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-opacity"
             style={{ background: "#f97316" }}
           >
             {loading ? "Logging in…" : "Log In →"}
@@ -89,5 +94,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

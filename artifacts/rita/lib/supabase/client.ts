@@ -1,9 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { getSupabaseUrl } from "./url";
+
+function getUrl() {
+  return (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+    .replace(/\/+$/, "")
+    .replace(/\/rest\/v1\/?$/, "");
+}
 
 export function createClient() {
   return createBrowserClient(
-    getSupabaseUrl(),
+    getUrl(),
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 }
