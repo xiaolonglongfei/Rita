@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { signupAction } from "../actions";
 import Link from "next/link";
 
 export default function SignUpPage() {
@@ -11,7 +11,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
-  const supabase = createClient();
+  const [sentTo, setSentTo] = useState("");
 
   async function handleSignUp() {
     setLoading(true);
@@ -23,35 +23,22 @@ export default function SignUpPage() {
       return;
     }
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName } },
-    });
+    const result = await signupAction(fullName, email, password);
 
-    if (authError) {
-      setError(authError.message);
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
       return;
     }
 
-    if (data.user) {
-      await supabase.from("users").upsert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        is_admin: false,
-      });
-    }
-
-    if (data.session) {
-      // Email confirmation disabled — session live immediately
-      await new Promise((resolve) => setTimeout(resolve, 150));
-      window.location.href = "/instructors?welcome=true";
-    } else {
+    if (result?.emailSent) {
+      setSentTo(result.email ?? email);
       setEmailSent(true);
       setLoading(false);
+      return;
     }
+
+    // On success signupAction calls redirect() server-side — no client code needed
   }
 
   if (emailSent) {
@@ -64,7 +51,8 @@ export default function SignUpPage() {
           <p className="text-4xl mt-6 mb-3">📬</p>
           <h2 className="text-lg font-bold text-slate-800 mb-2">Check your email</h2>
           <p className="text-sm text-slate-500">
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then log in.
+            We sent a confirmation link to <strong>{sentTo}</strong>. Click it
+            to activate your account, then log in.
           </p>
           <Link
             href="/login"

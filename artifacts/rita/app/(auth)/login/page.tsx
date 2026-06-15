@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { loginAction } from "../actions";
 import Link from "next/link";
 
 function LoginForm() {
@@ -12,27 +12,16 @@ function LoginForm() {
   const [error, setError] = useState("");
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/instructors";
-  const supabase = createClient();
 
   async function handleLogin() {
     setLoading(true);
     setError("");
-
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      setError("Invalid email or password");
+    const result = await loginAction(email, password, next);
+    if (result?.error) {
+      setError(result.error);
       setLoading(false);
-      return;
     }
-
-    // Small delay so @supabase/ssr can finish writing the auth cookie
-    // before the full-page reload triggers the middleware session check
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    window.location.href = next;
+    // On success loginAction calls redirect() server-side — no client code needed
   }
 
   return (

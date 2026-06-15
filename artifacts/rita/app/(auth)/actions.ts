@@ -1,0 +1,83 @@
+"use server";
+
+import { createServerClient } from "@supabase/ssr";
+import type { CookieOptions } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { createServiceClient } from "@/lib/supabase/server";
+
+function getUrl() {
+  return (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+    .replace(/\/+$/, "")
+    .replace(/\/rest\/v1\/?$/, "");
+}
+
+async function getServerSupabase() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    getUrl(),
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+}
+
+export async function loginAction(
+  email: string,
+  password: string,
+  next: string = "/instructors"
+) {
+  const supabase = await getServerSupabase();
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    return { error: "Invalid email or password" };
+  }
+
+  redirect(next);
+}
+
+export async function signupAction(
+  fullName: string,
+  email: string,
+  password: string
+) {
+  const supabase = await getServerSupabase();
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { full_name: fullName } },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data.user) {
+    const service = createServiceClient();
+    await service.from("users").upsert({
+      id: data.user.id,
+      email,
+      full_name: fullName,
+      is_admin: false,
+    });
+  }
+
+  if (!data.session) {
+    return { emailSent: true, email };
+  }
+
+  redirect("/instructors?welcome=true");
+}
