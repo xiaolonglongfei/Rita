@@ -52,15 +52,24 @@ export async function POST(request: Request) {
     rating_effectiveness,
     rating_punctuality,
     comment,
+    session_date,
+    session_time,
+    session_location,
   } = body;
 
   if (
     !instructor_id ||
     rating_value == null ||
     rating_effectiveness == null ||
-    rating_punctuality == null
+    rating_punctuality == null ||
+    !session_date ||
+    !session_time ||
+    !session_location
   ) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json(
+      { error: "All session details are required" },
+      { status: 400 }
+    );
   }
 
   const scores = [rating_value, rating_effectiveness, rating_punctuality];
@@ -71,13 +80,43 @@ export async function POST(request: Request) {
     );
   }
 
+  if (new Date(session_date) > new Date()) {
+    return NextResponse.json(
+      { error: "Session date cannot be in the future" },
+      { status: 400 }
+    );
+  }
+
   const db = createServiceClient();
 
-  await db.from("users").upsert({
-    id: user.id,
-    email: user.email!,
-    full_name: user.user_metadata?.full_name || user.email!,
-  }, { onConflict: "id" });
+  // Ensure user exists in users table
+  await db.from("users").upsert(
+    {
+      id: user.id,
+      email: user.email!,
+      full_name: user.user_metadata?.full_name || user.email!,
+    },
+    { onConflict: "id" }
+  );
+
+  // Check for duplicate (same student, same instructor, same date)
+  const { data: existing } = await db
+    .from("reviews")
+    .select("id")
+    .eq("student_id", user.id)
+    .eq("instructor_id", instructor_id)
+    .eq("session_date", session_date)
+    .single();
+
+  if (existing) {
+    return NextResponse.json(
+      {
+        error:
+          "You have already submitted a review for a session with this instructor on this date",
+      },
+      { status: 409 }
+    );
+  }
 
   const { data: review, error } = await db
     .from("reviews")
@@ -88,6 +127,10 @@ export async function POST(request: Request) {
       rating_effectiveness,
       rating_punctuality,
       comment: comment || null,
+      session_date,
+      session_time,
+      session_location,
+      is_verified: false,
       moderation_status: "approved",
     })
     .select()
@@ -95,7 +138,7 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Send notification to the reviewer
+  // Notification to reviewer
   const { data: instructor } = await db
     .from("instructors")
     .select("full_name")
@@ -107,7 +150,7 @@ export async function POST(request: Request) {
     type: "review_submitted",
     message: `Your review for ${
       (instructor as { full_name: string } | null)?.full_name ?? "the instructor"
-    } has been submitted.`,
+    } has been submitted and is pending verification.`,
   });
 
   return NextResponse.json({ review }, { status: 201 });

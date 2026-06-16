@@ -1,0 +1,769 @@
+# Replit Prompt #15 — Session Verification Flow + Review Submission Update
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #16 until this step is verified.
+
+---
+
+## Overview
+
+This prompt builds the complete Session Verification system and updates the Review submission flow to require session details before rating.
+
+---
+
+## Business Logic Summary
+
+### Review Submission (Updated)
+- Student fills in session details FIRST (required): date, time, location
+- Then rates with vertical sliders (Value, Effectiveness, Punctuality)
+- Then optional comment
+- On submit: review saved as "Unverified", verification request sent to instructor
+- One review per session per student (same student cannot submit two reviews for the same instructor on the same date)
+
+### Instructor Verification
+- Instructor logs in and sees pending verification requests
+- Each request shows: date, time, location, student name (NOT the review scores or comment)
+- Instructor clicks Confirm → review becomes "Verified"
+- Instructor clicks Deny → review stays "Unverified" (not deleted)
+- If instructor has not claimed profile → review stays "Unverified" permanently
+
+### Notifications
+- When student submits review → email sent to instructor (if instructor has email on file)
+- Instructor also sees pending requests in their dashboard when logged in
+
+### Display Rules (unchanged)
+- Reviews only shown when instructor has 3+ reviews
+- Student name NEVER shown on review cards
+- Session date/time/location NEVER shown on review cards
+
+---
+
+## Step 1: Update Database — Add Sessions Table Link to Reviews
+
+Run this in Supabase SQL Editor:
+
+```sql
+-- Add unique constraint to prevent duplicate reviews for same session
+ALTER TABLE reviews 
+ADD CONSTRAINT unique_student_instructor_date 
+UNIQUE (student_id, instructor_id, session_date);
+
+-- Add session_date and session_location to reviews table
+ALTER TABLE reviews 
+ADD COLUMN IF NOT EXISTS session_date DATE,
+ADD COLUMN IF NOT EXISTS session_time TIME,
+ADD COLUMN IF NOT EXISTS session_location TEXT;
+```
+
+---
+
+## Step 2: Update Review Form — Add Session Details Step
+
+Update `components/review/ReviewForm.tsx` to a two-step form:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { VerticalSlider } from './VerticalSlider'
+import { useRouter } from 'next/navigation'
+
+interface ReviewFormProps {
+  instructorId: string
+  instructorName: string
+  studentName: string
+}
+
+function scoreColor(s: number): string {
+  if (s >= 4.0) return '#f97316'
+  if (s >= 2.5) return '#c89000'
+  return '#c83030'
+}
+
+export function ReviewForm({ instructorId, instructorName, studentName }: ReviewFormProps) {
+  const [step, setStep] = useState<1 | 2>(1)
+
+  // Step 1: Session details
+  const [sessionDate, setSessionDate] = useState('')
+  const [sessionTime, setSessionTime] = useState('')
+  const [sessionLocation, setSessionLocation] = useState('')
+
+  // Step 2: Ratings
+  const [value, setValue] = useState(5)
+  const [effectiveness, setEffectiveness] = useState(5)
+  const [punctuality, setPunctuality] = useState(5)
+  const [comment, setComment] = useState('')
+
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+
+  const overall = (value + effectiveness + punctuality) / 3
+
+  function handleStep1Submit() {
+    if (!sessionDate || !sessionTime || !sessionLocation.trim()) {
+      setError('Please fill in all session details')
+      return
+    }
+    // Prevent future dates
+    if (new Date(sessionDate) > new Date()) {
+      setError('Session date cannot be in the future')
+      return
+    }
+    setError('')
+    setStep(2)
+  }
+
+  async function handleFinalSubmit() {
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructor_id: instructorId,
+          rating_value: value,
+          rating_effectiveness: effectiveness,
+          rating_punctuality: punctuality,
+          comment: comment.trim() || null,
+          session_date: sessionDate,
+          session_time: sessionTime,
+          session_location: sessionLocation.trim(),
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to submit review')
+      }
+      router.push(`/instructors/${instructorId}?reviewed=true`)
+    } catch (err: any) {
+      setError(err.message)
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-md mx-auto shadow-sm">
+
+      {/* Header */}
+      <div className="mb-6 pb-5 border-b border-slate-100 text-center">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Reviewing</p>
+        <p className="text-lg font-bold text-slate-800">{instructorName}</p>
+        <p className="text-xs text-slate-400 mt-1">🔒 Your review is completely anonymous</p>
+      </div>
+
+      {/* Step indicator */}
+      <div className="flex items-center justify-center gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{ background: '#f97316', color: 'white' }}
+          >
+            1
+          </div>
+          <span className="text-xs font-semibold" style={{ color: step === 1 ? '#f97316' : '#94a3b8' }}>
+            Session Details
+          </span>
+        </div>
+        <div className="w-8 h-px bg-slate-200" />
+        <div className="flex items-center gap-2">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+            style={{
+              background: step === 2 ? '#f97316' : '#e2e8f0',
+              color: step === 2 ? 'white' : '#94a3b8'
+            }}
+          >
+            2
+          </div>
+          <span className="text-xs font-semibold" style={{ color: step === 2 ? '#f97316' : '#94a3b8' }}>
+            Your Rating
+          </span>
+        </div>
+      </div>
+
+      {/* STEP 1: Session Details */}
+      {step === 1 && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+              📅 Session Date <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="date"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              value={sessionDate}
+              onChange={e => setSessionDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+              🕐 Session Time <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="time"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              value={sessionTime}
+              onChange={e => setSessionTime(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+              📍 Session Location <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Pound Ridge Tennis Club"
+              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              value={sessionLocation}
+              onChange={e => setSessionLocation(e.target.value)}
+            />
+          </div>
+
+          <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 leading-relaxed">
+            ℹ️ Your instructor will be asked to confirm this session happened. 
+            They will see your name, date, time, and location — but not your rating.
+          </div>
+
+          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+          <button
+            onClick={handleStep1Submit}
+            className="w-full py-3 rounded-xl text-white font-bold text-base"
+            style={{ background: '#f97316' }}
+          >
+            Next — Rate your session →
+          </button>
+        </div>
+      )}
+
+      {/* STEP 2: Rating */}
+      {step === 2 && (
+        <div>
+          {/* Session summary */}
+          <div className="bg-slate-50 rounded-xl p-3 mb-5 text-xs text-slate-600">
+            <p className="font-semibold text-slate-700 mb-1">Session details:</p>
+            <p>📅 {new Date(sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p>🕐 {sessionTime}</p>
+            <p>📍 {sessionLocation}</p>
+            <button
+              onClick={() => setStep(1)}
+              className="text-orange-500 font-semibold mt-1 hover:underline"
+            >
+              ← Edit details
+            </button>
+          </div>
+
+          {/* Vertical sliders */}
+          <div className="flex justify-center gap-10 mb-6">
+            <VerticalSlider label="Value" emoji="💰" value={value} onChange={setValue} />
+            <VerticalSlider label="Effectiveness" emoji="📈" value={effectiveness} onChange={setEffectiveness} />
+            <VerticalSlider label="Punctuality" emoji="⏰" value={punctuality} onChange={setPunctuality} />
+          </div>
+
+          {/* Overall score */}
+          <div
+            className="text-center rounded-xl py-3 mb-5"
+            style={{ background: scoreColor(overall) + '15' }}
+          >
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-0.5">Overall Score</p>
+            <p className="text-3xl font-bold" style={{ color: scoreColor(overall) }}>{overall.toFixed(1)}</p>
+          </div>
+
+          {/* Optional comment */}
+          <div className="mb-5">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-2">
+              Comment <span className="font-normal normal-case">(optional)</span>
+            </label>
+            <textarea
+              className="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none focus:border-orange-300"
+              rows={3}
+              placeholder="Share your experience... (optional)"
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              maxLength={500}
+            />
+            {comment.length > 0 && (
+              <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/500</p>
+            )}
+          </div>
+
+          {error && <p className="text-sm text-red-500 mb-4 text-center">{error}</p>}
+
+          <button
+            onClick={handleFinalSubmit}
+            disabled={submitting}
+            className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50"
+            style={{ background: '#f97316' }}
+          >
+            {submitting ? 'Submitting...' : 'Submit Anonymous Review'}
+          </button>
+
+          <p className="text-xs text-slate-400 text-center mt-3">
+            🔒 Your identity is never revealed to the instructor
+          </p>
+        </div>
+      )}
+
+    </div>
+  )
+}
+```
+
+---
+
+## Step 3: Update Review Submission Page
+
+Update `app/(main)/reviews/new/page.tsx` to pass studentName to ReviewForm:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { ReviewForm } from '@/components/review/ReviewForm'
+
+export default async function NewReviewPage({
+  searchParams,
+}: {
+  searchParams: { instructor_id?: string }
+}) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    redirect(`/login?next=/reviews/new${searchParams.instructor_id ? `?instructor_id=${searchParams.instructor_id}` : ''}`)
+  }
+
+  // Get student name from users table
+  const { data: userData } = await supabase
+    .from('users')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  const studentName = userData?.full_name || 
+    user.user_metadata?.full_name || 
+    user.email?.split('@')[0] || 'Student'
+
+  let instructor = null
+  if (searchParams.instructor_id) {
+    const { data } = await supabase
+      .from('instructors')
+      .select('id, full_name')
+      .eq('id', searchParams.instructor_id)
+      .single()
+    instructor = data
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-lg mx-auto">
+        {instructor && (
+          <a
+            href={`/instructors/${instructor.id}`}
+            className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6"
+          >
+            ← Back to {instructor.full_name}
+          </a>
+        )}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Step 1: Confirm your session details · Step 2: Rate your instructor
+          </p>
+        </div>
+        {instructor ? (
+          <ReviewForm
+            instructorId={instructor.id}
+            instructorName={instructor.full_name}
+            studentName={studentName}
+          />
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">
+            <p className="text-slate-500 text-sm mb-4">Find the instructor you want to review:</p>
+            <a
+              href="/instructors"
+              className="inline-block text-white font-semibold px-6 py-3 rounded-xl text-sm"
+              style={{ background: '#f97316' }}
+            >
+              Browse Instructors →
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 4: Update Reviews API Route
+
+Update `app/api/reviews/route.ts` to handle session details and duplicate prevention:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const {
+    instructor_id,
+    rating_value,
+    rating_effectiveness,
+    rating_punctuality,
+    comment,
+    session_date,
+    session_time,
+    session_location,
+  } = body
+
+  // Validate required fields
+  if (!instructor_id || rating_value == null || 
+      rating_effectiveness == null || rating_punctuality == null ||
+      !session_date || !session_time || !session_location) {
+    return NextResponse.json({ error: 'All session details are required' }, { status: 400 })
+  }
+
+  // Validate scores
+  const scores = [rating_value, rating_effectiveness, rating_punctuality]
+  if (scores.some((s: number) => s < 0 || s > 5)) {
+    return NextResponse.json({ error: 'Scores must be between 0 and 5' }, { status: 400 })
+  }
+
+  // Prevent future session dates
+  if (new Date(session_date) > new Date()) {
+    return NextResponse.json({ error: 'Session date cannot be in the future' }, { status: 400 })
+  }
+
+  // Ensure user exists in users table
+  await supabase.from('users').upsert({
+    id: user.id,
+    email: user.email!,
+    full_name: user.user_metadata?.full_name || user.email!,
+  }, { onConflict: 'id' })
+
+  // Check for duplicate (same student, same instructor, same date)
+  const { data: existing } = await supabase
+    .from('reviews')
+    .select('id')
+    .eq('student_id', user.id)
+    .eq('instructor_id', instructor_id)
+    .eq('session_date', session_date)
+    .single()
+
+  if (existing) {
+    return NextResponse.json({
+      error: 'You have already submitted a review for a session with this instructor on this date'
+    }, { status: 409 })
+  }
+
+  // Insert review
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({
+      student_id: user.id,
+      instructor_id,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      comment: comment || null,
+      session_date,
+      session_time,
+      session_location,
+      is_verified: false,
+      moderation_status: 'approved',
+      edit_count: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ review: data }, { status: 201 })
+}
+```
+
+---
+
+## Step 5: Build Instructor Verification Dashboard
+
+Create `app/(main)/sessions/page.tsx` — this serves both students AND instructors:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export default async function SessionsPage() {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  // Check if user is a claimed instructor
+  const { data: instructorProfile } = await supabase
+    .from('instructors')
+    .select('id, full_name')
+    .eq('claimed_by', user.id)
+    .single()
+
+  // Get pending verifications for this instructor
+  let pendingVerifications: any[] = []
+  if (instructorProfile) {
+    const { data } = await supabase
+      .from('reviews')
+      .select(`
+        id,
+        session_date,
+        session_time,
+        session_location,
+        is_verified,
+        student_id,
+        users!reviews_student_id_fkey (full_name)
+      `)
+      .eq('instructor_id', instructorProfile.id)
+      .eq('is_verified', false)
+      .eq('moderation_status', 'approved')
+      .order('session_date', { ascending: false })
+    pendingVerifications = data || []
+  }
+
+  // Get student's own review history
+  const { data: myReviews } = await supabase
+    .from('reviews')
+    .select(`
+      id,
+      session_date,
+      session_location,
+      is_verified,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      instructors!reviews_instructor_id_fkey (full_name)
+    `)
+    .eq('student_id', user.id)
+    .order('session_date', { ascending: false })
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-8 px-4">
+      <div className="max-w-3xl mx-auto">
+
+        {/* Instructor verification panel */}
+        {instructorProfile && (
+          <div className="mb-8">
+            <h2 className="text-lg font-bold text-slate-800 mb-1">
+              Pending Verifications
+            </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              Students are requesting you to verify these sessions.
+            </p>
+
+            {pendingVerifications.length === 0 ? (
+              <div className="bg-white rounded-xl border border-slate-100 p-6 text-center">
+                <p className="text-sm text-slate-400">No pending verification requests</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {pendingVerifications.map(review => (
+                  <div
+                    key={review.id}
+                    className="bg-white rounded-xl border border-slate-100 p-4 flex items-center justify-between gap-4"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-slate-800">
+                        👤 {(review.users as any)?.full_name || 'Student'}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        📅 {new Date(review.session_date).toLocaleDateString('en-US', {
+                          weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+                        })}
+                        {review.session_time && ` · 🕐 ${review.session_time}`}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        📍 {review.session_location}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <form action={`/api/reviews/${review.id}/verify`} method="POST">
+                        <input type="hidden" name="action" value="confirm" />
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-lg text-white text-sm font-semibold"
+                          style={{ background: '#22c55e' }}
+                        >
+                          ✓ Confirm
+                        </button>
+                      </form>
+                      <form action={`/api/reviews/${review.id}/verify`} method="POST">
+                        <input type="hidden" name="action" value="deny" />
+                        <button
+                          type="submit"
+                          className="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-600"
+                        >
+                          ✗ Deny
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Student's review history */}
+        <div>
+          <h2 className="text-lg font-bold text-slate-800 mb-1">My Reviews</h2>
+          <p className="text-sm text-slate-500 mb-4">Your submitted reviews and verification status.</p>
+
+          {!myReviews || myReviews.length === 0 ? (
+            <div className="bg-white rounded-xl border border-slate-100 p-6 text-center">
+              <p className="text-sm text-slate-400 mb-3">You haven't written any reviews yet</p>
+              <a
+                href="/instructors"
+                className="inline-block text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                style={{ background: '#f97316' }}
+              >
+                Find an instructor to review →
+              </a>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {myReviews.map((review: any) => {
+                const overall = (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3
+                return (
+                  <div
+                    key={review.id}
+                    className="bg-white rounded-xl p-4"
+                    style={{
+                      borderLeft: `4px solid ${review.is_verified ? '#22c55e' : '#94a3b8'}`,
+                      borderTop: '1px solid #f1f5f9',
+                      borderRight: '1px solid #f1f5f9',
+                      borderBottom: '1px solid #f1f5f9',
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold text-slate-800">
+                        {(review.instructors as any)?.full_name}
+                      </p>
+                      <span
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                        style={{
+                          background: review.is_verified ? '#dcfce7' : '#f1f5f9',
+                          color: review.is_verified ? '#16a34a' : '#64748b',
+                        }}
+                      >
+                        {review.is_verified ? '✓ Verified' : 'Pending verification'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      📅 {new Date(review.session_date).toLocaleDateString()} · 📍 {review.session_location}
+                    </p>
+                    <p className="text-xs font-semibold mt-2" style={{ color: '#f97316' }}>
+                      Overall: {overall.toFixed(1)}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 6: Build Verification API Route
+
+Create `app/api/reviews/[id]/verify/route.ts`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json().catch(() => ({}))
+  const formData = await request.formData().catch(() => null)
+  const action = body.action || formData?.get('action')
+
+  if (action !== 'confirm' && action !== 'deny') {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+  }
+
+  // Verify this instructor owns this review
+  const { data: instructorProfile } = await supabase
+    .from('instructors')
+    .select('id')
+    .eq('claimed_by', user.id)
+    .single()
+
+  if (!instructorProfile) {
+    return NextResponse.json({ error: 'Not an instructor' }, { status: 403 })
+  }
+
+  const { data: review } = await supabase
+    .from('reviews')
+    .select('id, instructor_id')
+    .eq('id', params.id)
+    .eq('instructor_id', instructorProfile.id)
+    .single()
+
+  if (!review) {
+    return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  }
+
+  if (action === 'confirm') {
+    await supabase
+      .from('reviews')
+      .update({ is_verified: true })
+      .eq('id', params.id)
+  }
+  // If deny: review stays, is_verified remains false
+
+  return NextResponse.redirect(new URL('/sessions', request.url))
+}
+```
+
+---
+
+## ✅ Done When:
+- [ ] Run Supabase SQL from Step 1 successfully
+- [ ] Review form has two steps: Session Details → Rating
+- [ ] Session date, time, location are all required fields
+- [ ] Future dates are blocked
+- [ ] Duplicate review (same student, instructor, date) returns clear error
+- [ ] Review is saved with session_date, session_time, session_location
+- [ ] /sessions page shows pending verifications for claimed instructors
+- [ ] Verification panel shows: student name, date, time, location (NOT scores)
+- [ ] Confirm button marks review as is_verified = true
+- [ ] Deny button leaves review as is_verified = false (not deleted)
+- [ ] Student can see their own review history with verification status
+- [ ] Green left border = verified, gray left border = pending
+
+**Do not proceed to Prompt #16 until all checkboxes above are complete.**

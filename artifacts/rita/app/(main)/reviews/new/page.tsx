@@ -20,6 +20,19 @@ export default async function NewReviewPage({
     );
   }
 
+  // Get student display name
+  const { data: userData } = await supabase
+    .from("users")
+    .select("full_name")
+    .eq("id", user.id)
+    .single();
+
+  const studentName =
+    userData?.full_name ||
+    user.user_metadata?.full_name ||
+    user.email?.split("@")[0] ||
+    "Student";
+
   let instructor: { id: string; full_name: string } | null = null;
   if (instructor_id) {
     const { data } = await supabase
@@ -33,7 +46,6 @@ export default async function NewReviewPage({
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
       <div className="max-w-lg mx-auto">
-        {/* Back link */}
         {instructor && (
           <a
             href={`/instructors/${instructor.id}`}
@@ -43,11 +55,10 @@ export default async function NewReviewPage({
           </a>
         )}
 
-        {/* Page header */}
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-slate-800">Leave a Review</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Drag each slider up to rate your instructor
+            Step 1: Confirm your session details · Step 2: Rate your instructor
           </p>
         </div>
 
@@ -55,6 +66,7 @@ export default async function NewReviewPage({
           <ReviewForm
             instructorId={instructor.id}
             instructorName={instructor.full_name}
+            studentName={studentName}
           />
         ) : (
           <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">

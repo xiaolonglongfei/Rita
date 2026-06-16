@@ -629,6 +629,9 @@ video {
 .inline-flex {
   display: inline-flex;
 }
+.table {
+  display: table;
+}
 .grid {
   display: grid;
 }
@@ -650,9 +653,6 @@ video {
 .h-2 {
   height: 0.5rem;
 }
-.h-20 {
-  height: 5rem;
-}
 .h-24 {
   height: 6rem;
 }
@@ -668,14 +668,17 @@ video {
 .h-4 {
   height: 1rem;
 }
-.h-5 {
-  height: 1.25rem;
+.h-7 {
+  height: 1.75rem;
 }
 .h-8 {
   height: 2rem;
 }
 .h-full {
   height: 100%;
+}
+.h-px {
+  height: 1px;
 }
 .min-h-screen {
   min-height: 100vh;
@@ -704,8 +707,8 @@ video {
 .w-4 {
   width: 1rem;
 }
-.w-5 {
-  width: 1.25rem;
+.w-7 {
+  width: 1.75rem;
 }
 .w-8 {
   width: 2rem;
@@ -721,6 +724,9 @@ video {
 }
 .max-w-2xl {
   max-width: 42rem;
+}
+.max-w-3xl {
+  max-width: 48rem;
 }
 .max-w-5xl {
   max-width: 64rem;
@@ -924,10 +930,6 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
 }
-.bg-rita-blue {
-  --tw-bg-opacity: 1;
-  background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1));
-}
 .bg-rita-blue-light {
   --tw-bg-opacity: 1;
   background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
@@ -951,6 +953,10 @@ video {
 .bg-slate-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1));
+}
+.bg-slate-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(226 232 240 / var(--tw-bg-opacity, 1));
 }
 .bg-slate-50 {
   --tw-bg-opacity: 1;
@@ -982,6 +988,10 @@ video {
 .px-2 {
   padding-left: 0.5rem;
   padding-right: 0.5rem;
+}
+.px-2\.5 {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 .px-3 {
   padding-left: 0.75rem;
@@ -1162,6 +1172,10 @@ video {
   --tw-text-opacity: 1;
   color: rgb(234 88 12 / var(--tw-text-opacity, 1));
 }
+.text-red-400 {
+  --tw-text-opacity: 1;
+  color: rgb(248 113 113 / var(--tw-text-opacity, 1));
+}
 .text-red-500 {
   --tw-text-opacity: 1;
   color: rgb(239 68 68 / var(--tw-text-opacity, 1));
@@ -1287,11 +1301,6 @@ video {
   background-color: rgb(254 226 226 / var(--tw-bg-opacity, 1));
 }
 
-.hover\:bg-rita-blue-dark:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(234 88 12 / var(--tw-bg-opacity, 1));
-}
-
 .hover\:bg-rita-gray-light:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(244 246 249 / var(--tw-bg-opacity, 1));
@@ -1335,11 +1344,6 @@ video {
 .focus\:border-orange-300:focus {
   --tw-border-opacity: 1;
   border-color: rgb(253 186 116 / var(--tw-border-opacity, 1));
-}
-
-.focus\:border-rita-blue:focus {
-  --tw-border-opacity: 1;
-  border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));
 }
 
 .focus\:border-rita-primary:focus {
