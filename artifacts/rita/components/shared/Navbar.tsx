@@ -71,7 +71,7 @@ export default function Navbar({ initialUser }: NavbarProps) {
           {user ? (
             <>
               <span className="hidden sm:block text-xs text-slate-400 max-w-[140px] truncate">
-                {user.email}
+                {user.user_metadata?.full_name || user.email?.split("@")[0] || "My Account"}
               </span>
               <Link
                 href="/profile"

@@ -28,11 +28,11 @@ export default function ProfilePage() {
       <div className="bg-white border border-slate-100 rounded-2xl p-6 mb-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-rita-blue-light flex items-center justify-center text-rita-blue font-bold text-xl">
-            {user.email?.[0]?.toUpperCase()}
+            {(user.user_metadata?.full_name || user.email || "?")[0].toUpperCase()}
           </div>
           <div>
             <div className="font-bold text-rita-charcoal">
-              {user.user_metadata?.full_name ?? user.email}
+              {user.user_metadata?.full_name || user.email?.split("@")[0] || "My Account"}
             </div>
             <div className="text-sm text-rita-gray">{user.email}</div>
           </div>

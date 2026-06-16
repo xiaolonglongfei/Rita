@@ -73,6 +73,12 @@ export async function POST(request: Request) {
 
   const db = createServiceClient();
 
+  await db.from("users").upsert({
+    id: user.id,
+    email: user.email!,
+    full_name: user.user_metadata?.full_name || user.email!,
+  }, { onConflict: "id" });
+
   const { data: review, error } = await db
     .from("reviews")
     .insert({
