@@ -42,14 +42,14 @@ export default function Navbar({ initialUser }: NavbarProps) {
             >
               Instructors
             </Link>
-            <Link
-              href="/ranking"
-              className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
-            >
-              Rankings
-            </Link>
             {user && (
               <>
+                <Link
+                  href="/ranking"
+                  className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"
+                >
+                  My Ranking
+                </Link>
                 <Link
                   href="/sessions"
                   className="text-sm text-rita-gray hover:text-rita-charcoal transition-colors"

@@ -130,9 +130,6 @@ export default async function InstructorProfilePage({
                   <p className="text-sm text-slate-500 font-medium">
                     Reviews pending — collecting feedback to protect reviewer privacy
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Reviews are shown once 3 or more have been collected
-                  </p>
                 </div>
               )}
             </section>
