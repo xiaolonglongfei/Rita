@@ -1,7 +1,4 @@
 {
-  "/api/instructors/route": "app/api/instructors/route.js",
   "/page": "app/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(main)/instructors/page": "app/(main)/instructors/page.js",
-  "/(main)/instructors/new/page": "app/(main)/instructors/new/page.js"
+  "/admin/page": "app/admin/page.js"
 }

@@ -937,10 +937,6 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(245 251 204 / var(--tw-bg-opacity, 1));
 }
-.bg-rita-primary {
-  --tw-bg-opacity: 1;
-  background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1));
-}
 .bg-slate-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1));
@@ -1291,11 +1287,6 @@ video {
 .hover\:border-rita-primary:hover {
   --tw-border-opacity: 1;
   border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));
-}
-
-.hover\:bg-rita-primary-dark:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(234 88 12 / var(--tw-bg-opacity, 1));
 }
 
 .hover\:bg-slate-200:hover {

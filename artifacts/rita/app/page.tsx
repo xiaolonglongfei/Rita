@@ -1,12 +1,21 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import Navbar from "@/components/shared/Navbar";
 
 export default async function HomePage() {
-  const supabase = createServiceClient();
+  const [authClient, db] = await Promise.all([
+    createClient(),
+    Promise.resolve(createServiceClient()),
+  ]);
+
+  const {
+    data: { user },
+  } = await authClient.auth.getUser();
 
   const [{ count: instructorCount }, { count: reviewCount }] = await Promise.all([
-    supabase.from("instructors").select("*", { count: "exact", head: true }),
-    supabase
+    db.from("instructors").select("*", { count: "exact", head: true }),
+    db
       .from("reviews")
       .select("*", { count: "exact", head: true })
       .eq("moderation_status", "approved"),
@@ -20,30 +29,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <nav className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-rita-charcoal">
-            Rita<span className="text-rita-lime">.</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/instructors" className="text-sm text-rita-gray hover:text-rita-charcoal">
-            Instructors
-          </Link>
-          <Link href="/ranking" className="text-sm text-rita-gray hover:text-rita-charcoal">
-            Rankings
-          </Link>
-          <Link href="/login" className="text-sm text-rita-gray hover:text-rita-charcoal">
-            Login
-          </Link>
-          <Link
-            href="/signup"
-            className="text-sm bg-rita-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-rita-primary-dark transition-colors"
-          >
-            Sign Up
-          </Link>
-        </div>
-      </nav>
+      <Navbar initialUser={user} />
 
       <main className="max-w-5xl mx-auto px-6 py-24 text-center">
         <div className="inline-block bg-rita-lime-light text-rita-lime-dark text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
@@ -77,7 +63,7 @@ export default async function HomePage() {
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-base border-2"
             style={{ borderColor: "#1e2a38", color: "#1e2a38", background: "transparent" }}
           >
-            I'm an Instructor
+            I&apos;m an Instructor
           </a>
         </div>
 
