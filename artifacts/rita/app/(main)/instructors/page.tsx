@@ -147,6 +147,21 @@ export default function InstructorsPage() {
               </Link>
             ))}
           </div>
+
+          <div className="mt-6 bg-white rounded-xl border border-dashed border-slate-200 p-5 text-center">
+            <p className="text-sm text-slate-500 mb-3">
+              {instructors.length === 0
+                ? "No instructors found matching your search."
+                : "Can't find the instructor you're looking for?"}
+            </p>
+            <a
+              href="/instructors/new"
+              className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
+              style={{ background: "#f97316" }}
+            >
+              + Add an Instructor
+            </a>
+          </div>
         </>
       )}
     </div>

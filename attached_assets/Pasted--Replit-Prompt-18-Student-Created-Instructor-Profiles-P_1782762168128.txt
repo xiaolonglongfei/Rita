@@ -1,0 +1,300 @@
+# Replit Prompt #18 — Student-Created Instructor Profiles
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #19 until this step is verified.
+
+---
+
+## Overview
+
+Students must be able to create a new instructor profile when searching and not finding the instructor they want to review. This was part of the original PRD — instructor profiles can be created three ways: by students, by admin (scraper), or by the instructor themselves (self-claim).
+
+---
+
+## Step 1: Add "Can't find your instructor?" Prompt to Search Page
+
+In `app/(main)/instructors/page.tsx`, add this below the search results (especially visible when 0 results):
+
+```typescript
+// Add this section after the instructor list, always visible
+<div className="mt-6 bg-white rounded-xl border border-dashed border-slate-200 p-5 text-center">
+  <p className="text-sm text-slate-500 mb-3">
+    {instructors.length === 0
+      ? "No instructors found matching your search."
+      : "Can't find the instructor you're looking for?"}
+  </p>
+  <a
+    href="/instructors/new"
+    className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
+    style={{ background: '#f97316' }}
+  >
+    + Add an Instructor
+  </a>
+</div>
+```
+
+---
+
+## Step 2: Build "Add Instructor" Page for Students
+
+Create `app/(main)/instructors/new/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import { AddInstructorForm } from '@/components/instructor/AddInstructorForm'
+
+export default async function NewInstructorPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login?next=/instructors/new')
+
+  return (
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-md mx-auto">
+        <a
+          href="/instructors"
+          className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6"
+        >
+          ← Back to search
+        </a>
+
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-slate-800">Add an Instructor</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Help grow Rita's instructor database
+          </p>
+        </div>
+
+        <AddInstructorForm />
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 3: Build Add Instructor Form Component
+
+Create `components/instructor/AddInstructorForm.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export function AddInstructorForm() {
+  const [fullName, setFullName] = useState('')
+  const [bio, setBio] = useState('')
+  const [teachingLocations, setTeachingLocations] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const router = useRouter()
+
+  async function handleSubmit() {
+    if (!fullName.trim()) {
+      setError('Instructor name is required')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const res = await fetch('/api/instructors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          bio: bio.trim() || null,
+          teaching_locations: teachingLocations.trim() || null,
+          created_by_source: 'student',
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to create instructor')
+      }
+
+      const { instructor } = await res.json()
+      router.push(`/instructors/${instructor.id}?created=true`)
+    } catch (err: any) {
+      setError(err.message)
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 p-6">
+      <div className="flex flex-col gap-4">
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+            Instructor Name <span className="text-red-400">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. John Smith"
+            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+            About <span className="font-normal normal-case text-slate-400">(optional)</span>
+          </label>
+          <textarea
+            placeholder="Anything you know about this instructor's background or specialty..."
+            className="w-full border border-slate-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-orange-300"
+            rows={3}
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            maxLength={500}
+          />
+        </div>
+
+        <div>
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
+            Teaching Location <span className="font-normal normal-case text-slate-400">(optional)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="e.g. Scarsdale Tennis Club"
+            className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+            value={teachingLocations}
+            onChange={e => setTeachingLocations(e.target.value)}
+          />
+        </div>
+
+        <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 leading-relaxed">
+          ℹ️ This instructor's profile will appear as "Unclaimed" until they sign up 
+          and verify their identity. You'll be able to write a review for them right away.
+        </div>
+
+        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+        <button
+          onClick={handleSubmit}
+          disabled={submitting || !fullName.trim()}
+          className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50"
+          style={{ background: '#f97316' }}
+        >
+          {submitting ? 'Creating...' : 'Add Instructor'}
+        </button>
+
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 4: Update Instructors API Route to Allow Student Creation
+
+Update `app/api/instructors/route.ts` — the POST handler should now allow BOTH admin and authenticated students to create instructors, with different `created_by_source` values:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Must be logged in (either student or admin)
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { full_name, bio, teaching_locations, created_by_source } = body
+
+  if (!full_name?.trim()) {
+    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  }
+
+  // Check for duplicate instructor name (case-insensitive)
+  const { data: existing } = await supabase
+    .from('instructors')
+    .select('id, full_name')
+    .ilike('full_name', full_name.trim())
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    return NextResponse.json({
+      error: `An instructor named "${existing[0].full_name}" already exists. Please search for them instead.`
+    }, { status: 409 })
+  }
+
+  // Determine source: admin-created vs student-created
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  const source = userData?.is_admin 
+    ? (created_by_source || 'admin') 
+    : 'student'
+
+  const { data, error } = await supabase
+    .from('instructors')
+    .insert({
+      full_name: full_name.trim(),
+      bio: bio || null,
+      teaching_locations: teaching_locations || null,
+      created_by: user.id,
+      created_by_source: source,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ instructor: data }, { status: 201 })
+}
+```
+
+---
+
+## Step 5: Add Success Message on Instructor Profile
+
+In `app/(main)/instructors/[id]/page.tsx`, show a success banner when redirected from creation:
+
+```typescript
+// Near the top of the page, check searchParams
+{searchParams.created === 'true' && (
+  <div
+    className="max-w-5xl mx-auto px-4 pt-4"
+  >
+    <div
+      className="rounded-xl px-4 py-3 text-sm font-medium"
+      style={{ background: '#fff7ed', color: '#f97316' }}
+    >
+      ✓ Instructor added! You can now write a review for them.
+    </div>
+  </div>
+)}
+```
+
+---
+
+## ✅ Done When:
+- [ ] "Can't find the instructor you're looking for?" prompt shows on search page
+- [ ] "+ Add an Instructor" button links to /instructors/new
+- [ ] Logged-out users redirected to login when accessing /instructors/new
+- [ ] Add Instructor form requires only name (bio + location optional)
+- [ ] Duplicate name (case-insensitive) shows clear error, does not create duplicate
+- [ ] New instructor created with created_by_source = 'student'
+- [ ] After creation, redirected to new instructor's profile page
+- [ ] Success message shown on instructor profile after creation
+- [ ] New instructor shows as "Unclaimed" badge
+- [ ] Student can immediately write a review for the newly created instructor
+
+**Do not proceed to Prompt #19 until all checkboxes above are complete.**

@@ -6,10 +6,13 @@ import { InstructorBadge } from "@/components/instructor/InstructorBadge";
 
 export default async function InstructorProfilePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ created?: string }>;
 }) {
   const { id } = await params;
+  const { created } = await searchParams;
   const supabase = createServiceClient();
 
   const [{ data: instructor }, { data: reviews }, { count: verifiedSessions }] =
@@ -40,6 +43,18 @@ export default async function InstructorProfilePage({
 
   return (
     <div>
+      {/* Success banner after instructor creation */}
+      {created === "true" && (
+        <div className="max-w-5xl mx-auto px-4 pt-4">
+          <div
+            className="rounded-xl px-4 py-3 text-sm font-medium"
+            style={{ background: "#fff7ed", color: "#f97316" }}
+          >
+            ✓ Instructor added! You can now write a review for them.
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-slate-100 -mx-6 -mt-6 px-6 py-6 mb-8">
         <div className="max-w-5xl mx-auto flex items-start gap-5">

@@ -45,27 +45,48 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authClient = await createClient();
+  const supabase = await createClient();
   const {
     data: { user },
-  } = await authClient.auth.getUser();
+  } = await supabase.auth.getUser();
+
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const db = createServiceClient();
-  const { data: profile } = await db
-    .from("users")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-  if (!profile?.is_admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
   const body = await request.json();
-  // Support both { full_name } (admin table) and legacy { name } format
   const full_name = (body.full_name ?? body.name ?? "").trim();
+
   if (!full_name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
+  // Duplicate check (case-insensitive)
+  const { data: existing } = await supabase
+    .from("instructors")
+    .select("id, full_name")
+    .ilike("full_name", full_name)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    return NextResponse.json(
+      {
+        error: `An instructor named "${existing[0].full_name}" already exists. Please search for them instead.`,
+      },
+      { status: 409 }
+    );
+  }
+
+  // Determine source: admin vs student
+  const { data: userData } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+
+  const source = userData?.is_admin
+    ? (body.created_by_source ?? "admin")
+    : "student";
+
+  const db = createServiceClient();
   const { data, error } = await db
     .from("instructors")
     .insert({
@@ -74,9 +95,9 @@ export async function POST(request: Request) {
       teaching_locations: body.teaching_locations ?? body.location ?? null,
       avatar_url: body.photoUrl ?? null,
       created_by: user.id,
-      created_by_source: "admin",
+      created_by_source: source,
     })
-    .select("*")
+    .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
