@@ -200,6 +200,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/api/moderation/[id]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/moderation/[id]">> = Specific
+  const handler = {} as typeof import("../../app/api/moderation/[id]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/api/moderation/route.ts
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/moderation">> = Specific

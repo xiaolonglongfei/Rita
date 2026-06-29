@@ -1,0 +1,619 @@
+# Replit Prompt #17 — Admin Dashboard
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #18 until this step is verified.
+
+---
+
+## Overview
+
+Build the Admin Dashboard with three pages:
+1. Instructor management (add/edit instructor profiles)
+2. Content moderation queue (flagged reviews)
+3. User management (ban/unban accounts)
+
+Admin access is controlled by `users.is_admin = TRUE`. The middleware already protects `/admin/*` routes — only verify this is still working.
+
+---
+
+## Step 1: Verify Admin Access Middleware
+
+Confirm `middleware.ts` still has this logic (do not remove it):
+
+```typescript
+if (path.startsWith('/admin')) {
+  if (!user) return NextResponse.redirect(new URL('/login', request.url))
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+  if (!userData?.is_admin) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+}
+```
+
+---
+
+## Step 2: Build Admin Layout
+
+Create `app/admin/layout.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin, full_name')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.is_admin) redirect('/')
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Admin nav */}
+      <nav className="bg-slate-900 text-white px-6 py-4">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <Link href="/admin" className="font-bold text-lg">
+              Rita<span style={{ color: '#f97316' }}>.</span> Admin
+            </Link>
+            <div className="flex gap-6 text-sm">
+              <Link href="/admin/instructors" className="text-slate-300 hover:text-white">
+                Instructors
+              </Link>
+              <Link href="/admin/moderation" className="text-slate-300 hover:text-white">
+                Moderation
+              </Link>
+              <Link href="/admin/users" className="text-slate-300 hover:text-white">
+                Users
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <span className="text-slate-400">{userData.full_name}</span>
+            <Link href="/" className="text-slate-300 hover:text-white">
+              ← Back to site
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        {children}
+      </main>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 3: Build Admin Overview Page
+
+Create `app/admin/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+
+export default async function AdminOverviewPage() {
+  const supabase = await createClient()
+
+  const [
+    { count: instructorCount },
+    { count: studentCount },
+    { count: reviewCount },
+    { count: pendingModerationCount },
+    { count: pendingVerificationCount },
+  ] = await Promise.all([
+    supabase.from('instructors').select('*', { count: 'exact', head: true }),
+    supabase.from('users').select('*', { count: 'exact', head: true }),
+    supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('moderation_status', 'approved'),
+    supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('moderation_status', 'pending_review'),
+    supabase.from('reviews').select('*', { count: 'exact', head: true }).eq('is_verified', false),
+  ])
+
+  const stats = [
+    { label: 'Total Instructors', value: instructorCount ?? 0, icon: '🎾' },
+    { label: 'Total Students', value: studentCount ?? 0, icon: '👤' },
+    { label: 'Approved Reviews', value: reviewCount ?? 0, icon: '⭐' },
+    { label: 'Pending Moderation', value: pendingModerationCount ?? 0, icon: '🚩' },
+    { label: 'Unverified Sessions', value: pendingVerificationCount ?? 0, icon: '⏳' },
+  ]
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-800 mb-6">Dashboard</h1>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {stats.map(stat => (
+          <div key={stat.label} className="bg-white rounded-xl border border-slate-100 p-5">
+            <div className="text-2xl mb-2">{stat.icon}</div>
+            <div className="text-2xl font-bold" style={{ color: '#f97316' }}>{stat.value}</div>
+            <div className="text-xs text-slate-500 mt-1">{stat.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 4: Build Instructor Management Page
+
+Create `app/admin/instructors/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { InstructorAdminTable } from '@/components/admin/InstructorAdminTable'
+
+export default async function AdminInstructorsPage() {
+  const supabase = await createClient()
+  const { data: instructors } = await supabase
+    .from('instructors')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-slate-800">Instructors</h1>
+      </div>
+      <InstructorAdminTable instructors={instructors || []} />
+    </div>
+  )
+}
+```
+
+Create `components/admin/InstructorAdminTable.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+
+interface Instructor {
+  id: string
+  full_name: string
+  bio: string | null
+  teaching_locations: string | null
+  is_claimed: boolean
+  avg_overall: number
+  total_reviews: number
+}
+
+export function InstructorAdminTable({ instructors }: { instructors: Instructor[] }) {
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newBio, setNewBio] = useState('')
+  const [newLocation, setNewLocation] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleAdd() {
+    if (!newName.trim()) return
+    setSubmitting(true)
+    await fetch('/api/instructors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        full_name: newName,
+        bio: newBio || null,
+        teaching_locations: newLocation || null,
+      }),
+    })
+    window.location.reload()
+  }
+
+  return (
+    <div>
+      <button
+        onClick={() => setShowAddForm(!showAddForm)}
+        className="mb-4 px-4 py-2 rounded-lg text-white text-sm font-semibold"
+        style={{ background: '#f97316' }}
+      >
+        {showAddForm ? 'Cancel' : '+ Add Instructor'}
+      </button>
+
+      {showAddForm && (
+        <div className="bg-white rounded-xl border border-slate-100 p-5 mb-6 flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="Full name"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+          />
+          <textarea
+            placeholder="Bio"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm resize-none"
+            rows={2}
+            value={newBio}
+            onChange={e => setNewBio(e.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Teaching locations"
+            className="border border-slate-200 rounded-lg px-3 py-2 text-sm"
+            value={newLocation}
+            onChange={e => setNewLocation(e.target.value)}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={submitting || !newName.trim()}
+            className="px-4 py-2 rounded-lg text-white text-sm font-semibold disabled:opacity-50 self-start"
+            style={{ background: '#f97316' }}
+          >
+            {submitting ? 'Adding...' : 'Save Instructor'}
+          </button>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+            <tr>
+              <th className="text-left px-4 py-3">Name</th>
+              <th className="text-left px-4 py-3">Location</th>
+              <th className="text-left px-4 py-3">Status</th>
+              <th className="text-left px-4 py-3">Score</th>
+              <th className="text-left px-4 py-3">Reviews</th>
+            </tr>
+          </thead>
+          <tbody>
+            {instructors.map(inst => (
+              <tr key={inst.id} className="border-t border-slate-100">
+                <td className="px-4 py-3 font-medium text-slate-800">{inst.full_name}</td>
+                <td className="px-4 py-3 text-slate-500">{inst.teaching_locations || '—'}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                    style={{
+                      background: inst.is_claimed ? '#fff7ed' : '#f1f5f9',
+                      color: inst.is_claimed ? '#f97316' : '#64748b',
+                    }}
+                  >
+                    {inst.is_claimed ? 'Claimed' : 'Unclaimed'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-slate-600">
+                  {inst.total_reviews > 0 ? `⭐ ${inst.avg_overall?.toFixed(1)}` : '—'}
+                </td>
+                <td className="px-4 py-3 text-slate-500">{inst.total_reviews}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## Step 5: Build Instructor Create API Route
+
+Create `app/api/instructors/route.ts` (or update if it exists):
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.is_admin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const body = await request.json()
+  const { full_name, bio, teaching_locations } = body
+
+  if (!full_name?.trim()) {
+    return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+  }
+
+  const { data, error } = await supabase
+    .from('instructors')
+    .insert({
+      full_name: full_name.trim(),
+      bio: bio || null,
+      teaching_locations: teaching_locations || null,
+      created_by: user.id,
+      created_by_source: 'admin',
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ instructor: data }, { status: 201 })
+}
+```
+
+---
+
+## Step 6: Build Moderation Queue Page
+
+Create `app/admin/moderation/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { ModerationQueue } from '@/components/admin/ModerationQueue'
+
+export default async function AdminModerationPage() {
+  const supabase = await createClient()
+
+  const { data: flaggedReviews } = await supabase
+    .from('reviews')
+    .select(`
+      id,
+      rating_value,
+      rating_effectiveness,
+      rating_punctuality,
+      comment,
+      is_flagged,
+      flag_reason,
+      moderation_status,
+      session_date,
+      student_id,
+      instructor_id,
+      users!reviews_student_id_fkey (full_name, email),
+      instructors!reviews_instructor_id_fkey (full_name)
+    `)
+    .or('is_flagged.eq.true,moderation_status.eq.pending_review')
+    .order('created_at', { ascending: false })
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-800 mb-2">Moderation Queue</h1>
+      <p className="text-sm text-slate-500 mb-6">
+        Flagged or pending reviews requiring manual review.
+      </p>
+      <ModerationQueue reviews={flaggedReviews || []} />
+    </div>
+  )
+}
+```
+
+Create `components/admin/ModerationQueue.tsx`:
+
+```typescript
+'use client'
+
+import { useState } from 'react'
+
+export function ModerationQueue({ reviews: initialReviews }: { reviews: any[] }) {
+  const [reviews, setReviews] = useState(initialReviews)
+
+  async function handleAction(reviewId: string, action: 'approve' | 'remove') {
+    await fetch(`/api/moderation/${reviewId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action }),
+    })
+    setReviews(reviews.filter(r => r.id !== reviewId))
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-100 p-8 text-center">
+        <p className="text-sm text-slate-400">No reviews need moderation right now.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {reviews.map(review => {
+        const overall = (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3
+        return (
+          <div key={review.id} className="bg-white rounded-xl border border-slate-100 p-5">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">
+                  Review for {review.instructors?.full_name}
+                </p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  By: {review.users?.full_name} ({review.users?.email})
+                </p>
+                {review.flag_reason && (
+                  <p className="text-xs text-red-500 mt-1">⚠️ {review.flag_reason}</p>
+                )}
+              </div>
+              <span className="text-lg font-bold" style={{ color: '#f97316' }}>
+                ⭐ {overall.toFixed(1)}
+              </span>
+            </div>
+
+            {review.comment && (
+              <p className="text-sm text-slate-600 bg-slate-50 rounded-lg p-3 mb-3">
+                "{review.comment}"
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleAction(review.id, 'approve')}
+                className="px-4 py-2 rounded-lg text-white text-sm font-semibold"
+                style={{ background: '#22c55e' }}
+              >
+                ✓ Approve
+              </button>
+              <button
+                onClick={() => handleAction(review.id, 'remove')}
+                className="px-4 py-2 rounded-lg text-white text-sm font-semibold"
+                style={{ background: '#ef4444' }}
+              >
+                ✗ Remove
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+```
+
+---
+
+## Step 7: Build Moderation Action API Route
+
+Create `app/api/moderation/[id]/route.ts`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!userData?.is_admin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { action } = await request.json()
+
+  const newStatus = action === 'approve' ? 'approved' : 'removed'
+
+  await supabase
+    .from('reviews')
+    .update({ moderation_status: newStatus, is_flagged: false })
+    .eq('id', params.id)
+
+  await supabase.from('moderation_log').insert({
+    review_id: params.id,
+    action: action === 'approve' ? 'approved' : 'removed',
+    performed_by: user.id,
+    performed_by_type: 'admin',
+  })
+
+  return NextResponse.json({ success: true })
+}
+```
+
+---
+
+## Step 8: Build User Management Page
+
+Create `app/admin/users/page.tsx`:
+
+```typescript
+import { createClient } from '@/lib/supabase/server'
+import { UserAdminTable } from '@/components/admin/UserAdminTable'
+
+export default async function AdminUsersPage() {
+  const supabase = await createClient()
+  const { data: users } = await supabase
+    .from('users')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-slate-800 mb-6">Users</h1>
+      <UserAdminTable users={users || []} />
+    </div>
+  )
+}
+```
+
+Create `components/admin/UserAdminTable.tsx`:
+
+```typescript
+'use client'
+
+interface User {
+  id: string
+  full_name: string
+  email: string
+  is_admin: boolean
+  created_at: string
+}
+
+export function UserAdminTable({ users }: { users: User[] }) {
+  return (
+    <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
+          <tr>
+            <th className="text-left px-4 py-3">Name</th>
+            <th className="text-left px-4 py-3">Email</th>
+            <th className="text-left px-4 py-3">Role</th>
+            <th className="text-left px-4 py-3">Joined</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map(u => (
+            <tr key={u.id} className="border-t border-slate-100">
+              <td className="px-4 py-3 font-medium text-slate-800">{u.full_name}</td>
+              <td className="px-4 py-3 text-slate-500">{u.email}</td>
+              <td className="px-4 py-3">
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                  style={{
+                    background: u.is_admin ? '#fff7ed' : '#f1f5f9',
+                    color: u.is_admin ? '#f97316' : '#64748b',
+                  }}
+                >
+                  {u.is_admin ? 'Admin' : 'Student'}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-slate-400">
+                {new Date(u.created_at).toLocaleDateString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+```
+
+---
+
+## ✅ Done When:
+- [ ] /admin redirects non-admins to homepage
+- [ ] /admin overview shows 5 stat cards with real counts
+- [ ] /admin/instructors lists all instructors in a table
+- [ ] "+ Add Instructor" form creates a new instructor via API
+- [ ] /admin/moderation shows flagged/pending reviews
+- [ ] Approve button sets moderation_status to 'approved'
+- [ ] Remove button sets moderation_status to 'removed'
+- [ ] Moderation actions are logged to moderation_log table
+- [ ] /admin/users lists all users with admin/student badge
+- [ ] Admin nav bar shows Instructors / Moderation / Users links
+
+**Do not proceed to Prompt #18 until all checkboxes above are complete.**

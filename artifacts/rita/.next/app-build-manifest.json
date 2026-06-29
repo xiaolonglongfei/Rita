@@ -11,21 +11,6 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
-    "/(main)/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/layout.js"
-    ],
-    "/(main)/reviews/new/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/reviews/new/page.js"
-    ],
-    "/(main)/ranking/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(main)/ranking/page.js"
-    ],
     "/(auth)/login/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
