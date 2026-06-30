@@ -38,3 +38,4 @@ channel = "stable-25_05"
 
 [userenv.shared]
 NEXT_PUBLIC_APP_URL = "https://c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1-00-36xxu15g8x1md.worf.replit.dev"
+RESEND_FROM_EMAIL = "onboarding@resend.dev"
