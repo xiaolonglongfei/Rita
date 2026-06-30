@@ -1,0 +1,265 @@
+# Replit Prompt #19 — Email Notifications via Resend
+> Paste this entire prompt into Replit Agent.
+> Do NOT proceed to Prompt #20 until this step is verified.
+
+---
+
+## Overview
+
+Build the minimal MVP email notification system using Resend. Two emails only:
+1. To instructor when a student submits a verification request
+2. To student when their session is verified by the instructor
+
+---
+
+## Step 1: Verify Resend Setup
+
+Confirm `RESEND_API_KEY` and `RESEND_FROM_EMAIL` exist in Replit Secrets. If not, request them:
+- `RESEND_API_KEY` — from resend.com dashboard
+- `RESEND_FROM_EMAIL` — should be `noreply@livdao.com` (or a verified Resend domain)
+
+If the domain `livdao.com` is not yet verified in Resend, emails can still be sent using Resend's default `onboarding@resend.dev` sender for testing purposes. Use that as a fallback if `RESEND_FROM_EMAIL` is not set.
+
+---
+
+## Step 2: Create Email Helper
+
+Create `lib/resend.ts`:
+
+```typescript
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
+
+export async function sendVerificationRequestEmail({
+  to,
+  instructorName,
+  studentName,
+  sessionDate,
+  sessionTime,
+  sessionLocation,
+}: {
+  to: string
+  instructorName: string
+  studentName: string
+  sessionDate: string
+  sessionTime: string
+  sessionLocation: string
+}) {
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `A student wants you to verify a session`,
+      html: `
+        <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1e2a38;">Rita<span style="color: #b8d400;">.</span></h2>
+          <p style="color: #1e2a38; font-size: 16px;">Hi ${instructorName},</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            <strong>${studentName}</strong> has submitted a review and is asking you to confirm the session happened.
+          </p>
+          <div style="background: #fff7ed; border-radius: 12px; padding: 16px; margin: 20px 0;">
+            <p style="margin: 4px 0; color: #1e2a38; font-size: 14px;">📅 ${new Date(sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p style="margin: 4px 0; color: #1e2a38; font-size: 14px;">🕐 ${sessionTime}</p>
+            <p style="margin: 4px 0; color: #1e2a38; font-size: 14px;">📍 ${sessionLocation}</p>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px;">
+            Log in to Rita to confirm or deny this session. You will not see the student's rating or comments — only the session details.
+          </p>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/sessions" style="display: inline-block; background: #f97316; color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-top: 16px;">
+            Review Request →
+          </a>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error('Failed to send verification request email:', error)
+  }
+}
+
+export async function sendVerificationConfirmedEmail({
+  to,
+  instructorName,
+  sessionDate,
+}: {
+  to: string
+  instructorName: string
+  sessionDate: string
+}) {
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `Your session has been verified ✓`,
+      html: `
+        <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1e2a38;">Rita<span style="color: #b8d400;">.</span></h2>
+          <p style="color: #1e2a38; font-size: 16px;">Good news!</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            <strong>${instructorName}</strong> has confirmed your session on 
+            ${new Date(sessionDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}.
+            Your review is now marked as <strong>Verified</strong>.
+          </p>
+          <p style="color: #94a3b8; font-size: 12px;">
+            🔒 Your identity remains anonymous. The instructor only confirmed the session details — they cannot see your rating.
+          </p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error('Failed to send verification confirmed email:', error)
+  }
+}
+```
+
+---
+
+## Step 3: Trigger Email on Review Submission
+
+Update `app/api/reviews/route.ts` — after successfully inserting a review, send the verification request email to the instructor:
+
+```typescript
+import { sendVerificationRequestEmail } from '@/lib/resend'
+
+// ... existing code in POST handler, after the review insert succeeds ...
+
+// Fetch instructor's claimed user email (if claimed)
+const { data: instructorData } = await supabase
+  .from('instructors')
+  .select('full_name, is_claimed, claimed_by')
+  .eq('id', instructor_id)
+  .single()
+
+if (instructorData?.is_claimed && instructorData.claimed_by) {
+  const { data: instructorUser } = await supabase
+    .from('users')
+    .select('email')
+    .eq('id', instructorData.claimed_by)
+    .single()
+
+  const { data: studentData } = await supabase
+    .from('users')
+    .select('full_name')
+    .eq('id', user.id)
+    .single()
+
+  if (instructorUser?.email) {
+    await sendVerificationRequestEmail({
+      to: instructorUser.email,
+      instructorName: instructorData.full_name,
+      studentName: studentData?.full_name || 'A student',
+      sessionDate: session_date,
+      sessionTime: session_time,
+      sessionLocation: session_location,
+    })
+  }
+}
+
+// Also create an in-app notification
+await supabase.from('notifications').insert({
+  user_id: instructorData?.claimed_by || null,
+  type: 'verification_requested',
+  related_review_id: data.id,
+  related_instructor_id: instructor_id,
+  message: `A student wants you to verify a session on ${session_date}`,
+})
+
+// (continue with the existing return NextResponse.json response)
+```
+
+**Note:** Only send the email if `instructorData.is_claimed` is true. If the instructor hasn't claimed their profile yet, there's no email to send — the review just stays unverified until they sign up.
+
+---
+
+## Step 4: Trigger Email on Verification Confirmed
+
+Update `app/api/reviews/[id]/verify/route.ts` — after confirming a review, send the email to the student:
+
+```typescript
+import { sendVerificationConfirmedEmail } from '@/lib/resend'
+
+// ... existing code in POST handler ...
+
+if (action === 'confirm') {
+  const { data: updatedReview } = await supabase
+    .from('reviews')
+    .update({ is_verified: true })
+    .eq('id', params.id)
+    .select('student_id, session_date, instructor_id')
+    .single()
+
+  if (updatedReview) {
+    // Get student email
+    const { data: studentUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', updatedReview.student_id)
+      .single()
+
+    // Get instructor name
+    const { data: instructorData } = await supabase
+      .from('instructors')
+      .select('full_name')
+      .eq('id', updatedReview.instructor_id)
+      .single()
+
+    if (studentUser?.email) {
+      await sendVerificationConfirmedEmail({
+        to: studentUser.email,
+        instructorName: instructorData?.full_name || 'Your instructor',
+        sessionDate: updatedReview.session_date,
+      })
+    }
+
+    // Create in-app notification
+    await supabase.from('notifications').insert({
+      user_id: updatedReview.student_id,
+      type: 'verification_confirmed',
+      related_review_id: params.id,
+      message: `Your session on ${updatedReview.session_date} has been verified`,
+    })
+  }
+}
+```
+
+---
+
+## Step 5: Install Resend Package (if not already installed)
+
+```bash
+npm install resend
+```
+
+---
+
+## Step 6: Test the Email Flow
+
+To test, you'll need a claimed instructor account:
+
+1. Sign up a second test account
+2. As admin, find an instructor in `/admin/instructors` and manually set `claimed_by` to the test user's ID and `is_claimed = true` (via Supabase SQL Editor for now, since the formal "claim profile" flow is a future feature):
+
+```sql
+UPDATE instructors 
+SET is_claimed = TRUE, claimed_by = 'TEST_USER_UUID_HERE'
+WHERE full_name = 'Claudia Bartolome';
+```
+
+3. As your main student account, submit a review for that instructor with session details
+4. Check that the instructor's email inbox receives the verification request
+5. Log in as the instructor, go to `/sessions`, confirm the request
+6. Check that the student's email inbox receives the verification confirmed email
+
+---
+
+## ✅ Done When:
+- [ ] `lib/resend.ts` created with both email templates
+- [ ] Submitting a review for a CLAIMED instructor triggers an email to that instructor
+- [ ] Submitting a review for an UNCLAIMED instructor does NOT error (just skips email)
+- [ ] Confirming a verification triggers an email to the student
+- [ ] Emails render correctly with Rita branding (orange/lime colors)
+- [ ] In-app notifications are also created alongside emails
+- [ ] No errors in server logs when emails are sent or skipped
+
+**Do not proceed to Prompt #20 until all checkboxes above are complete.**

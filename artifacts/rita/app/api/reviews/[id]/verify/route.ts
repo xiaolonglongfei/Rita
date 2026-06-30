@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { sendVerificationConfirmedEmail } from "@/lib/resend";
 
 export async function POST(
   request: Request,
@@ -35,7 +36,7 @@ export async function POST(
   // Verify this user is a claimed instructor
   const { data: instructorProfile } = await db
     .from("instructors")
-    .select("id")
+    .select("id, full_name")
     .eq("claimed_by", user.id)
     .single();
 
@@ -46,7 +47,7 @@ export async function POST(
   // Verify the review belongs to this instructor
   const { data: review } = await db
     .from("reviews")
-    .select("id, instructor_id")
+    .select("id, instructor_id, student_id, session_date")
     .eq("id", id)
     .eq("instructor_id", instructorProfile.id)
     .single();
@@ -57,6 +58,30 @@ export async function POST(
 
   if (action === "confirm") {
     await db.from("reviews").update({ is_verified: true }).eq("id", id);
+
+    // Get student email for confirmation email
+    const { data: studentUser } = await db
+      .from("users")
+      .select("email")
+      .eq("id", review.student_id)
+      .single();
+
+    // In-app notification to student
+    await db.from("notifications").insert({
+      user_id: review.student_id,
+      type: "verification_confirmed",
+      related_review_id: id,
+      message: `Your session on ${review.session_date} has been verified`,
+    });
+
+    // Email to student (best-effort)
+    if (studentUser?.email) {
+      await sendVerificationConfirmedEmail({
+        to: studentUser.email,
+        instructorName: instructorProfile.full_name,
+        sessionDate: review.session_date,
+      });
+    }
   }
   // deny: review stays as-is (is_verified remains false)
 

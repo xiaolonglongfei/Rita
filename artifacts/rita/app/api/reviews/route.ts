@@ -1,5 +1,8 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import {
+  sendVerificationRequestEmail,
+} from "@/lib/resend";
 
 export async function GET() {
   const authClient = await createClient();
@@ -138,20 +141,50 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Notification to reviewer
-  const { data: instructor } = await db
+  // Fetch instructor details for notifications/emails
+  const { data: instructorData } = await db
     .from("instructors")
-    .select("full_name")
+    .select("full_name, is_claimed, claimed_by")
     .eq("id", instructor_id)
     .single();
 
+  // Notification to reviewer (student)
   await db.from("notifications").insert({
     user_id: user.id,
     type: "review_submitted",
     message: `Your review for ${
-      (instructor as { full_name: string } | null)?.full_name ?? "the instructor"
+      instructorData?.full_name ?? "the instructor"
     } has been submitted and is pending verification.`,
   });
+
+  // If instructor has claimed their profile, send them a verification request
+  if (instructorData?.is_claimed && instructorData.claimed_by) {
+    const [{ data: instructorUser }, { data: studentData }] = await Promise.all([
+      db.from("users").select("email").eq("id", instructorData.claimed_by).single(),
+      db.from("users").select("full_name").eq("id", user.id).single(),
+    ]);
+
+    // In-app notification to instructor
+    await db.from("notifications").insert({
+      user_id: instructorData.claimed_by,
+      type: "verification_requested",
+      related_review_id: review.id,
+      related_instructor_id: instructor_id,
+      message: `A student wants you to verify a session on ${session_date}`,
+    });
+
+    // Email to instructor (best-effort, never blocks the response)
+    if (instructorUser?.email) {
+      await sendVerificationRequestEmail({
+        to: instructorUser.email,
+        instructorName: instructorData.full_name,
+        studentName: studentData?.full_name || "A student",
+        sessionDate: session_date,
+        sessionTime: session_time,
+        sessionLocation: session_location,
+      });
+    }
+  }
 
   return NextResponse.json({ review }, { status: 201 });
 }
