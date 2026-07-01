@@ -18,10 +18,11 @@ export async function sendVerificationRequestEmail({
   sessionTime: string;
   sessionLocation: string;
 }) {
+  const recipient = process.env.RESEND_TEST_EMAIL || to;
   try {
     const result = await resend.emails.send({
       from: FROM_EMAIL,
-      to,
+      to: recipient,
       subject: `A student wants you to verify a session`,
       html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
@@ -60,10 +61,11 @@ export async function sendVerificationConfirmedEmail({
   instructorName: string;
   sessionDate: string;
 }) {
+  const recipient = process.env.RESEND_TEST_EMAIL || to;
   try {
     await resend.emails.send({
       from: FROM_EMAIL,
-      to,
+      to: recipient,
       subject: `Your session has been verified ✓`,
       html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
@@ -82,5 +84,6 @@ export async function sendVerificationConfirmedEmail({
     });
   } catch (error) {
     console.error("Failed to send verification confirmed email:", error);
+    throw error;
   }
 }
