@@ -20,7 +20,7 @@ export default async function InstructorProfilePage({
       supabase.from("instructors").select("*").eq("id", id).single(),
       supabase
         .from("reviews")
-        .select("id, rating_value, rating_effectiveness, rating_punctuality, comment, created_at, student_id")
+        .select("id, rating_value, rating_effectiveness, rating_punctuality, comment, created_at, student_id, is_verified")
         .eq("instructor_id", id)
         .eq("moderation_status", "approved")
         .order("created_at", { ascending: false })
@@ -36,10 +36,7 @@ export default async function InstructorProfilePage({
 
   const reviewsVisible = (instructor.total_reviews ?? 0) >= 3;
 
-  const enrichedReviews = (reviews ?? []).map((r) => ({
-    ...r,
-    is_verified: true,
-  }));
+  const enrichedReviews = reviews ?? [];
 
   return (
     <div>

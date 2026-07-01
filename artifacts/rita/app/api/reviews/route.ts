@@ -180,10 +180,17 @@ export async function POST(request: Request) {
     });
 
     // Email to instructor (best-effort, never blocks the response)
+    console.log('=== EMAIL DEBUG ===');
+    console.log('instructor is_claimed:', instructorData?.is_claimed);
+    console.log('claimed_by:', instructorData?.claimed_by);
+    console.log('instructor email:', instructorUser?.email);
+    console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
+    console.log('RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL);
+
     if (instructorUser?.email) {
       console.log("[reviews/POST] Sending verification email to:", instructorUser.email);
       try {
-        await sendVerificationRequestEmail({
+        const result = await sendVerificationRequestEmail({
           to: instructorUser.email,
           instructorName: instructorData.full_name,
           studentName: studentData?.full_name || "A student",
@@ -191,9 +198,10 @@ export async function POST(request: Request) {
           sessionTime: session_time,
           sessionLocation: session_location,
         });
+        console.log('Email send result:', result);
         console.log("[reviews/POST] Verification email sent successfully");
       } catch (emailErr) {
-        console.error("[reviews/POST] Resend error:", emailErr);
+        console.error('Email send FAILED:', emailErr);
       }
     } else {
       console.log("[reviews/POST] No instructor email found — skipping email");

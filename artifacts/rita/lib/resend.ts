@@ -19,7 +19,7 @@ export async function sendVerificationRequestEmail({
   sessionLocation: string;
 }) {
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from: FROM_EMAIL,
       to,
       subject: `A student wants you to verify a session`,
@@ -44,8 +44,10 @@ export async function sendVerificationRequestEmail({
         </div>
       `,
     });
+    return result;
   } catch (error) {
     console.error("Failed to send verification request email:", error);
+    throw error;
   }
 }
 

@@ -1,0 +1,58 @@
+Please fix two critical issues:
+
+ISSUE 1: Reviews are showing as "✓ Verified" on the 
+instructor profile page, but those same reviews are 
+still appearing in "Pending Verifications" on My Sessions.
+
+This means is_verified is being set to TRUE when the 
+review is first submitted (which is wrong). 
+
+Fix: In app/api/reviews/route.ts, confirm the review 
+insert always has is_verified: FALSE. Search the entire 
+codebase for any place that sets is_verified to true 
+other than the verify route (app/api/reviews/[id]/verify/route.ts).
+
+Also check: is the instructor profile page fetching 
+reviews WITHOUT filtering by is_verified? It should show 
+ALL approved reviews regardless of verified status, 
+but display the verified/unverified LABEL correctly.
+The label on each review card should reflect the actual 
+is_verified value from the database.
+
+Run this SQL in Supabase to check the actual values:
+SELECT id, is_verified, moderation_status, session_date 
+FROM reviews 
+ORDER BY created_at DESC;
+
+ISSUE 2: Resend shows zero sent emails. The email is 
+never being triggered.
+
+Please add this diagnostic code to app/api/reviews/route.ts,
+right before the sendVerificationRequestEmail call:
+
+console.log('=== EMAIL DEBUG ===')
+console.log('instructor is_claimed:', instructorData?.is_claimed)
+console.log('claimed_by:', instructorData?.claimed_by)
+console.log('instructor email:', instructorUser?.email)
+console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY)
+console.log('RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL)
+
+Also wrap the email send in a try/catch and log the full error:
+
+try {
+  const result = await sendVerificationRequestEmail({...})
+  console.log('Email send result:', result)
+} catch (err) {
+  console.error('Email send FAILED:', err)
+}
+
+Then submit a test review and report back exactly what 
+the Replit console logs show for these debug lines.
+
+Most likely cause: the Resend free tier requires you to 
+verify a domain OR only allows sending to the account 
+owner's email address. Check if there is an error like 
+"You can only send emails to your own email address" 
+or "domain not verified". If so, temporarily change 
+the recipient email to your own Resend account email 
+for testing.
