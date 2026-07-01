@@ -1,5 +1,42 @@
 {
-  "node": {},
+  "node": {
+    "701e4a9a39fb0fddeee2d593d27103b78a0082ba43": {
+      "workers": {
+        "app/(auth)/signup/page": {
+          "moduleId": "(action-browser)/../../node_modules/.pnpm/next@15.5.19_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Frunner%2Fworkspace%2Fartifacts%2Frita%2Fapp%2F(auth)%2Factions.ts%22%2C%5B%7B%22id%22%3A%22701e4a9a39fb0fddeee2d593d27103b78a0082ba43%22%2C%22exportedName%22%3A%22signupAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%2C%7B%22id%22%3A%22708a6487d0609d400f1778c59662128ea1868d68ca%22%2C%22exportedName%22%3A%22loginAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(auth)/login/page": {
+          "moduleId": "(action-browser)/../../node_modules/.pnpm/next@15.5.19_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Frunner%2Fworkspace%2Fartifacts%2Frita%2Fapp%2F(auth)%2Factions.ts%22%2C%5B%7B%22id%22%3A%22701e4a9a39fb0fddeee2d593d27103b78a0082ba43%22%2C%22exportedName%22%3A%22signupAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%2C%7B%22id%22%3A%22708a6487d0609d400f1778c59662128ea1868d68ca%22%2C%22exportedName%22%3A%22loginAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(auth)/signup/page": "action-browser",
+        "app/(auth)/login/page": "action-browser"
+      },
+      "filename": "app/(auth)/actions.ts",
+      "exportedName": "signupAction"
+    },
+    "708a6487d0609d400f1778c59662128ea1868d68ca": {
+      "workers": {
+        "app/(auth)/signup/page": {
+          "moduleId": "(action-browser)/../../node_modules/.pnpm/next@15.5.19_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Frunner%2Fworkspace%2Fartifacts%2Frita%2Fapp%2F(auth)%2Factions.ts%22%2C%5B%7B%22id%22%3A%22701e4a9a39fb0fddeee2d593d27103b78a0082ba43%22%2C%22exportedName%22%3A%22signupAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%2C%7B%22id%22%3A%22708a6487d0609d400f1778c59662128ea1868d68ca%22%2C%22exportedName%22%3A%22loginAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        },
+        "app/(auth)/login/page": {
+          "moduleId": "(action-browser)/../../node_modules/.pnpm/next@15.5.19_react-dom@19.1.0_react@19.1.0__react@19.1.0/node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22%2Fhome%2Frunner%2Fworkspace%2Fartifacts%2Frita%2Fapp%2F(auth)%2Factions.ts%22%2C%5B%7B%22id%22%3A%22701e4a9a39fb0fddeee2d593d27103b78a0082ba43%22%2C%22exportedName%22%3A%22signupAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%2C%7B%22id%22%3A%22708a6487d0609d400f1778c59662128ea1868d68ca%22%2C%22exportedName%22%3A%22loginAction%22%2C%22filename%22%3A%22app%2F(auth)%2Factions.ts%22%7D%5D%5D%5D&__client_imported__=true!",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/(auth)/signup/page": "action-browser",
+        "app/(auth)/login/page": "action-browser"
+      },
+      "filename": "app/(auth)/actions.ts",
+      "exportedName": "loginAction"
+    }
+  },
   "edge": {},
   "encryptionKey": "G4xEgwDp+Y1XLXb+6c3ShKJ89nG1RvmN+cXV94P6Dm4="
 }

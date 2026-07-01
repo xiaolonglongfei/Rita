@@ -1,3 +1,11 @@
 {
-  "/page": "app/page.js"
+  "/api/instructors/route": "app/api/instructors/route.js",
+  "/api/reviews/route": "app/api/reviews/route.js",
+  "/page": "app/page.js",
+  "/(auth)/signup/page": "app/(auth)/signup/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(main)/instructors/page": "app/(main)/instructors/page.js",
+  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js",
+  "/(main)/reviews/new/page": "app/(main)/reviews/new/page.js",
+  "/(main)/profile/page": "app/(main)/profile/page.js"
 }

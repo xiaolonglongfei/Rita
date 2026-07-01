@@ -1,0 +1,75 @@
+Please fix these four issues:
+
+ISSUE 1: Verification request email is not being received.
+Debug the email sending in app/api/reviews/route.ts:
+- Add console.log before and after the sendVerificationRequestEmail call
+- Log whether instructorData.is_claimed is true
+- Log whether instructorUser?.email exists
+- Log any errors from Resend
+Report what the console shows when a review is submitted.
+
+ISSUE 2: Instructor accounts see the same navbar as students.
+When a user who has claimed an instructor profile logs in,
+the navbar should be different from a regular student.
+
+Check if the logged-in user has a claimed instructor profile:
+const { data: instructorProfile } = await supabase
+  .from('instructors')
+  .select('id, full_name')
+  .eq('claimed_by', user.id)
+  .single()
+
+If instructorProfile exists, show this navbar instead:
+- "My Profile" (links to their instructor profile page)
+- "My Sessions" (to see pending verifications)
+- Their name + Sign Out
+
+If no instructorProfile (regular student), show:
+- "Instructors"
+- "My Ranking"
+- "My Sessions"
+- "Write Review"
+- Their name + Profile + Sign Out
+
+ISSUE 3: After logging in, there is no notification or 
+indication of pending verification requests for instructors.
+
+When an instructor logs in and has pending unverified 
+reviews waiting for their confirmation, show a badge or 
+banner on the My Sessions page indicating how many 
+verification requests are pending.
+
+Also add a notification badge on the navbar "My Sessions" 
+link showing the count of pending verifications:
+
+const { count } = await supabase
+  .from('reviews')
+  .select('*', { count: 'exact', head: true })
+  .eq('instructor_id', instructorProfile.id)
+  .eq('is_verified', false)
+  .eq('moderation_status', 'approved')
+
+ISSUE 4: "I'm an Instructor" button on homepage redirects 
+to /signup even when user is already logged in.
+
+Fix: Check if user is already logged in.
+- If logged in AND has claimed instructor profile → 
+  redirect to /sessions
+- If logged in BUT no instructor profile → 
+  redirect to a page explaining how to claim a profile
+- If NOT logged in → redirect to /signup?role=instructor
+
+In app/(main)/page.tsx (server component):
+const { data: { user } } = await supabase.auth.getUser()
+const { data: instructorProfile } = user ? await supabase
+  .from('instructors')
+  .select('id')
+  .eq('claimed_by', user.id)
+  .single() : { data: null }
+
+const instructorHref = user 
+  ? (instructorProfile ? '/sessions' : '/claim-profile')
+  : '/signup?role=instructor'
+
+// Then use instructorHref in the button:
+<a href={instructorHref}>I'm an Instructor</a>
