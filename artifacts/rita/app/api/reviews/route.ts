@@ -158,11 +158,17 @@ export async function POST(request: Request) {
   });
 
   // If instructor has claimed their profile, send them a verification request
+  console.log("[reviews/POST] instructorData:", JSON.stringify(instructorData));
+  console.log("[reviews/POST] is_claimed:", instructorData?.is_claimed, "claimed_by:", instructorData?.claimed_by);
+
   if (instructorData?.is_claimed && instructorData.claimed_by) {
     const [{ data: instructorUser }, { data: studentData }] = await Promise.all([
       db.from("users").select("email").eq("id", instructorData.claimed_by).single(),
       db.from("users").select("full_name").eq("id", user.id).single(),
     ]);
+
+    console.log("[reviews/POST] instructorUser email:", instructorUser?.email ?? "(none)");
+    console.log("[reviews/POST] studentData:", JSON.stringify(studentData));
 
     // In-app notification to instructor
     await db.from("notifications").insert({
@@ -175,15 +181,25 @@ export async function POST(request: Request) {
 
     // Email to instructor (best-effort, never blocks the response)
     if (instructorUser?.email) {
-      await sendVerificationRequestEmail({
-        to: instructorUser.email,
-        instructorName: instructorData.full_name,
-        studentName: studentData?.full_name || "A student",
-        sessionDate: session_date,
-        sessionTime: session_time,
-        sessionLocation: session_location,
-      });
+      console.log("[reviews/POST] Sending verification email to:", instructorUser.email);
+      try {
+        await sendVerificationRequestEmail({
+          to: instructorUser.email,
+          instructorName: instructorData.full_name,
+          studentName: studentData?.full_name || "A student",
+          sessionDate: session_date,
+          sessionTime: session_time,
+          sessionLocation: session_location,
+        });
+        console.log("[reviews/POST] Verification email sent successfully");
+      } catch (emailErr) {
+        console.error("[reviews/POST] Resend error:", emailErr);
+      }
+    } else {
+      console.log("[reviews/POST] No instructor email found — skipping email");
     }
+  } else {
+    console.log("[reviews/POST] Instructor not claimed — no email sent");
   }
 
   return NextResponse.json({ review }, { status: 201 });

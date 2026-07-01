@@ -528,6 +528,12 @@ video {
 .sticky {
   position: sticky;
 }
+.-right-4 {
+  right: -1rem;
+}
+.-top-2 {
+  top: -0.5rem;
+}
 .bottom-0 {
   bottom: 0px;
 }
@@ -1093,6 +1099,9 @@ video {
 .text-5xl {
   font-size: 3rem;
   line-height: 1;
+}
+.text-\[10px\] {
+  font-size: 10px;
 }
 .text-base {
   font-size: 1rem;

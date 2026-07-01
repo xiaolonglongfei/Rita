@@ -1,17 +1,38 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Navbar from "@/components/shared/Navbar";
 
 export default async function HomePage() {
-  const [authClient, db] = await Promise.all([
-    createClient(),
-    Promise.resolve(createServiceClient()),
-  ]);
-
+  const supabase = await createClient();
   const {
     data: { user },
-  } = await authClient.auth.getUser();
+  } = await supabase.auth.getUser();
+
+  const db = createServiceClient();
+
+  let instructorProfile: { id: string; full_name: string } | null = null;
+  let pendingCount = 0;
+
+  if (user) {
+    const { data: profile } = await db
+      .from("instructors")
+      .select("id, full_name")
+      .eq("claimed_by", user.id)
+      .single();
+
+    if (profile) {
+      instructorProfile = profile as { id: string; full_name: string };
+
+      const { count } = await db
+        .from("reviews")
+        .select("*", { count: "exact", head: true })
+        .eq("instructor_id", profile.id)
+        .eq("is_verified", false)
+        .eq("moderation_status", "approved");
+
+      pendingCount = count ?? 0;
+    }
+  }
 
   const [{ count: instructorCount }, { count: reviewCount }] = await Promise.all([
     db.from("instructors").select("*", { count: "exact", head: true }),
@@ -27,9 +48,20 @@ export default async function HomePage() {
     { label: "Dimensions Rated", value: "3" },
   ];
 
+  // "I'm an Instructor" smart redirect
+  const instructorHref = user
+    ? instructorProfile
+      ? "/sessions"
+      : "/claim-profile"
+    : "/signup?role=instructor";
+
   return (
     <div className="min-h-screen bg-white">
-      <Navbar initialUser={user} />
+      <Navbar
+        initialUser={user}
+        instructorProfile={instructorProfile}
+        pendingCount={pendingCount}
+      />
 
       <main className="max-w-5xl mx-auto px-6 py-24 text-center">
         <div className="inline-block bg-rita-lime-light text-rita-lime-dark text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
@@ -59,7 +91,7 @@ export default async function HomePage() {
             Browse Instructors →
           </a>
           <a
-            href="/signup?role=instructor"
+            href={instructorHref}
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-base border-2"
             style={{ borderColor: "#1e2a38", color: "#1e2a38", background: "transparent" }}
           >
