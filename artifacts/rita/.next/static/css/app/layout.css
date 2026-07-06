@@ -1289,6 +1289,11 @@ video {
   --radius: 0.5rem;
 }
 
+html,
+body {
+  -webkit-touch-callout: none;
+}
+
 .last\:border-0:last-child {
   border-width: 0px;
 }

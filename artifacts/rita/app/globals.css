@@ -6,6 +6,11 @@
   --radius: 0.5rem;
 }
 
+html,
+body {
+  -webkit-touch-callout: none;
+}
+
 @layer base {
   body {
     @apply bg-white text-rita-charcoal antialiased;
