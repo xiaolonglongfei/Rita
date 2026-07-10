@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Navbar from "@/components/shared/Navbar";
 
@@ -41,12 +40,6 @@ export default async function HomePage() {
       .select("*", { count: "exact", head: true })
       .eq("moderation_status", "approved"),
   ]);
-
-  const stats = [
-    { label: "Instructors", value: String(instructorCount ?? 0) },
-    { label: "Reviews", value: String(reviewCount ?? 0) },
-    { label: "Dimensions Rated", value: "3" },
-  ];
 
   // "I'm an Instructor" smart redirect
   const instructorHref = user
@@ -100,14 +93,34 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-24 grid grid-cols-3 gap-8 text-center">
-          {stats.map((stat) => (
-            <div key={stat.label} className="bg-rita-gray-light rounded-2xl p-6">
-              <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
-                {stat.value}
-              </div>
-              <div className="text-sm text-rita-gray">{stat.label}</div>
+          <a
+            href="/instructors"
+            className="bg-rita-gray-light rounded-2xl p-6 block transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
+          >
+            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
+              {instructorCount ?? 0}
             </div>
-          ))}
+            <div className="text-sm text-rita-gray">Instructors</div>
+          </a>
+
+          <a
+            href="/instructors"
+            className="bg-rita-gray-light rounded-2xl p-6 block transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
+          >
+            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
+              {reviewCount ?? 0}
+            </div>
+            <div className="text-sm text-rita-gray">Reviews</div>
+          </a>
+
+          <div
+            className="bg-rita-gray-light rounded-2xl p-6 cursor-default"
+            title="Value · Effectiveness · Punctuality"
+          >
+            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>3</div>
+            <div className="text-sm text-rita-gray">Dimensions Rated</div>
+            <div className="text-xs text-slate-400 mt-1">Value · Effectiveness · Punctuality</div>
+          </div>
         </div>
       </main>
     </div>
