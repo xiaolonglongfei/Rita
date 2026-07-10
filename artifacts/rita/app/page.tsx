@@ -113,13 +113,15 @@ export default async function HomePage() {
             <div className="text-sm text-rita-gray">Reviews</div>
           </a>
 
-          <div
-            className="bg-rita-gray-light rounded-2xl p-6 cursor-default"
-            title="Value · Effectiveness · Punctuality"
-          >
-            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>3</div>
-            <div className="text-sm text-rita-gray">Dimensions Rated</div>
-            <div className="text-xs text-slate-400 mt-1">Value · Effectiveness · Punctuality</div>
+          <div className="bg-rita-gray-light rounded-2xl p-5 text-center">
+            <div className="text-2xl font-bold mb-3" style={{ color: "#f97316" }}>
+              Rated on 3 Dimensions
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="text-sm font-medium text-slate-600">💰 Value</div>
+              <div className="text-sm font-medium text-slate-600">📈 Effectiveness</div>
+              <div className="text-sm font-medium text-slate-600">⏰ Punctuality</div>
+            </div>
           </div>
         </div>
       </main>
