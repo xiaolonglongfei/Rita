@@ -92,35 +92,41 @@ export default async function HomePage() {
           </a>
         </div>
 
-        <div className="mt-24 grid grid-cols-3 gap-8 text-center">
-          <a
-            href="/instructors"
-            className="bg-rita-gray-light rounded-2xl p-6 block transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
-          >
-            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
+        <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mt-10 px-4">
+          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+            <div className="text-4xl mb-3">🎾</div>
+            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
               {instructorCount ?? 0}
             </div>
-            <div className="text-sm text-rita-gray">Instructors</div>
+            <div className="text-sm text-slate-500 mt-1">Instructors</div>
           </a>
 
-          <a
-            href="/instructors"
-            className="bg-rita-gray-light rounded-2xl p-6 block transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
-          >
-            <div className="text-3xl font-extrabold mb-1" style={{ color: "#f97316" }}>
+          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+            <div className="text-4xl mb-3">⭐</div>
+            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
               {reviewCount ?? 0}
             </div>
-            <div className="text-sm text-rita-gray">Reviews</div>
+            <div className="text-sm text-slate-500 mt-1">Reviews</div>
           </a>
 
-          <div className="bg-rita-gray-light rounded-2xl p-5 text-center">
-            <div className="text-2xl font-bold mb-3" style={{ color: "#f97316" }}>
-              Rated on 3 Dimensions
+          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+            <div className="text-4xl mb-3">📊</div>
+            <div className="text-base font-extrabold mb-3" style={{ color: "#f97316" }}>
+              Rated on
             </div>
-            <div className="flex flex-col gap-1.5">
-              <div className="text-sm font-medium text-slate-600">💰 Value</div>
-              <div className="text-sm font-medium text-slate-600">📈 Effectiveness</div>
-              <div className="text-sm font-medium text-slate-600">⏰ Punctuality</div>
+            <div className="flex flex-col gap-2 text-left">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
+                <span className="text-sm text-slate-600">💰 Value</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
+                <span className="text-sm text-slate-600">📈 Effectiveness</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
+                <span className="text-sm text-slate-600">⏰ Punctuality</span>
+              </div>
             </div>
           </div>
         </div>

@@ -1,0 +1,57 @@
+Replace the current homepage stats section with this new design.
+Three cards side by side, each with a large emoji icon on top.
+
+In app/(main)/page.tsx, replace the stats section with:
+
+<div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mt-10 px-4">
+
+  {/* Card 1: Instructors */}
+  <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+    <div className="text-4xl mb-3">🎾</div>
+    <div className="text-3xl font-extrabold" style={{ color: '#f97316' }}>
+      {instructorCount}
+    </div>
+    <div className="text-sm text-slate-500 mt-1">Instructors</div>
+  </a>
+
+  {/* Card 2: Reviews */}
+  <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+    <div className="text-4xl mb-3">⭐</div>
+    <div className="text-3xl font-extrabold" style={{ color: '#f97316' }}>
+      {reviewCount}
+    </div>
+    <div className="text-sm text-slate-500 mt-1">Reviews</div>
+  </a>
+
+  {/* Card 3: Dimensions — NOT a link, informational only */}
+  <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+    <div className="text-4xl mb-3">📊</div>
+    <div className="text-base font-extrabold mb-3" style={{ color: '#f97316' }}>
+      Rated on
+    </div>
+    <div className="flex flex-col gap-2 text-left">
+      <div className="flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f97316' }}></div>
+        <span className="text-sm text-slate-600">💰 Value</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f97316' }}></div>
+        <span className="text-sm text-slate-600">📈 Effectiveness</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f97316' }}></div>
+        <span className="text-sm text-slate-600">⏰ Punctuality</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+Important notes:
+- Cards 1 and 2 are clickable links to /instructors
+- Card 3 is NOT a link, informational only
+- Cards 1 and 2 have hover:scale-105 and hover:shadow-md effects
+- Card 3 has no hover effect
+- Remove the previous stats section entirely
+- Keep the existing instructorCount and reviewCount 
+  variables from the server component
