@@ -52,6 +52,45 @@ export async function sendVerificationRequestEmail({
   }
 }
 
+export async function sendWelcomeEmail({
+  to,
+  fullName,
+}: {
+  to: string;
+  fullName: string;
+}) {
+  const recipient = process.env.RESEND_TEST_EMAIL || to;
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to: recipient,
+      subject: `Welcome to Rovi!`,
+      html: `
+        <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1e2a38;">Rovi<span style="color: #b8d400;">.</span></h2>
+          <p style="color: #1e2a38; font-size: 16px;">Hi ${fullName},</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Welcome to Rovi! You can now browse tennis instructors
+            and leave honest, anonymous reviews.
+          </p>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL || ""}/instructors"
+             style="display: inline-block; background: #f97316; color: white;
+             padding: 12px 24px; border-radius: 10px; text-decoration: none;
+             font-weight: bold; margin-top: 16px;">
+            Browse Instructors →
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+            🔒 All your reviews are completely anonymous.
+            Your identity is never revealed to instructors.
+          </p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error("Failed to send welcome email:", error);
+  }
+}
+
 export async function sendVerificationConfirmedEmail({
   to,
   instructorName,

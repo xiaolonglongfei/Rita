@@ -1,0 +1,61 @@
+Please fix two issues:
+
+ISSUE 1: Add home link to login and signup pages.
+On both app/(auth)/login/page.tsx and app/(auth)/signup/page.tsx,
+make the "Rovi." logo at the top a clickable link back to homepage:
+
+Replace the current logo display with:
+<a href="/" className="font-bold text-2xl text-slate-800 hover:opacity-80 transition-opacity">
+  Rovi<span style={{ color: '#b8d400' }}>.</span>
+</a>
+
+This way users can click the logo to go back to homepage
+if they want to abandon the login/signup flow.
+
+ISSUE 2: Send welcome email when a new user signs up.
+In the signup server action (wherever signUp is handled),
+after successfully creating the user, send a welcome email
+using Resend.
+
+Add this function to lib/resend.ts:
+
+export async function sendWelcomeEmail({
+  to,
+  fullName,
+}: {
+  to: string
+  fullName: string
+}) {
+  try {
+    await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: 'Welcome to Rovi!',
+      html: `
+        <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="color: #1e2a38;">Rovi<span style="color: #b8d400;">.</span></h2>
+          <p style="color: #1e2a38; font-size: 16px;">Hi ${fullName},</p>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Welcome to Rovi! You can now browse tennis instructors 
+            and leave honest, anonymous reviews.
+          </p>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/instructors" 
+             style="display: inline-block; background: #f97316; color: white; 
+             padding: 12px 24px; border-radius: 10px; text-decoration: none; 
+             font-weight: bold; margin-top: 16px;">
+            Browse Instructors →
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
+            🔒 All your reviews are completely anonymous. 
+            Your identity is never revealed to instructors.
+          </p>
+        </div>
+      `,
+    })
+  } catch (error) {
+    console.error('Failed to send welcome email:', error)
+  }
+}
+
+Then call sendWelcomeEmail() after successful user creation
+in the signup flow, passing the user's email and full name.

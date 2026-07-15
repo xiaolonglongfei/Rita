@@ -5,6 +5,7 @@ import type { CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
+import { sendWelcomeEmail } from "@/lib/resend";
 
 function getUrl() {
   return (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
@@ -73,6 +74,7 @@ export async function signupAction(
       full_name: fullName,
       is_admin: false,
     });
+    await sendWelcomeEmail({ to: email, fullName });
   }
 
   if (!data.session) {

@@ -28,9 +28,9 @@ function LoginForm() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md shadow-sm">
         <div className="text-center mb-8">
-          <div className="text-3xl font-bold text-rita-charcoal mb-1">
-            Rovi<span className="text-rita-lime">.</span>
-          </div>
+          <a href="/" className="font-bold text-2xl text-slate-800 hover:opacity-80 transition-opacity inline-block mb-1">
+            Rovi<span style={{ color: '#b8d400' }}>.</span>
+          </a>
           <p className="text-sm text-slate-500">Welcome back</p>
         </div>
 
