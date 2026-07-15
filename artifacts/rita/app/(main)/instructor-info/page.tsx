@@ -1,3 +1,5 @@
+"use client";
+
 export default function InstructorInfoPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-16 px-4">
@@ -51,11 +53,11 @@ export default function InstructorInfoPage() {
                 <p className="text-xs text-slate-400 mt-0.5">
                   Email us at{" "}
                   <a
-                    href="mailto:hello@rovi.training"
+                    href="mailto:rovi.training.support@gmail.com"
                     className="font-semibold"
                     style={{ color: "#f97316" }}
                   >
-                    hello@rovi.training
+                    rovi.training.support@gmail.com
                   </a>
                   {" "}with your name and the club you teach at.
                   We will verify your identity and activate your profile.
@@ -91,12 +93,12 @@ export default function InstructorInfoPage() {
             >
               Search for My Profile →
             </a>
-            <a
-              href="mailto:hello@rovi.training"
-              className="w-full py-3 rounded-xl font-semibold text-sm text-center border border-slate-200 text-slate-600"
+            <button
+              onClick={() => window.location.href = 'mailto:rovi.training.support@gmail.com?subject=Instructor%20Profile%20Claim%20Request&body=Hi%20Rovi%20team%2C%0A%0AMy%20name%20is%20%5BYOUR%20NAME%5D%20and%20I%20teach%20at%20%5BCLUB%20NAME%5D.%0A%0AI%20would%20like%20to%20claim%20my%20instructor%20profile%20on%20Rovi.%0A%0AThank%20you'}
+              className="w-full py-3 rounded-xl font-semibold text-sm text-center border border-slate-200 text-slate-600 bg-white cursor-pointer"
             >
               Contact Us to Join
-            </a>
+            </button>
             <a
               href="/"
               className="text-xs text-slate-400 hover:text-slate-600 mt-1"
