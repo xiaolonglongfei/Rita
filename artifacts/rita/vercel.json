@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm install",
+  "installCommand": "HUSKY=0 npm install",
   "buildCommand": "npm run build",
   "framework": "nextjs"
 }
