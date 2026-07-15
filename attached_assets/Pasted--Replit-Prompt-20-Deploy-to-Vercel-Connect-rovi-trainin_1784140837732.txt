@@ -1,0 +1,128 @@
+# Replit Prompt #20 — Deploy to Vercel + Connect rovi.training Domain
+> Paste this entire prompt into Replit Agent.
+> This is the production deployment step.
+
+---
+
+## Overview
+
+Deploy the Rovi app to Vercel for production hosting, then connect the rovi.training custom domain.
+
+---
+
+## Step 1: Prepare for Production Build
+
+First, ensure the app builds without errors:
+
+```bash
+npm run build
+```
+
+Fix any TypeScript or build errors before proceeding. Report any errors found.
+
+---
+
+## Step 2: Push to GitHub
+
+```bash
+# Initialize git if not already done
+git init
+git add .
+git commit -m "Initial production build — Rovi v1.0"
+
+# Create a new GitHub repository called "rovi" 
+# (do this manually at github.com, then connect):
+git remote add origin https://github.com/YOUR_USERNAME/rovi.git
+git branch -M main
+git push -u origin main
+```
+
+---
+
+## Step 3: Deploy to Vercel
+
+1. Go to vercel.com and sign in (or create account)
+2. Click "Add New Project"
+3. Import the GitHub repository "rovi"
+4. In the "Configure Project" step:
+   - Framework Preset: **Next.js** (auto-detected)
+   - Root Directory: `.` (default)
+   - Build Command: `npm run build` (default)
+   - Output Directory: `.next` (default)
+
+5. Add ALL environment variables from Replit Secrets:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `RESEND_API_KEY`
+   - `RESEND_FROM_EMAIL`
+   - `RESEND_TEST_EMAIL`
+   - `NEXT_PUBLIC_APP_URL` → set this to `https://rovi.training`
+
+6. Click "Deploy"
+
+---
+
+## Step 4: Connect rovi.training Domain
+
+After deployment succeeds:
+
+1. In Vercel dashboard → your project → Settings → Domains
+2. Click "Add Domain"
+3. Enter: `rovi.training`
+4. Vercel will show you DNS records to add
+
+5. Go to your domain registrar (where you bought rovi.training)
+6. Add these DNS records:
+   - Type: `A` Record → Name: `@` → Value: `76.76.21.21`
+   - Type: `CNAME` Record → Name: `www` → Value: `cname.vercel-dns.com`
+
+7. Wait 5-30 minutes for DNS propagation
+8. Vercel will automatically issue an SSL certificate
+
+---
+
+## Step 5: Update Supabase Auth URLs
+
+After the domain is connected, update Supabase:
+
+1. Go to Supabase → Authentication → URL Configuration
+2. Update Site URL to: `https://rovi.training`
+3. Add to Redirect URLs: `https://rovi.training/**`
+4. Also add: `https://www.rovi.training/**`
+5. Save
+
+---
+
+## Step 6: Update NEXT_PUBLIC_APP_URL
+
+In Vercel dashboard → your project → Settings → Environment Variables:
+- Update `NEXT_PUBLIC_APP_URL` to `https://rovi.training`
+- Redeploy for the change to take effect
+
+---
+
+## Step 7: Final Smoke Test on Production
+
+After deployment, test these flows on https://rovi.training:
+
+- [ ] Homepage loads correctly
+- [ ] Sign up creates a real account
+- [ ] Login works and session persists
+- [ ] Instructor search returns real data
+- [ ] Instructor profile page loads with real data
+- [ ] Write a Review flow completes successfully
+- [ ] My Sessions page shows reviews and verification requests
+- [ ] My Ranking page loads
+- [ ] Admin dashboard accessible at /admin
+- [ ] Email notification received after submitting review for claimed instructor
+
+---
+
+## ✅ Done When:
+- [ ] `npm run build` completes with no errors
+- [ ] App is live at https://rovi.training
+- [ ] SSL certificate active (https:// not http://)
+- [ ] All environment variables set in Vercel
+- [ ] Supabase Auth URLs updated to rovi.training
+- [ ] All smoke tests passing on production URL
