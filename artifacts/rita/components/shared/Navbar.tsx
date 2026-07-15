@@ -48,7 +48,7 @@ export default function Navbar({
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="text-xl font-bold text-rita-charcoal">
-            Rita<span className="text-rita-lime">.</span>
+            Rovi<span className="text-rita-lime">.</span>
           </Link>
 
           {/* Nav links */}

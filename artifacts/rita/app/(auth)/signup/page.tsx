@@ -46,7 +46,7 @@ export default function SignUpPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md shadow-sm text-center">
           <div className="text-3xl font-bold text-rita-charcoal mb-1">
-            Rita<span className="text-rita-lime">.</span>
+            Rovi<span className="text-rita-lime">.</span>
           </div>
           <p className="text-4xl mt-6 mb-3">📬</p>
           <h2 className="text-lg font-bold text-slate-800 mb-2">Check your email</h2>
@@ -71,7 +71,7 @@ export default function SignUpPage() {
       <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md shadow-sm">
         <div className="text-center mb-8">
           <div className="text-3xl font-bold text-rita-charcoal mb-1">
-            Rita<span className="text-rita-lime">.</span>
+            Rovi<span className="text-rita-lime">.</span>
           </div>
           <p className="text-sm text-slate-500">Create an account to start reviewing</p>
         </div>

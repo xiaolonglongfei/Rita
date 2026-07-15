@@ -21,7 +21,7 @@ export default async function NewInstructorPage() {
 
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-bold text-slate-800">Add an Instructor</h1>
-          <p className="text-sm text-slate-500 mt-1">Help grow Rita&apos;s instructor database</p>
+          <p className="text-sm text-slate-500 mt-1">Help grow Rovi&apos;s instructor database</p>
         </div>
 
         <AddInstructorForm />

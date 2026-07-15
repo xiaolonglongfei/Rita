@@ -29,7 +29,7 @@ function LoginForm() {
       <div className="bg-white rounded-2xl border border-slate-100 p-8 w-full max-w-md shadow-sm">
         <div className="text-center mb-8">
           <div className="text-3xl font-bold text-rita-charcoal mb-1">
-            Rita<span className="text-rita-lime">.</span>
+            Rovi<span className="text-rita-lime">.</span>
           </div>
           <p className="text-sm text-slate-500">Welcome back</p>
         </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Rita — Find the Right Tennis Instructor",
+  title: "Rovi — Find the Right Tennis Instructor",
   description:
     "Data-driven reviews and rankings for tennis instructors in Westchester County, NY.",
 };

@@ -58,7 +58,7 @@ export default async function HomePage() {
 
       <main className="max-w-5xl mx-auto px-6 py-24 text-center">
         <div className="inline-block bg-rita-lime-light text-rita-lime-dark text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">
-          🎾 Now serving Westchester County, NY
+          🎾 Find Your Perfect Coach
         </div>
         <h1 className="text-5xl font-extrabold text-rita-charcoal leading-tight mb-6">
           Find the right tennis<br />
@@ -72,8 +72,7 @@ export default async function HomePage() {
           .
         </h1>
         <p className="text-lg text-rita-gray max-w-2xl mx-auto mb-10">
-          Real reviews from real students in Westchester County — honest,
-          anonymous, and verified.
+          Real reviews from real students — honest, anonymous, and verified.
         </p>
         <div className="flex gap-4 justify-center flex-wrap mt-8">
           <a

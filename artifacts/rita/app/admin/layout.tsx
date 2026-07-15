@@ -23,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link href="/admin" className="font-bold text-lg">
-              Rita<span style={{ color: "#f97316" }}>.</span> Admin
+              Rovi<span style={{ color: "#f97316" }}>.</span> Admin
             </Link>
             <div className="flex gap-6 text-sm">
               <Link href="/admin/instructors" className="text-slate-300 hover:text-white transition-colors">

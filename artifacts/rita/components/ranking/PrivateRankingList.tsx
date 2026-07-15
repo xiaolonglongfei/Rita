@@ -271,7 +271,7 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
 
       {/* Info note */}
       <div className="bg-orange-50 rounded-xl p-4 text-xs text-orange-700 leading-relaxed border border-orange-100">
-        ℹ️ Your personal ranking is combined with other students&apos; rankings to generate Rita&apos;s
+        ℹ️ Your personal ranking is combined with other students&apos; rankings to generate Rovi&apos;s
         platform-wide public ranking — without revealing your individual list.
       </div>
 
