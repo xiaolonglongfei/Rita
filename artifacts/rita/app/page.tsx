@@ -41,13 +41,6 @@ export default async function HomePage() {
       .eq("moderation_status", "approved"),
   ]);
 
-  // "I'm an Instructor" smart redirect
-  const instructorHref = user
-    ? instructorProfile
-      ? "/sessions"
-      : "/claim-profile"
-    : "/signup?role=instructor";
-
   return (
     <div className="min-h-screen bg-white">
       <Navbar
@@ -83,7 +76,7 @@ export default async function HomePage() {
             Browse Instructors →
           </a>
           <a
-            href={instructorHref}
+            href="/instructor-info"
             className="inline-flex items-center gap-2 px-7 py-3 rounded-xl font-bold text-base border-2"
             style={{ borderColor: "#1e2a38", color: "#1e2a38", background: "transparent" }}
           >

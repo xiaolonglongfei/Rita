@@ -1056,6 +1056,10 @@ video {
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
+.py-16 {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+}
 .pb-5 {
   padding-bottom: 1.25rem;
 }
@@ -1339,6 +1343,11 @@ body {
 .hover\:text-white:hover {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+
+.hover\:text-slate-600:hover {
+  --tw-text-opacity: 1;
+  color: rgb(71 85 105 / var(--tw-text-opacity, 1));
 }
 
 .hover\:underline:hover {
