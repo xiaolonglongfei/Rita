@@ -1,0 +1,45 @@
+PROMPT #22 — Radar chart still leaks score shape when reviews_visible = false
+
+CONTEXT:
+Prompt #21 correctly hid the numeric labels/bars and greyed out the triangle 
+color, but the chart is still plotting REAL data — the vertex positions are 
+still computed from actual avg_value / avg_effectiveness / avg_punctuality. 
+An instructor can still visually read which axis is high/low/near-zero from 
+the shape alone, even with the numbers hidden. This still leaks the single 
+reviewer's score distribution.
+
+TASK:
+When reviews_visible = false (fewer than 3 reviews), the Score Breakdown 
+radar/triangle chart component must NOT receive or plot real score data at 
+all. Instead render a fixed, neutral placeholder shape:
+
+  - A perfect equilateral triangle with all three vertices at equal distance 
+    from center (e.g. all three axes at a fixed placeholder value like 50% of 
+    max scale, or simply don't draw an inner triangle/polygon at all — just 
+    show the empty outer triangle frame with the three axis labels, no data 
+    polygon overlaid).
+  - This placeholder must look IDENTICAL regardless of what the real 
+    underlying scores are — verify this by testing with two different 
+    instructors who each have 1-2 reviews with very different real scores 
+    (e.g. one with real scores like 4.8/4.9/4.7 and another with 1.2/1.5/1.0) 
+    and confirming both render the exact same placeholder shape.
+
+- Fix this at the component/data layer: the frontend component should receive 
+  either (a) null/no data prop when reviews_visible = false, and internally 
+  render its own fixed placeholder geometry, or (b) explicit placeholder 
+  values (e.g. 50/50/50) — NOT the real computed scores dimmed via CSS opacity 
+  or color, which is what's happening now.
+- Re-confirm the API/network layer point from Prompt #21: the network response 
+  itself should not contain real avg_value/avg_effectiveness/avg_punctuality 
+  for instructors below the visibility threshold, which also structurally 
+  prevents this chart bug from recurring.
+
+DONE WHEN:
+[ ] Two test instructors with 1-2 reviews each, with deliberately very 
+    different real scores, render the EXACT same placeholder triangle shape
+[ ] Placeholder triangle is a clean equilateral shape (not derived from any 
+    real number)
+[ ] Once an instructor crosses 3 reviews, the real data-driven triangle 
+    renders correctly (no regression)
+[ ] Network tab confirms no real score values are returned for <3-review 
+    instructors

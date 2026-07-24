@@ -47,9 +47,12 @@ export function ScoreTriangle({
   reviewCount,
   reviewsVisible = true,
 }: ScoreTriangleProps) {
-  const v = value ?? 0;
-  const e = effectiveness ?? 0;
-  const p = punctuality ?? 0;
+  // When not visible, substitute a fixed neutral value (2.5 = 50% of max 5) so the
+  // polygon shape is always a perfect equilateral — never reveals real score distribution.
+  const PLACEHOLDER = 2.5;
+  const v = !reviewsVisible ? PLACEHOLDER : (value ?? 0);
+  const e = !reviewsVisible ? PLACEHOLDER : (effectiveness ?? 0);
+  const p = !reviewsVisible ? PLACEHOLDER : (punctuality ?? 0);
   const overall = (v + e + p) / 3;
   // hasData is true only when there are reviews AND scores are visible (privacy gate)
   const hasData = reviewCount > 0 && reviewsVisible;
