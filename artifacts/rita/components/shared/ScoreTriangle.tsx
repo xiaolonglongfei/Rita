@@ -5,6 +5,8 @@ type ScoreTriangleProps = {
   effectiveness: number | null;
   punctuality: number | null;
   reviewCount: number;
+  /** When false, scores are hidden (privacy — fewer than 3 reviews). Defaults to true for admin views. */
+  reviewsVisible?: boolean;
 };
 
 const CX = 150;
@@ -43,12 +45,14 @@ export function ScoreTriangle({
   effectiveness,
   punctuality,
   reviewCount,
+  reviewsVisible = true,
 }: ScoreTriangleProps) {
   const v = value ?? 0;
   const e = effectiveness ?? 0;
   const p = punctuality ?? 0;
   const overall = (v + e + p) / 3;
-  const hasData = reviewCount > 0;
+  // hasData is true only when there are reviews AND scores are visible (privacy gate)
+  const hasData = reviewCount > 0 && reviewsVisible;
 
   const scores = [v, e, p];
   const bgPts = ANGLES.map(bgPt);
@@ -140,6 +144,8 @@ export function ScoreTriangle({
         <div className="text-xs text-slate-400 mt-2">
           {hasData
             ? `Overall Score · ${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}`
+            : reviewCount > 0 && !reviewsVisible
+            ? "Reviews pending — privacy protected"
             : "No reviews yet"}
         </div>
       </div>

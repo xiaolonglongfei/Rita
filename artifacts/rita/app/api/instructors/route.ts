@@ -24,20 +24,25 @@ export async function GET(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({
-    items: (data ?? []).map((i) => ({
-      id: i.id,
-      name: i.full_name,
-      bio: i.bio,
-      photoUrl: i.avatar_url,
-      location: i.teaching_locations,
-      claimed: i.is_claimed,
-      avgScore: i.avg_overall,
-      avgValue: i.avg_value,
-      avgEffectiveness: i.avg_effectiveness,
-      avgPunctuality: i.avg_punctuality,
-      reviewCount: i.total_reviews,
-      createdAt: i.created_at,
-    })),
+    items: (data ?? []).map((i) => {
+      // Privacy: only expose scores when reviews_visible = true (requires 3+ approved reviews)
+      const scoresVisible = i.reviews_visible === true;
+      return {
+        id: i.id,
+        name: i.full_name,
+        bio: i.bio,
+        photoUrl: i.avatar_url,
+        location: i.teaching_locations,
+        claimed: i.is_claimed,
+        reviewsVisible: scoresVisible,
+        avgScore: scoresVisible ? i.avg_overall : null,
+        avgValue: scoresVisible ? i.avg_value : null,
+        avgEffectiveness: scoresVisible ? i.avg_effectiveness : null,
+        avgPunctuality: scoresVisible ? i.avg_punctuality : null,
+        reviewCount: i.total_reviews,
+        createdAt: i.created_at,
+      };
+    }),
     total: count ?? 0,
     page,
     limit,

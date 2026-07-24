@@ -22,6 +22,9 @@ export async function GET(
   if (error || !instructor)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // Privacy: only expose scores when reviews_visible = true (requires 3+ approved reviews)
+  const scoresVisible = instructor.reviews_visible === true;
+
   return NextResponse.json({
     instructor: {
       id: instructor.id,
@@ -30,10 +33,11 @@ export async function GET(
       photoUrl: instructor.avatar_url,
       location: instructor.teaching_locations,
       claimed: instructor.is_claimed,
-      avgScore: instructor.avg_overall,
-      avgValue: instructor.avg_value,
-      avgEffectiveness: instructor.avg_effectiveness,
-      avgPunctuality: instructor.avg_punctuality,
+      reviewsVisible: scoresVisible,
+      avgScore: scoresVisible ? instructor.avg_overall : null,
+      avgValue: scoresVisible ? instructor.avg_value : null,
+      avgEffectiveness: scoresVisible ? instructor.avg_effectiveness : null,
+      avgPunctuality: scoresVisible ? instructor.avg_punctuality : null,
       reviewCount: instructor.total_reviews,
       createdAt: instructor.created_at,
     },

@@ -1,0 +1,54 @@
+PROMPT #21 — Fix score-visibility privacy leak + success toast styling
+
+CONTEXT:
+Rovi's core privacy guarantee is that individual review anonymity is protected 
+until an instructor has 3+ reviews (tracked via `instructors.reviews_visible` 
+boolean in Supabase, already computed/stored). The "Recent Reviews" section on 
+the instructor profile page correctly respects this and shows "Reviews pending 
+— collecting feedback to protect reviewer privacy" when reviews_visible = false.
+
+However, TWO other UI elements do NOT respect this flag and leak real scores 
+even with just 1 review, which lets an instructor who just confirmed a single 
+session correlate the newly-appeared score to that one specific student:
+
+1. Instructor profile page header (star rating next to name, e.g. "⭐2.5 · 1 reviews")
+2. Score Breakdown panel (radar/triangle chart + Value/Effectiveness/Punctuality 
+   numeric bars + overall score number)
+
+This is also very likely broken on the search/instructor-list page cards (the 
+star rating shown next to each instructor in the list) — check and fix there too.
+
+TASK 1 — Fix the privacy leak (priority — this is a real data exposure issue):
+
+- Gate all THREE locations above behind `reviews_visible === true`:
+  a) Profile page header star rating → when reviews_visible = false, hide the 
+     star/number entirely and show the same "Reviews pending" style treatment 
+     already used elsewhere (or simply omit the rating line).
+  b) Score Breakdown panel → when reviews_visible = false, show the same 
+     locked/placeholder state currently used for zero-review instructors 
+     (empty triangle outline, "—" for each axis, "No reviews yet" / 
+     "Reviews pending" copy) — do NOT plot real data points on the triangle.
+  c) Search/list page instructor cards → same gating on the star rating shown 
+     per card.
+
+- IMPORTANT — fix this at the API/query layer, not just the UI. If the current 
+  instructor detail/list endpoint returns avg_value, avg_effectiveness, 
+  avg_punctuality, avg_overall directly whenever reviews_visible = false, a 
+  user can still see the real numbers via browser dev tools / network tab even 
+  if the UI hides them. The backend query should return null (or omit these 
+  fields) for any instructor where reviews_visible = false, regardless of what 
+  the frontend does with them.
+
+- Double check: does the admin dashboard use the same component/query for 
+  instructor scores? If so, admins should still see real scores there (for 
+  moderation purposes) — make sure the fix doesn't accidentally blind admins 
+  too. Flag this back to me if the admin view shares the same code path.
+
+TASK 2 — Fix "Instructor added" success banner styling:
+
+Current: light peach/orange background reads as a warning state (too close to 
+the amber score-tier color used elsewhere), poor visual distinction from 
+error/warning UI.
+
+Fix: use the underused brand Lime (#b8d400) for success/confirmation states, 
+reserving orange (#f97316) for

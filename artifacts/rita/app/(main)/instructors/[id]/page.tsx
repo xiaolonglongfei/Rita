@@ -34,7 +34,9 @@ export default async function InstructorProfilePage({
 
   if (!instructor) notFound();
 
-  const reviewsVisible = (instructor.total_reviews ?? 0) >= 3;
+  // Use the stored reviews_visible flag (set by DB trigger when instructor reaches 3+ approved reviews)
+  // Fall back to computing it if the column isn't present yet in local types
+  const reviewsVisible = (instructor as Record<string, unknown>).reviews_visible === true;
 
   const enrichedReviews = reviews ?? [];
 
@@ -45,7 +47,7 @@ export default async function InstructorProfilePage({
         <div className="max-w-5xl mx-auto px-4 pt-4">
           <div
             className="rounded-xl px-4 py-3 text-sm font-medium"
-            style={{ background: "#fff7ed", color: "#f97316" }}
+            style={{ background: "#f4ffe0", color: "#4a6e00", border: "1px solid #b8d400" }}
           >
             ✓ Instructor added! You can now write a review for them.
           </div>
@@ -73,7 +75,7 @@ export default async function InstructorProfilePage({
               )}
             </div>
             <div className="flex items-center gap-4 mt-3 flex-wrap">
-              {(instructor.total_reviews ?? 0) > 0 ? (
+              {reviewsVisible && (instructor.total_reviews ?? 0) > 0 ? (
                 <>
                   <span className="text-2xl font-bold" style={{ color: "#f97316" }}>
                     ⭐ {instructor.avg_overall?.toFixed(1)}
@@ -87,6 +89,10 @@ export default async function InstructorProfilePage({
                     </span>
                   )}
                 </>
+              ) : (instructor.total_reviews ?? 0) > 0 ? (
+                <span className="text-sm text-slate-400 italic">
+                  {instructor.total_reviews} {(instructor.total_reviews ?? 0) === 1 ? "review" : "reviews"} — scores visible after 3 reviews
+                </span>
               ) : (
                 <span className="text-sm text-slate-400 italic">No reviews yet</span>
               )}
@@ -156,6 +162,7 @@ export default async function InstructorProfilePage({
                 effectiveness={instructor.avg_effectiveness ?? 0}
                 punctuality={instructor.avg_punctuality ?? 0}
                 reviewCount={instructor.total_reviews ?? 0}
+                reviewsVisible={reviewsVisible}
               />
             </div>
           </div>
