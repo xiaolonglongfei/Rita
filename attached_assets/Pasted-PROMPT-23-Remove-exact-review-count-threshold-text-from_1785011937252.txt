@@ -1,0 +1,43 @@
+PROMPT #23 — Remove exact review-count/threshold text from privacy placeholder
+
+CONTEXT:
+Prompt #21/#22 fixed the actual data leak (real scores no longer shown before 
+3 reviews), but introduced a NEW leak of a different kind: the placeholder 
+text now explicitly states the review count and the exact threshold, e.g. 
+"1 review — scores visible after 3 reviews". This exposes:
+  1. The exact number of reviews an instructor currently has (competitively 
+     sensitive — reveals adoption/traction per instructor)
+  2. The exact threshold number (3) used for the anonymity-protection 
+     methodology — this is proprietary logic that should not be disclosed 
+     publicly, to prevent competitors from copying the exact mechanism or 
+     gaming it.
+
+TASK:
+Find every location where placeholder/pending text is shown for instructors 
+below the visibility threshold, and remove any specific numbers:
+
+- Header line under instructor name (currently: "1 review — scores visible 
+  after 3 reviews") → replace with generic copy that reveals no numbers, e.g. 
+  "Reviews pending — collecting feedback to protect reviewer privacy" 
+  (reuse the exact copy already used correctly in the "Recent Reviews" 
+  section for consistency)
+- Score Breakdown panel subtitle (currently correct: "Reviews pending — 
+  privacy protected" — no numbers, keep as is)
+- Audit the search/instructor-list page cards too — if any card shows a raw 
+  review count (e.g. "1 review") for an instructor below threshold, decide 
+  whether to hide the count entirely or keep it (a low review count alone 
+  without the threshold number is much lower risk, but check with product 
+  owner — Feilong — before deciding to hide it or not)
+- Search the whole codebase for any other place a literal "3" or the phrase 
+  "after 3 reviews" / similar threshold-revealing string appears in 
+  user-facing copy, and generalize it.
+
+DONE WHEN:
+[ ] No user-facing text anywhere states the exact review count needed to 
+    unlock scores
+[ ] Header placeholder text matches the same generic, number-free copy used 
+    in the Recent Reviews section
+[ ] Confirmed via full-text search of frontend code that no hardcoded 
+    threshold number leaks into rendered copy
+[ ] Tested on an instructor with 1 review and one with 2 reviews — both show 
+    identical generic copy (no count difference visible either)

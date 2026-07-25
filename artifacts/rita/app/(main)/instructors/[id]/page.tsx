@@ -91,7 +91,7 @@ export default async function InstructorProfilePage({
                 </>
               ) : (instructor.total_reviews ?? 0) > 0 ? (
                 <span className="text-sm text-slate-400 italic">
-                  {instructor.total_reviews} {(instructor.total_reviews ?? 0) === 1 ? "review" : "reviews"} — scores visible after 3 reviews
+                  Reviews pending — collecting feedback to protect reviewer privacy
                 </span>
               ) : (
                 <span className="text-sm text-slate-400 italic">No reviews yet</span>
