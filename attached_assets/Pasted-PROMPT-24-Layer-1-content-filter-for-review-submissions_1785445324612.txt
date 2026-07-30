@@ -1,0 +1,81 @@
+PROMPT #24 — Layer 1 content filter for review submissions
+
+CONTEXT:
+Reviews currently allow free-text comments with no content filtering. We need 
+a pre-submit validation layer that catches the most common problems BEFORE a 
+review is saved to the database — not after. This should give the student an 
+inline, editable error so they can fix and resubmit, not a silent rejection.
+
+This is Layer 1 only (regex/keyword-based). Layer 2 (AI-based classification 
+for serious allegations) is a separate future prompt — do not build that here.
+
+TASK:
+
+1. Install a maintained profanity-filter package rather than hand-rolling a 
+   word list:
+   npm install bad-words
+
+2. Create lib/moderation/layer1.ts with a function that checks review comment 
+   text for three categories of problems:
+
+   a) PII detection (regex-based):
+      - Phone numbers: /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/
+      - Email addresses: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
+      - Street addresses (best-effort): /\d{1,5}\s+\w+(\s+\w+){0,3}\s+(street|st|avenue|ave|road|rd|drive|dr|lane|ln|court|ct|way|blvd|boulevard)\b/i
+      - Instagram/social handles: /(@[a-zA-Z0-9_]{3,})/  (flag for review, these 
+        are sometimes legitimate mentions of a club's account, so treat as a 
+        soft warning not a hard block — see below)
+
+   b) Profanity — use the `bad-words` package's Filter class, run isProfane() 
+      on the comment text.
+
+   c) Excessive caps / shouting pattern — if comment length > 20 chars and the 
+      ratio of uppercase letters to total letters exceeds 0.7, flag it.
+
+   Function signature:
+   
+   interface ModerationResult {
+     passed: boolean;
+     blockers: string[];      // hard blocks — must fix before submitting
+     warnings: string[];      // soft flags — shown but don't block submission
+   }
+   
+   export function checkReviewContentLayer1(text: string): ModerationResult
+
+   Hard blocks (passed = false): phone number, email, street address, profanity
+   Soft warnings (passed = true, but shown to user): excessive caps, @handle mention
+
+3. Wire this into the review submission flow in BOTH places:
+
+   a) CLIENT-SIDE (immediate UX feedback): call checkReviewContentLayer1() on 
+      the comment field on blur or before the "Submit" button is enabled. Show 
+      inline error text below the textarea, e.g.:
+      "Please remove phone numbers or email addresses before submitting."
+      "This comment doesn't meet our content guidelines — please rephrase."
+      Do NOT tell the student exactly which word triggered profanity (avoid 
+      making it a game to find bypass words) — keep the message generic.
+
+   b) SERVER-SIDE (source of truth — client checks can be bypassed): in the 
+      Server Action / API route that inserts into the `reviews` table, run 
+      checkReviewContentLayer1() again before the insert. If passed = false, 
+      reject the request with a 400 and the same generic message. This is the 
+      real enforcement — the client-side check is just UX, don't skip this.
+
+4. Log blocked attempts (not the content itself, just metadata: instructor_id, 
+   timestamp, which blocker category triggered) to a simple table or the 
+   existing moderation_log table, so we can see if this is happening a lot 
+   (could indicate a UX problem, e.g. the address regex firing on legitimate 
+   text like "we played 3 sets") vs. actually catching bad content.
+
+DONE WHEN:
+[ ] Submitting a comment containing a phone number, email, or street address 
+    is blocked client-side with a clear inline message
+[ ] Submitting profane content is blocked with a generic message (doesn't 
+    reveal which word)
+[ ] All-caps ranting shows a warning but doesn't block submission
+[ ] Directly hitting the API/Server Action with a blocked comment (bypassing 
+    the client) is also rejected — test this with a raw fetch/curl call, not 
+    just the UI
+[ ] A normal review comment like "Great lesson, really helped my backhand!" 
+    passes with no warnings
+[ ] Blocked attempts are logged with metadata only, not full comment content

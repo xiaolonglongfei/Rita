@@ -1,8 +1,18 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
-import {
-  sendVerificationRequestEmail,
-} from "@/lib/resend";
+import { sendVerificationRequestEmail } from "@/lib/resend";
+import { checkReviewContentLayer1, blockerMessage } from "@/lib/moderation/layer1";
+
+/*
+ * content_filter_logs table (run once in Supabase SQL editor):
+ *
+ * CREATE TABLE IF NOT EXISTS content_filter_logs (
+ *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+ *   instructor_id text,
+ *   blocked_categories text[],
+ *   created_at timestamptz DEFAULT now()
+ * );
+ */
 
 export async function GET() {
   const authClient = await createClient();
@@ -88,6 +98,24 @@ export async function POST(request: Request) {
       { error: "Session date cannot be in the future" },
       { status: 400 }
     );
+  }
+
+  // ── Layer 1 content moderation (server is the source of truth) ───────────
+  if (comment && comment.trim()) {
+    const modResult = checkReviewContentLayer1(comment.trim());
+    if (!modResult.passed) {
+      // Log metadata only — never log the comment content itself
+      const db = createServiceClient();
+      void Promise.resolve(
+        db.from("content_filter_logs")
+          .insert({ instructor_id, blocked_categories: modResult.blockers })
+      ).then(undefined, () => {}); // fire-and-forget; silently ignores missing table
+
+      return NextResponse.json(
+        { error: blockerMessage(modResult.blockers) },
+        { status: 400 }
+      );
+    }
   }
 
   const db = createServiceClient();

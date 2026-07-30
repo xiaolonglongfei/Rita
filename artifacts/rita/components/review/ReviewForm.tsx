@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { VerticalSlider } from "./VerticalSlider";
 import { useRouter } from "next/navigation";
+import {
+  checkReviewContentLayer1,
+  blockerMessage,
+  warningMessage,
+} from "@/lib/moderation/layer1";
 
 interface ReviewFormProps {
   instructorId: string;
@@ -30,6 +35,8 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [commentError, setCommentError] = useState("");
+  const [commentWarning, setCommentWarning] = useState("");
   const router = useRouter();
 
   const overall = (value + effectiveness + punctuality) / 3;
@@ -48,7 +55,27 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
     setStep(2);
   }
 
+  function handleCommentBlur() {
+    if (!comment.trim()) {
+      setCommentError("");
+      setCommentWarning("");
+      return;
+    }
+    const result = checkReviewContentLayer1(comment);
+    setCommentError(result.passed ? "" : blockerMessage(result.blockers));
+    setCommentWarning(result.warnings.length > 0 ? warningMessage(result.warnings) : "");
+  }
+
   async function handleFinalSubmit() {
+    // Re-run content check before submitting (catches paste-then-submit without blur)
+    if (comment.trim()) {
+      const result = checkReviewContentLayer1(comment);
+      if (!result.passed) {
+        setCommentError(blockerMessage(result.blockers));
+        return;
+      }
+    }
+
     setSubmitting(true);
     setError("");
     try {
@@ -243,16 +270,35 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
               Comment <span className="font-normal normal-case">(optional)</span>
             </label>
             <textarea
-              className="w-full border border-slate-200 rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none focus:border-orange-300"
+              className={`w-full border rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none transition-colors ${
+                commentError
+                  ? "border-red-300 focus:border-red-400"
+                  : "border-slate-200 focus:border-orange-300"
+              }`}
               rows={3}
               placeholder="Share your experience... (optional)"
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={(e) => {
+                setComment(e.target.value);
+                // Clear error as user edits so they can see it re-validate on blur
+                if (commentError) setCommentError("");
+              }}
+              onBlur={handleCommentBlur}
               maxLength={500}
             />
-            {comment.length > 0 && (
-              <p className="text-xs text-slate-400 text-right mt-1">{comment.length}/500</p>
-            )}
+            <div className="flex justify-between items-start mt-1 gap-2">
+              <div className="flex-1">
+                {commentError && (
+                  <p className="text-xs text-red-500">{commentError}</p>
+                )}
+                {!commentError && commentWarning && (
+                  <p className="text-xs text-amber-600">{commentWarning}</p>
+                )}
+              </div>
+              {comment.length > 0 && (
+                <p className="text-xs text-slate-400 flex-shrink-0">{comment.length}/500</p>
+              )}
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-500 mb-4 text-center">{error}</p>}
