@@ -1,0 +1,48 @@
+PROMPT #25 — Critical bug: welcome email sent to wrong recipient
+
+CONTEXT:
+When a user signs up with their own email address, the "Welcome to Rovi" 
+confirmation email is being sent to a hardcoded test address (the founder's 
+personal email used during development) instead of the actual registering 
+user's email. This means real users never receive their welcome email, and 
+the founder's inbox is receiving other people's signup notifications — a 
+privacy issue as well as a broken onboarding flow.
+
+TASK:
+
+1. Find the code that sends the "Welcome to Rovi!" email via Resend (likely 
+   triggered from the Supabase Auth `on_auth_user_created` flow or a signup 
+   Server Action). Look specifically for:
+   - A hardcoded `to:` email address in the Resend send call, instead of 
+     dynamically using the newly created user's email (e.g. `user.email` or 
+     `newUser.email` from the signup payload)
+   - Any environment variable or config flag that might be overriding the 
+     recipient for ALL outgoing emails (e.g. something like TEST_EMAIL, 
+     DEV_EMAIL_OVERRIDE, or similar) — if one exists and is still active in 
+     production, remove or disable it
+
+2. Fix the recipient to always use the actual registering user's email address 
+   from the signup data, not a fixed address.
+
+3. AUDIT THE OTHER TWO TRANSACTIONAL EMAILS for the same bug, since they were 
+   likely built in the same batch and may share the same hardcoded-recipient 
+   mistake:
+   - Session verification request email (sent to the instructor)
+   - Session confirmation email (sent to the student)
+   For each, confirm the recipient is dynamically pulled from the correct 
+   user/instructor record, not hardcoded.
+
+DONE WHEN:
+[ ] Sign up with a brand-new test email address (NOT the founder's email) — 
+    confirm the welcome email arrives at THAT address, and does not also go 
+    to the founder's inbox
+[ ] Sign up with a second different test email — confirm welcome email 
+    correctly goes to that second address, proving it's not just fixed to a 
+    different hardcoded value
+[ ] Verified the session verification (instructor) and session confirmation 
+    (student) emails both correctly target the right recipient — test with 
+    real distinct email addresses for student and instructor roles
+[ ] Confirmed no hardcoded email address or test-override env var remains 
+    active anywhere in the transactional email sending code
+[ ] Checked Resend dashboard logs to confirm recent test sends went to the 
+    correct varied addresses, not a single repeated address
