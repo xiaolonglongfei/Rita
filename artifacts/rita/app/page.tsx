@@ -34,7 +34,7 @@ export default async function HomePage() {
   }
 
   const [{ count: instructorCount }, { count: reviewCount }] = await Promise.all([
-    db.from("instructors").select("*", { count: "exact", head: true }),
+    db.from("instructors").select("*", { count: "exact", head: true }).eq("is_test", false),
     db
       .from("reviews")
       .select("*", { count: "exact", head: true })

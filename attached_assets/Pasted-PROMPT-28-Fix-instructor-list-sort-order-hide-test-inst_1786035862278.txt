@@ -1,0 +1,56 @@
+PROMPT #28 — Fix instructor list sort order + hide test instructors from public views
+
+CONTEXT:
+Two related issues found on the public instructor browse page:
+
+1. Sort order appears to be based on `updated_at` (most recently modified 
+   first) rather than a meaningful, stable order. This causes any instructor 
+   record that gets touched by an UPDATE (including QA/admin housekeeping 
+   like resetting stats after test data cleanup) to jump toward the top of 
+   the public list — completely unrelated to review quality, relevance, or 
+   any user-facing signal. This needs to be fixed regardless of the test 
+   instructor issue below.
+
+2. The permanent QA test instructor record (full_name = 'ZZZ TEST INSTRUCTOR 
+   - DO NOT USE') is currently visible in the public instructor browse list 
+   and searchable by real users. This must never be visible to real users — 
+   we are about to onboard our first real club contact and this would 
+   seriously undermine trust if seen.
+
+TASK:
+
+1. Find the query powering the public instructor browse/search page (likely 
+   in an API route or Server Component fetching from the `instructors` 
+   table). Report back what the current ORDER BY clause actually is.
+
+2. Change the sort order to something meaningful and stable — for the 
+   default (no search query) view, sort alphabetically by full_name. Do NOT 
+   sort by updated_at or created_at for the public-facing list.
+
+3. Add an `is_test` boolean column to the `instructors` table, default 
+   FALSE:
+   ALTER TABLE instructors ADD COLUMN IF NOT EXISTS is_test BOOLEAN DEFAULT FALSE;
+
+4. Set it TRUE for the existing QA record:
+   UPDATE instructors SET is_test = TRUE WHERE full_name = 'ZZZ TEST INSTRUCTOR - DO NOT USE';
+
+5. Update EVERY public-facing query that lists or searches instructors 
+   (browse page, search-by-name, location filter, homepage stats/counts like 
+   "88 instructors") to filter WHERE is_test = FALSE or IS NOT TRUE. Check 
+   carefully for multiple places this could be queried from — don't just fix 
+   the main browse page and miss the homepage count or search autocomplete.
+
+6. The admin dashboard should still be able to see/manage test instructors 
+   (do not filter is_test there) — this flag is only about hiding it from 
+   real end users, not from admin tooling.
+
+DONE WHEN:
+[ ] Confirmed and reported what the previous sort order actually was
+[ ] Public instructor list is sorted alphabetically by name by default
+[ ] Searching "zzz" or "test" as a real (non-admin) logged-in user returns 
+    NO results
+[ ] The "88 instructors" (or whatever the current count is) homepage/browse 
+    page count DECREASES by 1 to exclude the test instructor
+[ ] Admin dashboard can still view/access the test instructor directly
+[ ] Confirmed no other real instructor's position changed unexpectedly as a 
+    side effect of the sort order fix

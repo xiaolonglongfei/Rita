@@ -11,14 +11,17 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
 
   const supabase = createServiceClient();
-  let query = supabase.from("instructors").select("*", { count: "exact" });
+  let query = supabase
+    .from("instructors")
+    .select("*", { count: "exact" })
+    .eq("is_test", false); // never expose QA/test records to real users
 
   if (search) query = query.or(`full_name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (location) query = query.ilike("teaching_locations", `%${location}%`);
   if (minScore) query = query.gte("avg_overall", parseFloat(minScore));
 
   const { data, error, count } = await query
-    .order("avg_overall", { ascending: false })
+    .order("full_name", { ascending: true }) // stable alphabetical order; was avg_overall DESC
     .range(offset, offset + limit - 1);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
