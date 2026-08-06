@@ -1,0 +1,41 @@
+PROMPT #27 — Fix: blocked submissions never reach the server, so they're never logged
+
+CONTEXT:
+Layer 1 client-side validation is correctly catching bad content (e.g. phone 
+numbers) and showing an inline error — but it's preventing the request from 
+ever being sent to the server. Since the content_filter_logs insert lives in 
+the server route handler, client-blocked attempts are never logged. Confirmed 
+via browser Network tab: submitting a comment with a phone number produces no 
+request to /api/reviews at all.
+
+TASK:
+
+Change the submission flow so that clicking "Submit Anonymous Review" ALWAYS 
+sends the request to the server, regardless of what the client-side 
+checkReviewContentLayer1() check found. The client-side check should only be 
+used for real-time inline feedback as the user types (e.g. on blur, showing 
+the warning text) — it must NOT prevent the actual submit action from firing 
+a request to the server.
+
+The server route is the single source of truth for both blocking AND logging:
+- Server runs checkReviewContentLayer1() again on the submitted content
+- If blockers.length > 0: return 400 with the blocker categories, AND insert 
+  the content_filter_logs row (this part already works — confirm it still 
+  does after this change)
+- If warnings.length > 0 only: allow the insert to proceed, AND log the row
+- Client displays whatever error message the SERVER returns, not just its 
+  own local regex check result (keep the local check for instant "as you 
+  type" feedback, but the actual submit button click must always attempt 
+  the real request)
+
+DONE WHEN:
+[ ] Typing a phone number into the comment field still shows the instant 
+    inline warning as before (don't regress the UX)
+[ ] Clicking "Submit Anonymous Review" with a phone number present DOES 
+    produce a network request to /api/reviews (verify in Network tab) — even 
+    though it will be rejected
+[ ] After that rejected attempt, a row appears in content_filter_logs with 
+    'phone_number' in blocked_categories
+[ ] A clean submission still succeeds normally and produces no log row
+[ ] A submission with only warning-level content (e.g. promotional language) 
+    still succeeds, and produces a log row with the warning category

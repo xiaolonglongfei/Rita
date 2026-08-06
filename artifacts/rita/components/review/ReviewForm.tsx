@@ -67,14 +67,9 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
   }
 
   async function handleFinalSubmit() {
-    // Re-run content check before submitting (catches paste-then-submit without blur)
-    if (comment.trim()) {
-      const result = checkReviewContentLayer1(comment);
-      if (!result.passed) {
-        setCommentError(blockerMessage(result.blockers));
-        return;
-      }
-    }
+    // Client-side check is for real-time blur feedback only.
+    // The request always reaches the server — server is the single source of
+    // truth for blocking AND logging. Server errors surface via setError below.
 
     setSubmitting(true);
     setError("");
