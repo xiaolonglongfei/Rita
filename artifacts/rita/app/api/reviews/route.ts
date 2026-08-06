@@ -4,14 +4,20 @@ import { sendVerificationRequestEmail } from "@/lib/resend";
 import { checkReviewContentLayer1, blockerMessage } from "@/lib/moderation/layer1";
 
 /*
- * content_filter_logs table (run once in Supabase SQL editor):
+ * Expected content_filter_logs schema (verify in Supabase — do not auto-create):
  *
- * CREATE TABLE IF NOT EXISTS content_filter_logs (
- *   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
- *   instructor_id text,
- *   blocked_categories text[],
- *   created_at timestamptz DEFAULT now()
- * );
+ *   id               uuid        PRIMARY KEY DEFAULT gen_random_uuid()
+ *   instructor_id    uuid        REFERENCES instructors(id)
+ *   attempted_by     uuid
+ *   blocked_categories text[]
+ *   warned_categories  text[]
+ *   flagged_content  text
+ *   reviewed         boolean     DEFAULT false
+ *   created_at       timestamptz DEFAULT now()
+ *
+ * If instructor_id is type `text` instead of `uuid`, or attempted_by /
+ * warned_categories / flagged_content columns are missing, inserts will fail
+ * silently — update the table schema to match before relying on this log.
  */
 
 export async function GET() {
@@ -100,25 +106,34 @@ export async function POST(request: Request) {
     );
   }
 
+  const db = createServiceClient();
+
   // ── Layer 1 content moderation (server is the source of truth) ───────────
   if (comment && comment.trim()) {
     const modResult = checkReviewContentLayer1(comment.trim());
-    if (!modResult.passed) {
-      // Log metadata only — never log the comment content itself
-      const db = createServiceClient();
-      void Promise.resolve(
-        db.from("content_filter_logs")
-          .insert({ instructor_id, blocked_categories: modResult.blockers })
-      ).then(undefined, () => {}); // fire-and-forget; silently ignores missing table
+    const hasTriggers = modResult.blockers.length > 0 || modResult.warnings.length > 0;
 
+    if (hasTriggers) {
+      // Log ALL flagged attempts (blocked AND warned) — never log clean submissions.
+      // includes flagged_content so admins can audit false positives.
+      void Promise.resolve(
+        db.from("content_filter_logs").insert({
+          instructor_id,
+          attempted_by: user.id,
+          blocked_categories: modResult.blockers,
+          warned_categories: modResult.warnings,
+          flagged_content: comment.trim(),
+        })
+      ).then(undefined, () => {}); // fire-and-forget; fails silently if table schema mismatches
+    }
+
+    if (!modResult.passed) {
       return NextResponse.json(
         { error: blockerMessage(modResult.blockers) },
         { status: 400 }
       );
     }
   }
-
-  const db = createServiceClient();
 
   // Ensure user exists in users table
   await db.from("users").upsert(

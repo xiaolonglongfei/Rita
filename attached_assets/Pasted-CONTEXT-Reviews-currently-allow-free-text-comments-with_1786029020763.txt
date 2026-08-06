@@ -1,0 +1,153 @@
+CONTEXT:
+Reviews currently allow free-text comments with no content filtering. We need 
+a pre-submit validation layer (Layer 1, regex/keyword-based only — no AI) that 
+catches common problems before a review is saved: personal information (PII), 
+profanity, promotional/spam content, and shouting. Every triggered check — 
+whether it blocks submission or just warns — must be logged to the existing 
+content_filter_logs table so we can audit false positives and abuse patterns 
+later.
+
+Rovi's context differs from generic business review platforms (Yelp/Google): 
+reviews are about a specific, named, identifiable individual instructor, not 
+a business — so profanity is treated as a hard block here, stricter than 
+Yelp's "colorful language is fine" policy.
+
+TASK:
+
+1. Install the profanity-filter package:
+   npm install bad-words
+
+2. Create lib/moderation/layer1.ts with this exact implementation:
+
+import { Filter } from 'bad-words';
+
+const profanityFilter = new Filter();
+
+export interface ModerationResult {
+  passed: boolean;
+  blockers: string[];   // hard blocks — must fix before submitting
+  warnings: string[];   // soft flags — logged but don't block submission
+}
+
+// 'block' = rejects submission. 'warn' = allowed through, but logged.
+// Profanity is 'block' here (stricter than Yelp) because reviews target a
+// named real person, not a generic business.
+const SEVERITY: Record<string, 'block' | 'warn'> = {
+  phone_number: 'block',
+  email_address: 'block',
+  street_address: 'block',
+  profanity: 'block',
+  promotional: 'warn',
+  excessive_caps: 'warn',
+  social_handle: 'warn',
+};
+
+const PHONE_REGEX = /(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/;
+const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+const ADDRESS_REGEX = /\d{1,5}\s+\w+(\s+\w+){0,3}\s+(street|st|avenue|ave|road|rd|drive|dr|lane|ln|court|ct|way|blvd|boulevard)\b/i;
+const SOCIAL_HANDLE_REGEX = /@[a-zA-Z0-9_]{3,}/;
+
+// Promotional/spam patterns — students soliciting/advertising competing
+// instruction, not related to reviewing the instructor being rated.
+const PROMOTIONAL_PATTERNS = [
+  /\b(dm|text|call|contact)\s+me\b/i,
+  /\bcheck out\b.*\b(instagram|ig|website|\.com)\b/i,
+  /\bbetter (coach|instructor|pro)\b.*\b(contact|call|dm)\b/i,
+];
+
+function checkExcessiveCaps(text: string): boolean {
+  if (text.length < 20) return false;
+  const letters = text.replace(/[^a-zA-Z]/g, '');
+  if (letters.length === 0) return false;
+  const capsRatio = (text.match(/[A-Z]/g) || []).length / letters.length;
+  return capsRatio > 0.7;
+}
+
+export function checkReviewContentLayer1(text: string): ModerationResult {
+  const blockers: string[] = [];
+  const warnings: string[] = [];
+
+  const checks: Array<[string, boolean]> = [
+    ['phone_number', PHONE_REGEX.test(text)],
+    ['email_address', EMAIL_REGEX.test(text)],
+    ['street_address', ADDRESS_REGEX.test(text)],
+    ['profanity', profanityFilter.isProfane(text)],
+    ['promotional', PROMOTIONAL_PATTERNS.some(p => p.test(text))],
+    ['excessive_caps', checkExcessiveCaps(text)],
+    ['social_handle', SOCIAL_HANDLE_REGEX.test(text)],
+  ];
+
+  for (const [category, triggered] of checks) {
+    if (!triggered) continue;
+    if (SEVERITY[category] === 'block') blockers.push(category);
+    else warnings.push(category);
+  }
+
+  return { passed: blockers.length === 0, blockers, warnings };
+}
+
+3. Wire this into the review submission flow, BOTH client-side and 
+   server-side (server-side is the real enforcement — client checks can be 
+   bypassed, don't skip the server check):
+
+   - On submit, call checkReviewContentLayer1(commentText)
+   - If result.blockers.length > 0: reject submission (400 on the server 
+     action/API route; inline error on the client) using this mapping for 
+     user-facing messages — keep it generic, don't reveal which specific 
+     word/phrase triggered it:
+       phone_number  → "Please remove phone numbers before submitting."
+       email_address → "Please remove email addresses before submitting."
+       street_address → "Please remove specific addresses before submitting."
+       profanity → "This comment doesn't meet our content guidelines — please rephrase."
+   - Do NOT block on 'warnings' categories (promotional, excessive_caps, 
+     social_handle) — allow submission through, but still log them.
+
+4. Confirm the content_filter_logs table matches this schema (it was already 
+   created — verify column names match exactly, do not recreate if it already 
+   has this structure):
+
+   id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+   instructor_id UUID REFERENCES instructors(id)
+   attempted_by UUID
+   blocked_categories TEXT[]
+   warned_categories TEXT[]
+   flagged_content TEXT
+   reviewed BOOLEAN DEFAULT FALSE
+   created_at TIMESTAMPTZ DEFAULT now()
+
+   RLS should already be enabled with an admin-only SELECT policy. If the 
+   existing table doesn't match this (e.g. instructor_id is type `text` 
+   instead of `uuid`, or flagged_content/attempted_by columns are missing), 
+   flag this back to me before proceeding — do not silently alter or drop 
+   the table yourself.
+
+5. On every submission attempt that triggers AT LEAST ONE blocker OR warning 
+   (regardless of whether the submission was ultimately blocked or allowed 
+   through), insert one row into content_filter_logs:
+   - instructor_id: the instructor being reviewed
+   - attempted_by: the submitting user's id
+   - blocked_categories: the `blockers` array from the result
+   - warned_categories: the `warnings` array from the result
+   - flagged_content: the full comment text
+   - reviewed: default false (leave unset)
+
+   Do NOT insert a row for clean submissions that triggered nothing — this 
+   table should only ever contain flagged attempts, not a log of every review.
+
+DONE WHEN:
+[ ] Submitting a comment with a phone number is blocked client-side with the 
+    correct inline message, AND a row appears in content_filter_logs with 
+    'phone_number' in blocked_categories
+[ ] Submitting a comment with mild promotional language (e.g. "DM me for 
+    lessons") is NOT blocked — submission succeeds — but a row appears in 
+    content_filter_logs with 'promotional' in warned_categories
+[ ] Submitting profane content is blocked with the generic message (doesn't 
+    reveal which word triggered it)
+[ ] A normal clean review comment like "Great lesson, really helped my 
+    backhand!" produces NO row in content_filter_logs
+[ ] Directly hitting the API/Server Action with a blocked comment (bypassing 
+    the client) is also rejected — test with a raw fetch/curl call, not just 
+    the UI
+[ ] Query content_filter_logs after several test submissions and confirm the 
+    data looks correct — right instructor_id, right categories in the arrays, 
+    actual comment text visible in flagged_content

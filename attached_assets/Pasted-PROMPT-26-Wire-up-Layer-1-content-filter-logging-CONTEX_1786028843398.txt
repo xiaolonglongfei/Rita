@@ -1,0 +1,53 @@
+PROMPT #26 — Wire up Layer 1 content filter + logging
+
+CONTEXT:
+Layer 1 regex-based content filtering needs to be implemented and connected to 
+the review submission flow, with all triggered checks logged to the existing 
+content_filter_logs table for later auditing.
+
+TASK:
+
+1. Install the profanity-filter package:
+   npm install bad-words
+
+2. Create lib/moderation/layer1.ts with this exact implementation:
+
+[粘贴我上面给你的完整 layer1.ts 代码]
+
+3. Wire this into the review submission flow, CLIENT-SIDE and SERVER-SIDE 
+   (server-side is the real enforcement, client-side is just UX):
+
+   - On submit, call checkReviewContentLayer1(commentText)
+   - If blockers.length > 0: reject submission (400 on server, inline error 
+     on client using this mapping for user-facing messages:
+     phone_number → "Please remove phone numbers before submitting."
+     email_address → "Please remove email addresses before submitting."
+     street_address → "Please remove specific addresses before submitting."
+     profanity → "This comment doesn't meet our content guidelines — please rephrase."
+     Do not block on 'warnings' categories (promotional, excessive_caps, 
+     social_handle) — allow submission but still log them.
+
+4. On EVERY submission attempt that triggers at least one blocker OR warning 
+   (regardless of whether it was ultimately blocked or allowed through), 
+   insert one row into content_filter_logs:
+   - instructor_id: the instructor being reviewed
+   - attempted_by: the submitting user's id
+   - blocked_categories: the `blockers` array from the result
+   - warned_categories: the `warnings` array from the result
+   - flagged_content: the full comment text (only insert this row if 
+     blockers or warnings is non-empty — do NOT log every clean submission, 
+     only ones that triggered something)
+   - reviewed: default false
+
+DONE WHEN:
+[ ] Submitting a comment with a phone number is blocked client-side, and a 
+    row appears in content_filter_logs with 'phone_number' in blocked_categories
+[ ] Submitting a comment with mild promotional language (e.g. "DM me for 
+    lessons") is NOT blocked, submission succeeds, but a row appears in 
+    content_filter_logs with 'promotional' in warned_categories
+[ ] A normal clean review comment produces NO row in content_filter_logs
+[ ] Directly hitting the API bypassing the client also enforces the block 
+    (test with raw fetch/curl)
+[ ] Query content_filter_logs after several test submissions and confirm the 
+    data looks correct — right instructor_id, right categories, actual text 
+    visible in flagged_content
