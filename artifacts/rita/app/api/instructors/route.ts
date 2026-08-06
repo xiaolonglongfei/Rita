@@ -14,7 +14,8 @@ export async function GET(request: Request) {
   let query = supabase
     .from("instructors")
     .select("*", { count: "exact" })
-    .eq("is_test", false); // never expose QA/test records to real users
+    .eq("is_test", false)   // never expose QA/test records to real users
+    .eq("is_active", true); // hide former/inactive instructors from public browse
 
   if (search) query = query.or(`full_name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (location) query = query.ilike("teaching_locations", `%${location}%`);

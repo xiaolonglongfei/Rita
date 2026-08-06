@@ -9,7 +9,8 @@ export async function GET(request: Request) {
   const { data, error } = await db
     .from("instructors")
     .select("id, full_name, avatar_url, teaching_locations, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, is_claimed")
-    .eq("is_test", false) // never expose QA/test records in public rankings
+    .eq("is_test", false)   // never expose QA/test records in public rankings
+    .eq("is_active", true)  // hide former/inactive instructors from public rankings
     .gt("total_reviews", 0)
     .order("avg_overall", { ascending: false })
     .order("total_reviews", { ascending: false })
