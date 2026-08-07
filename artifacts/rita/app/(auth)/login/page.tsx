@@ -50,9 +50,18 @@ function LoginForm() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide block mb-1.5">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Password
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium"
+                style={{ color: "#f97316" }}
+              >
+                Forgot password?
+              </Link>
+            </div>
             <input
               type="password"
               placeholder="Your password"

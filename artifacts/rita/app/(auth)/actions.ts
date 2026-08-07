@@ -49,6 +49,17 @@ export async function loginAction(
   redirect(next);
 }
 
+export async function forgotPasswordAction(email: string) {
+  const supabase = await getServerSupabase();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/+$/, "");
+  // Call regardless of whether the email exists — never reveal registration status.
+  // Supabase silently no-ops for unknown emails, so this is safe.
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${appUrl}/reset-password`,
+  });
+  return { sent: true };
+}
+
 export async function signupAction(
   fullName: string,
   email: string,
