@@ -1,0 +1,42 @@
+PROMPT #34 — Fix "Rated on" card layout inconsistency on homepage
+
+CONTEXT:
+The homepage has three stat cards in a vertical stack: "96 Instructors", 
+"3 Reviews", and "Rated on". The first two follow a consistent pattern (icon 
+centered on top, large number centered, label centered below). The third 
+card ("Rated on") breaks this pattern — it uses a left-aligned bulleted list 
+with small emoji icons (💰 Value, 📈 Effectiveness, ⏰ Punctuality), which 
+looks visually inconsistent and cluttered next to the clean centered cards 
+above it, especially on mobile.
+
+TASK:
+
+Redesign the "Rated on" card to match the visual rhythm of the two cards 
+above it:
+- Keep the bar-chart icon and "Rated on" title centered at the top, as-is
+- Replace the left-aligned bulleted list with THREE items arranged 
+  horizontally in a row, each with its icon centered above its label (money 
+  bag icon above "Value", chart icon above "Effectiveness", stopwatch icon 
+  above "Punctuality") — same visual pattern already used elsewhere on the 
+  site (e.g. the Score Breakdown triangle chart on instructor profile pages 
+  already uses this icon-above-label convention for these same three 
+  dimensions — reuse that same icon set and arrangement style for consistency)
+- The three items should be evenly spaced and centered as a group within the 
+  card, not left-aligned
+- Remove the bullet points entirely
+
+Test at mobile widths (375px, 390px) to confirm the three items fit 
+comfortably in a row without wrapping awkwardly or feeling cramped. If they 
+don't fit cleanly in one row at the narrowest supported width, stack as 
+three centered rows instead (icon + label per row, still centered — not 
+left-aligned bullets).
+
+DONE WHEN:
+[ ] "Rated on" card visually matches the centered-alignment pattern of the 
+    "Instructors" and "Reviews" cards above it
+[ ] No bullet points remain
+[ ] Icons match the same icon set used on instructor profile Score Breakdown 
+    (Value/Effectiveness/Punctuality) for visual consistency across the site
+[ ] Confirmed readable and well-spaced on 375px and 390px mobile viewports
+[ ] Desktop layout also checked and remains clean (this card likely appears 
+    there too)

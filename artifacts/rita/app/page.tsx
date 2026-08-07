@@ -103,22 +103,21 @@ export default async function HomePage() {
 
           <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
             <div className="text-4xl mb-3">📊</div>
-            <div className="text-base font-extrabold mb-3" style={{ color: "#f97316" }}>
+            <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
-            <div className="flex flex-col gap-2 text-left">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
-                <span className="text-sm text-slate-600">💰 Value</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
-                <span className="text-sm text-slate-600">📈 Effectiveness</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#f97316" }}></div>
-                <span className="text-sm text-slate-600">⏰ Punctuality</span>
-              </div>
+            {/* Three dimensions — icon centered above label, matching ScoreTriangle convention */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { emoji: "💰", label: "Value" },
+                { emoji: "📈", label: "Effectiveness" },
+                { emoji: "⏰", label: "Punctuality" },
+              ].map(({ emoji, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <span className="text-xl leading-none">{emoji}</span>
+                  <span className="text-xs text-slate-500 font-medium text-center leading-tight">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
