@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GripVertical, ChevronUp, ChevronDown } from "lucide-react";
 
 interface Instructor {
   id: string;
@@ -31,7 +32,10 @@ function scoreColor(s: number): string {
 export function PrivateRankingList({ initialRanked, unranked }: Props) {
   const [ranked, setRanked] = useState<Instructor[]>(initialRanked);
   const [unrankedList, setUnrankedList] = useState<Instructor[]>(unranked);
+  // dragIdx: which row is being dragged
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  // draggableRow: which row has its draggable flag enabled (set by handle pointer-down)
+  const [draggableRow, setDraggableRow] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -60,6 +64,10 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
     }
   }
 
+  // ── Drag handlers ────────────────────────────────────────────────────────
+  // draggable is only true when the user pointer-downed on the grip handle,
+  // so accidental row touches during scroll never trigger a drag.
+
   function handleDragStart(idx: number) {
     setDragIdx(idx);
   }
@@ -79,8 +87,36 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
     const newRanked = [...ranked];
     showToast(`${newRanked[idx].full_name} moved to #${idx + 1}`);
     setDragIdx(null);
+    setDraggableRow(null);
     await saveRanking(newRanked);
   }
+
+  function handleDragEnd() {
+    setDragIdx(null);
+    setDraggableRow(null);
+  }
+
+  // ── Arrow button handlers ────────────────────────────────────────────────
+
+  async function moveUp(i: number) {
+    if (i === 0) return;
+    const newRanked = [...ranked];
+    [newRanked[i - 1], newRanked[i]] = [newRanked[i], newRanked[i - 1]];
+    setRanked(newRanked);
+    showToast(`${newRanked[i - 1].full_name} moved to #${i}`);
+    await saveRanking(newRanked);
+  }
+
+  async function moveDown(i: number) {
+    if (i === ranked.length - 1) return;
+    const newRanked = [...ranked];
+    [newRanked[i + 1], newRanked[i]] = [newRanked[i], newRanked[i + 1]];
+    setRanked(newRanked);
+    showToast(`${newRanked[i + 1].full_name} moved to #${i + 2}`);
+    await saveRanking(newRanked);
+  }
+
+  // ── Add / remove ─────────────────────────────────────────────────────────
 
   async function addToRanking(instructor: Instructor) {
     const newRanked = [...ranked, instructor];
@@ -121,11 +157,14 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
           {ranked.map((inst, i) => (
             <div
               key={inst.id}
-              draggable
+              // draggable is only true when the grip handle was pointer-downed,
+              // so the row body never initiates a drag on accidental touch/scroll.
+              draggable={draggableRow === i}
               onDragStart={() => handleDragStart(i)}
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={() => handleDrop(i)}
-              className="bg-white rounded-xl p-4 flex items-center gap-3 cursor-grab active:cursor-grabbing select-none"
+              onDragEnd={handleDragEnd}
+              className="bg-white rounded-xl p-4 flex items-center gap-3 select-none"
               style={{
                 border: dragIdx === i ? "1.5px solid #f97316" : "1.5px solid #f1f5f9",
                 boxShadow:
@@ -134,6 +173,22 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
                 transition: "all 0.15s",
               }}
             >
+              {/* Drag handle — only this element enables dragging.
+                  touch-none prevents browser scroll-capture on the handle itself,
+                  allowing the handle to initiate a drag on touch devices. */}
+              <div
+                className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+                style={{ touchAction: "none" }}
+                onPointerDown={() => setDraggableRow(i)}
+                onPointerUp={() => {
+                  // If no drag started, reset so the row isn't stuck as draggable
+                  if (dragIdx === null) setDraggableRow(null);
+                }}
+                title="Drag to reorder"
+              >
+                <GripVertical size={20} />
+              </div>
+
               {/* Rank number */}
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
@@ -191,7 +246,7 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
                 )}
               </div>
 
-              {/* Score pills */}
+              {/* Score pills — desktop only */}
               {inst.total_reviews > 0 && (
                 <div className="hidden sm:flex gap-1.5 flex-shrink-0">
                   <span
@@ -215,13 +270,38 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
                 </div>
               )}
 
-              {/* Drag handle + remove */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-slate-300 text-lg select-none">⠿</span>
+              {/* ▲▼ arrow buttons + remove
+                  Each button is min 44×44px for reliable touch tap targets. */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex flex-col">
+                  <button
+                    onClick={() => moveUp(i)}
+                    disabled={i === 0}
+                    className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                    style={{ minWidth: 44, minHeight: 44 }}
+                    title="Move up"
+                    aria-label={`Move ${inst.full_name} up`}
+                  >
+                    <ChevronUp size={18} />
+                  </button>
+                  <button
+                    onClick={() => moveDown(i)}
+                    disabled={i === ranked.length - 1}
+                    className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                    style={{ minWidth: 44, minHeight: 44 }}
+                    title="Move down"
+                    aria-label={`Move ${inst.full_name} down`}
+                  >
+                    <ChevronDown size={18} />
+                  </button>
+                </div>
+
                 <button
                   onClick={() => removeFromRanking(inst)}
-                  className="text-slate-300 hover:text-red-400 text-xl leading-none"
+                  className="flex items-center justify-center text-slate-300 hover:text-red-400 text-xl leading-none transition-colors"
+                  style={{ minWidth: 44, minHeight: 44 }}
                   title="Remove from ranking"
+                  aria-label={`Remove ${inst.full_name} from ranking`}
                 >
                   ×
                 </button>
@@ -269,8 +349,8 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
         </div>
       )}
 
-      {/* Info note */}
-      <div className="bg-orange-50 rounded-xl p-4 text-xs text-orange-700 leading-relaxed border border-orange-100">
+      {/* Info note — text-sm for body-text readability, not caption-size */}
+      <div className="bg-orange-50 rounded-xl p-4 text-sm text-orange-700 leading-relaxed border border-orange-100">
         ℹ️ Your personal ranking is combined with other students&apos; rankings to generate Rovi&apos;s
         platform-wide public ranking — without revealing your individual list.
       </div>

@@ -77,7 +77,7 @@ export default async function RankingPage() {
       <div className="max-w-lg mx-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-slate-800">My Instructor Ranking</h1>
-          <p className="text-sm text-slate-500 mt-1">Drag to reorder. Only you can see this list.</p>
+          <p className="text-base text-slate-600 mt-1">Drag to reorder your instructors.</p>
         </div>
 
         <PrivateRankingList

@@ -1,0 +1,54 @@
+PROMPT #30 — Redesign "My Instructor Ranking" page: typography + mobile-safe drag interaction
+
+CONTEXT:
+Two pieces of instructional/explanatory text on this page are too small and 
+hard to read, especially on desktop: (1) "Drag to reorder. Only you can see 
+this list." near the top, and (2) the bottom info box explaining how personal 
+rankings feed into the platform-wide public ranking. Additionally, the current 
+drag-to-reorder interaction likely conflicts with vertical scroll on mobile 
+touchscreens — a raw full-row drag gesture is hard to distinguish from a 
+scroll gesture on touch devices.
+
+TASK:
+
+1. Typography fixes:
+   - Increase the "Drag to reorder" instruction text to a clearer, more 
+     prominent size (treat it as a proper UI instruction, not a small caption)
+   - Simplify: don't repeat "only you can see this list" both here AND in the 
+     "Private — visible only to you" badge below it — keep the privacy 
+     messaging in the badge only, keep this line focused on the action 
+     ("Drag to reorder your instructors")
+   - Increase the bottom info box text size to match body-text readability 
+     standards, not caption-size
+
+2. Add an explicit drag handle per row:
+   - Add a visible drag handle icon (e.g. six-dot grip icon, ⋮⋮) on each 
+     ranked instructor row
+   - Only the handle itself should initiate the drag gesture — the rest of 
+     the row should NOT trigger drag, so normal page scroll still works 
+     smoothly when a user's finger lands elsewhere on the row (critical for 
+     mobile — this is the main fix, not just a visual addition)
+
+3. Add up/down arrow buttons as an alternative to dragging:
+   - Each row gets small ▲▼ buttons to move the instructor one position up 
+     or down with a single tap
+   - This should work identically on desktop and mobile, and serves as a 
+     more precise/accessible alternative to drag gestures, especially useful 
+     for longer ranking lists
+
+4. Test explicitly on a mobile viewport (not just resize the desktop browser 
+   window — use actual touch event simulation or a real device/emulator):
+   - Confirm vertical page scroll works normally when touching anywhere on a 
+     row EXCEPT the drag handle
+   - Confirm dragging via the handle still successfully reorders
+   - Confirm the up/down arrow buttons are large enough to tap reliably on a 
+     touchscreen (minimum ~44x44px tap target per standard mobile guidelines)
+
+DONE WHEN:
+[ ] Both text elements are clearly readable on desktop without zooming
+[ ] Drag handle icon is visible on every row, both desktop and mobile
+[ ] On mobile, scrolling the page by touching a row (not the handle) works 
+    smoothly with no accidental reordering
+[ ] Up/down arrow buttons work on both desktop and mobile, tap targets meet 
+    the 44x44px minimum
+[ ] Existing ranking data/order is unaffected by this change (no data migration needed)
