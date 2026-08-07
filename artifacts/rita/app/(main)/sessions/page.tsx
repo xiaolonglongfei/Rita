@@ -149,12 +149,12 @@ export default async function SessionsPage() {
                       borderBottom: "1px solid #f1f5f9",
                     }}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold text-slate-800">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <p className="text-sm font-semibold text-slate-800 min-w-0 truncate">
                         {r.instructors?.full_name ?? "Unknown"}
                       </p>
                       <span
-                        className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                        className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
                         style={{
                           background: r.is_verified ? "#dcfce7" : "#f1f5f9",
                           color: r.is_verified ? "#16a34a" : "#64748b",

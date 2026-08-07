@@ -84,7 +84,7 @@ export default async function HomePage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto mt-10 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-10 px-4">
           <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
             <div className="text-4xl mb-3">🎾</div>
             <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>

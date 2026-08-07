@@ -1,0 +1,47 @@
+PROMPT #31 — Critical mobile responsiveness gaps: content overflow + missing navigation
+
+CONTEXT:
+Rovi's primary acquisition channel is QR code stickers/table tents scanned on 
+phones — mobile is the PRIMARY entry point for real users, not a secondary 
+concern. Testing on an actual mobile device (not a resized desktop browser) 
+revealed two serious issues:
+
+1. Page content overflows/touches screen edges on mobile viewports (e.g. the 
+   "Find a Tennis Instructor" heading and instructor count text on the browse 
+   page extend past the left edge of the screen). This suggests missing or 
+   incorrect horizontal padding/max-width constraints at mobile breakpoints.
+
+2. The main navigation (Instructors, My Ranking, My Sessions, Write Review) 
+   is COMPLETELY MISSING on mobile — only "Profile" and "Sign Out" appear in 
+   the mobile header. There is no hamburger menu, no mobile nav drawer, no 
+   alternative way to reach these pages. This means mobile users currently 
+   cannot navigate to "My Ranking" at all through the UI.
+
+TASK:
+
+1. Audit global layout/container components for missing responsive padding. 
+   Do not just fix the browse page — check every page (browse, instructor 
+   profile, my ranking, my sessions, write review, profile) for the same 
+   overflow issue at common mobile widths (375px, 390px, 414px).
+
+2. Build a proper mobile navigation solution:
+   - Add a hamburger menu icon in the mobile header that opens a nav 
+     drawer/dropdown containing ALL the same links available in desktop nav: 
+     Instructors, My Ranking, My Sessions, Write Review — plus keep 
+     Profile/Sign Out accessible as they are now
+   - Ensure every nav item is reachable and tappable (minimum 44x44px tap 
+     target)
+
+3. Test on real mobile viewport widths (375px, 390px, 414px — iPhone SE, 
+   standard iPhone, and larger Android sizes), not just a resized desktop 
+   browser window — use browser dev tools' device emulation mode at minimum, 
+   real device testing preferred.
+
+DONE WHEN:
+[ ] No page content touches or overflows screen edges at 375px width
+[ ] A mobile user can reach "My Ranking" through the UI without needing to 
+    manually type a URL
+[ ] Hamburger menu (or equivalent) contains all desktop nav links and each 
+    is tappable
+[ ] Tested and confirmed on at least 3 mobile viewport widths
+[ ] Desktop layout/nav is completely unaffected by these changes
