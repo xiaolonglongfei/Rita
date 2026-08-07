@@ -561,6 +561,12 @@ video {
 .top-6 {
   top: 1.5rem;
 }
+.-right-1\.5 {
+  right: -0.375rem;
+}
+.-top-1\.5 {
+  top: -0.375rem;
+}
 .z-40 {
   z-index: 40;
 }
@@ -769,6 +775,9 @@ video {
 }
 .flex-shrink-0 {
   flex-shrink: 0;
+}
+.shrink {
+  flex-shrink: 1;
 }
 .grow {
   flex-grow: 1;
@@ -1103,6 +1112,9 @@ video {
 .pb-3 {
   padding-bottom: 0.75rem;
 }
+.pl-1 {
+  padding-left: 0.25rem;
+}
 .text-left {
   text-align: left;
 }
@@ -1150,6 +1162,9 @@ video {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
+}
+.text-\[11px\] {
+  font-size: 11px;
 }
 .font-bold {
   font-weight: 700;

@@ -1,0 +1,40 @@
+PROMPT #32 — Fix instructor name truncation on mobile ranking cards
+
+CONTEXT:
+On the mobile "My Instructor Ranking" page, instructor full names are being 
+truncated with ellipsis (e.g. "Ron ...", "Stev...", "Clau...") because too 
+many elements are crammed into a single row (drag handle, rank number, medal 
+icon, avatar, name, star rating, up/down arrows, delete button). This is a 
+real functional problem, not just cosmetic — clubs have multiple instructors 
+sharing the same first few letters of their name (e.g. "Steve Benjamin" and 
+"Steve Higgins"), so truncation makes it impossible for a user to confirm 
+which instructor they're reordering or removing.
+
+TASK:
+
+Redesign the mobile ranking card layout so the full first name is ALWAYS 
+fully visible, and the full name is visible whenever reasonably possible:
+
+- Restructure the card to use two lines instead of forcing everything into 
+  one: top line = rank number + avatar + full name (this line gets priority 
+  width, no truncation on first name at minimum — ideally full name); second 
+  line = star rating + review count + secondary controls (up/down arrows, 
+  delete)
+- The medal/rank icon (🥇🥈🥉) can move to be a small badge overlapping the 
+  rank number circle, rather than taking its own horizontal slot
+- If the full name still doesn't fit on one line even after this 
+  restructure, wrap to a second line rather than truncating — do not use 
+  ellipsis on the name under any circumstance
+- Keep the drag handle and delete (×) button as the only elements on the 
+  far left/right edges; everything else flows in the middle with the name 
+  getting priority
+
+DONE WHEN:
+[ ] On a 375px-wide viewport, an instructor with a long full name (e.g. 
+    "Jean-Benoit Belin" or "Fernanda Poblete") displays completely, either 
+    on one line or wrapped to two — never truncated with "..."
+[ ] Two instructors with similar-looking short names (e.g. two "Steve"s) are 
+    each fully distinguishable at a glance
+[ ] Drag-to-reorder and up/down arrow functionality from Prompt #30 still 
+    works correctly after the layout change
+[ ] Desktop layout is unaffected

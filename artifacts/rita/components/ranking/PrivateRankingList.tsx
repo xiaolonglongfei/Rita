@@ -29,12 +29,25 @@ function scoreColor(s: number): string {
   return "#c83030";
 }
 
+// Rank circle background/border/text per position
+function rankStyle(i: number) {
+  const styles = [
+    { bg: "#fef3c7", color: "#92400e", border: "#fcd34d" },
+    { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" },
+    { bg: "#fde8d8", color: "#7c2d12", border: "#fdba74" },
+  ];
+  const s = styles[i] ?? { bg: "#fff7ed", color: "#f97316", border: "#fed7aa" };
+  return {
+    background: s.bg,
+    color: s.color,
+    border: `2px solid ${s.border}`,
+  };
+}
+
 export function PrivateRankingList({ initialRanked, unranked }: Props) {
   const [ranked, setRanked] = useState<Instructor[]>(initialRanked);
   const [unrankedList, setUnrankedList] = useState<Instructor[]>(unranked);
-  // dragIdx: which row is being dragged
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  // draggableRow: which row has its draggable flag enabled (set by handle pointer-down)
   const [draggableRow, setDraggableRow] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -64,31 +77,26 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
     }
   }
 
-  // ── Drag handlers ────────────────────────────────────────────────────────
-  // draggable is only true when the user pointer-downed on the grip handle,
-  // so accidental row touches during scroll never trigger a drag.
-
-  function handleDragStart(idx: number) {
-    setDragIdx(idx);
-  }
+  // ── Drag handlers ─────────────────────────────────────────────────────────
+  function handleDragStart(idx: number) { setDragIdx(idx); }
 
   function handleDragOver(e: React.DragEvent, idx: number) {
     e.preventDefault();
     if (dragIdx === null || dragIdx === idx) return;
-    const newRanked = [...ranked];
-    const [moved] = newRanked.splice(dragIdx, 1);
-    newRanked.splice(idx, 0, moved);
+    const r = [...ranked];
+    const [moved] = r.splice(dragIdx, 1);
+    r.splice(idx, 0, moved);
     setDragIdx(idx);
-    setRanked(newRanked);
+    setRanked(r);
   }
 
   async function handleDrop(idx: number) {
     if (dragIdx === null) return;
-    const newRanked = [...ranked];
-    showToast(`${newRanked[idx].full_name} moved to #${idx + 1}`);
+    const r = [...ranked];
+    showToast(`${r[idx].full_name} moved to #${idx + 1}`);
     setDragIdx(null);
     setDraggableRow(null);
-    await saveRanking(newRanked);
+    await saveRanking(r);
   }
 
   function handleDragEnd() {
@@ -96,42 +104,40 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
     setDraggableRow(null);
   }
 
-  // ── Arrow button handlers ────────────────────────────────────────────────
-
+  // ── Arrow handlers ────────────────────────────────────────────────────────
   async function moveUp(i: number) {
     if (i === 0) return;
-    const newRanked = [...ranked];
-    [newRanked[i - 1], newRanked[i]] = [newRanked[i], newRanked[i - 1]];
-    setRanked(newRanked);
-    showToast(`${newRanked[i - 1].full_name} moved to #${i}`);
-    await saveRanking(newRanked);
+    const r = [...ranked];
+    [r[i - 1], r[i]] = [r[i], r[i - 1]];
+    setRanked(r);
+    showToast(`${r[i - 1].full_name} moved to #${i}`);
+    await saveRanking(r);
   }
 
   async function moveDown(i: number) {
     if (i === ranked.length - 1) return;
-    const newRanked = [...ranked];
-    [newRanked[i + 1], newRanked[i]] = [newRanked[i], newRanked[i + 1]];
-    setRanked(newRanked);
-    showToast(`${newRanked[i + 1].full_name} moved to #${i + 2}`);
-    await saveRanking(newRanked);
+    const r = [...ranked];
+    [r[i + 1], r[i]] = [r[i], r[i + 1]];
+    setRanked(r);
+    showToast(`${r[i + 1].full_name} moved to #${i + 2}`);
+    await saveRanking(r);
   }
 
-  // ── Add / remove ─────────────────────────────────────────────────────────
-
+  // ── Add / remove ──────────────────────────────────────────────────────────
   async function addToRanking(instructor: Instructor) {
-    const newRanked = [...ranked, instructor];
-    setRanked(newRanked);
+    const n = [...ranked, instructor];
+    setRanked(n);
     setUnrankedList(unrankedList.filter((i) => i.id !== instructor.id));
     showToast(`${instructor.full_name} added to your ranking`);
-    await saveRanking(newRanked);
+    await saveRanking(n);
   }
 
   async function removeFromRanking(instructor: Instructor) {
-    const newRanked = ranked.filter((i) => i.id !== instructor.id);
-    setRanked(newRanked);
+    const n = ranked.filter((i) => i.id !== instructor.id);
+    setRanked(n);
     setUnrankedList([...unrankedList, instructor]);
     showToast(`${instructor.full_name} removed from ranking`);
-    await saveRanking(newRanked);
+    await saveRanking(n);
   }
 
   return (
@@ -157,154 +163,201 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
           {ranked.map((inst, i) => (
             <div
               key={inst.id}
-              // draggable is only true when the grip handle was pointer-downed,
-              // so the row body never initiates a drag on accidental touch/scroll.
               draggable={draggableRow === i}
               onDragStart={() => handleDragStart(i)}
               onDragOver={(e) => handleDragOver(e, i)}
               onDrop={() => handleDrop(i)}
               onDragEnd={handleDragEnd}
-              className="bg-white rounded-xl p-4 flex items-center gap-3 select-none"
+              className="bg-white rounded-xl px-3 py-3 select-none"
               style={{
                 border: dragIdx === i ? "1.5px solid #f97316" : "1.5px solid #f1f5f9",
-                boxShadow:
-                  dragIdx === i ? "0 4px 16px rgba(249,115,22,0.15)" : undefined,
+                boxShadow: dragIdx === i ? "0 4px 16px rgba(249,115,22,0.15)" : undefined,
                 transform: dragIdx === i ? "scale(1.02)" : undefined,
                 transition: "all 0.15s",
               }}
             >
-              {/* Drag handle — only this element enables dragging.
-                  touch-none prevents browser scroll-capture on the handle itself,
-                  allowing the handle to initiate a drag on touch devices. */}
-              <div
-                className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
-                style={{ touchAction: "none" }}
-                onPointerDown={() => setDraggableRow(i)}
-                onPointerUp={() => {
-                  // If no drag started, reset so the row isn't stuck as draggable
-                  if (dragIdx === null) setDraggableRow(null);
-                }}
-                title="Drag to reorder"
-              >
-                <GripVertical size={20} />
-              </div>
+              {/* ── MOBILE layout (two-line) — hidden on sm+ ─────────────── */}
+              <div className="flex flex-col gap-1.5 sm:hidden">
 
-              {/* Rank number */}
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                style={{
-                  background:
-                    i === 0
-                      ? "#fef3c7"
-                      : i === 1
-                      ? "#f1f5f9"
-                      : i === 2
-                      ? "#fde8d8"
-                      : "#fff7ed",
-                  color:
-                    i === 0
-                      ? "#92400e"
-                      : i === 1
-                      ? "#475569"
-                      : i === 2
-                      ? "#7c2d12"
-                      : "#f97316",
-                  border: `2px solid ${
-                    i === 0
-                      ? "#fcd34d"
-                      : i === 1
-                      ? "#cbd5e1"
-                      : i === 2
-                      ? "#fdba74"
-                      : "#fed7aa"
-                  }`,
-                }}
-              >
-                {i + 1}
-              </div>
+                {/* Top row: handle | rank+medal | avatar | full name (wraps, no truncation) */}
+                <div className="flex items-center gap-2">
 
-              {/* Medal */}
-              <span className="text-lg w-6 text-center flex-shrink-0">
-                {medals[i] || ""}
-              </span>
+                  {/* Drag handle */}
+                  <div
+                    className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+                    style={{ touchAction: "none", minWidth: 28, minHeight: 28, display: "flex", alignItems: "center", justifyContent: "center" }}
+                    onPointerDown={() => setDraggableRow(i)}
+                    onPointerUp={() => { if (dragIdx === null) setDraggableRow(null); }}
+                    title="Drag to reorder"
+                  >
+                    <GripVertical size={18} />
+                  </div>
 
-              {/* Avatar */}
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                style={{ background: "#f97316" }}
-              >
-                {inst.full_name.charAt(0)}
-              </div>
+                  {/* Rank number with medal badge overlay */}
+                  <div className="relative flex-shrink-0">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={rankStyle(i)}
+                    >
+                      {i + 1}
+                    </div>
+                    {medals[i] && (
+                      <span className="absolute -top-1.5 -right-1.5 text-[11px] leading-none">
+                        {medals[i]}
+                      </span>
+                    )}
+                  </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{inst.full_name}</p>
-                {inst.total_reviews > 0 && (
-                  <p className="text-xs text-slate-400">
-                    ⭐ {inst.avg_overall?.toFixed(1)} · {inst.total_reviews} reviews
+                  {/* Avatar */}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                    style={{ background: "#f97316" }}
+                  >
+                    {inst.full_name.charAt(0)}
+                  </div>
+
+                  {/* Full name — flex-1 + min-w-0 so it can shrink; NO truncate so it wraps */}
+                  <p className="text-sm font-semibold text-slate-800 flex-1 min-w-0">
+                    {inst.full_name}
                   </p>
-                )}
+                </div>
+
+                {/* Bottom row: star/count | spacer | up/down + delete */}
+                <div className="flex items-center justify-between pl-1">
+                  {/* Star rating — left side */}
+                  <div>
+                    {inst.total_reviews > 0 ? (
+                      <p className="text-xs text-slate-400">
+                        ⭐ {inst.avg_overall?.toFixed(1)} · {inst.total_reviews} review{inst.total_reviews !== 1 ? "s" : ""}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-300">No reviews yet</p>
+                    )}
+                  </div>
+
+                  {/* Controls — right side; each button 44×44px tap target */}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => moveUp(i)}
+                      disabled={i === 0}
+                      className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      style={{ minWidth: 44, minHeight: 44 }}
+                      aria-label={`Move ${inst.full_name} up`}
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+                    <button
+                      onClick={() => moveDown(i)}
+                      disabled={i === ranked.length - 1}
+                      className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      style={{ minWidth: 44, minHeight: 44 }}
+                      aria-label={`Move ${inst.full_name} down`}
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                    <button
+                      onClick={() => removeFromRanking(inst)}
+                      className="flex items-center justify-center text-slate-300 hover:text-red-400 text-xl leading-none transition-colors"
+                      style={{ minWidth: 44, minHeight: 44 }}
+                      aria-label={`Remove ${inst.full_name} from ranking`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Score pills — desktop only */}
-              {inst.total_reviews > 0 && (
-                <div className="hidden sm:flex gap-1.5 flex-shrink-0">
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: "#fff7ed", color: scoreColor(inst.avg_value) }}
-                  >
-                    V {inst.avg_value?.toFixed(1)}
-                  </span>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: "#fff7ed", color: scoreColor(inst.avg_effectiveness) }}
-                  >
-                    E {inst.avg_effectiveness?.toFixed(1)}
-                  </span>
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                    style={{ background: "#fff7ed", color: scoreColor(inst.avg_punctuality) }}
-                  >
-                    P {inst.avg_punctuality?.toFixed(1)}
-                  </span>
-                </div>
-              )}
+              {/* ── DESKTOP layout (single row, unchanged from Prompt #30) ── */}
+              <div className="hidden sm:flex items-center gap-3">
 
-              {/* ▲▼ arrow buttons + remove
-                  Each button is min 44×44px for reliable touch tap targets. */}
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <div className="flex flex-col">
-                  <button
-                    onClick={() => moveUp(i)}
-                    disabled={i === 0}
-                    className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                    style={{ minWidth: 44, minHeight: 44 }}
-                    title="Move up"
-                    aria-label={`Move ${inst.full_name} up`}
-                  >
-                    <ChevronUp size={18} />
-                  </button>
-                  <button
-                    onClick={() => moveDown(i)}
-                    disabled={i === ranked.length - 1}
-                    className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                    style={{ minWidth: 44, minHeight: 44 }}
-                    title="Move down"
-                    aria-label={`Move ${inst.full_name} down`}
-                  >
-                    <ChevronDown size={18} />
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => removeFromRanking(inst)}
-                  className="flex items-center justify-center text-slate-300 hover:text-red-400 text-xl leading-none transition-colors"
-                  style={{ minWidth: 44, minHeight: 44 }}
-                  title="Remove from ranking"
-                  aria-label={`Remove ${inst.full_name} from ranking`}
+                {/* Drag handle */}
+                <div
+                  className="flex-shrink-0 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+                  style={{ touchAction: "none" }}
+                  onPointerDown={() => setDraggableRow(i)}
+                  onPointerUp={() => { if (dragIdx === null) setDraggableRow(null); }}
+                  title="Drag to reorder"
                 >
-                  ×
-                </button>
+                  <GripVertical size={20} />
+                </div>
+
+                {/* Rank number */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  style={rankStyle(i)}
+                >
+                  {i + 1}
+                </div>
+
+                {/* Medal */}
+                <span className="text-lg w-6 text-center flex-shrink-0">
+                  {medals[i] || ""}
+                </span>
+
+                {/* Avatar */}
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                  style={{ background: "#f97316" }}
+                >
+                  {inst.full_name.charAt(0)}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-800 truncate">{inst.full_name}</p>
+                  {inst.total_reviews > 0 && (
+                    <p className="text-xs text-slate-400">
+                      ⭐ {inst.avg_overall?.toFixed(1)} · {inst.total_reviews} reviews
+                    </p>
+                  )}
+                </div>
+
+                {/* Score pills */}
+                {inst.total_reviews > 0 && (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "#fff7ed", color: scoreColor(inst.avg_value) }}>
+                      V {inst.avg_value?.toFixed(1)}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "#fff7ed", color: scoreColor(inst.avg_effectiveness) }}>
+                      E {inst.avg_effectiveness?.toFixed(1)}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: "#fff7ed", color: scoreColor(inst.avg_punctuality) }}>
+                      P {inst.avg_punctuality?.toFixed(1)}
+                    </span>
+                  </div>
+                )}
+
+                {/* ▲▼ + remove */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex flex-col">
+                    <button
+                      onClick={() => moveUp(i)}
+                      disabled={i === 0}
+                      className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      style={{ minWidth: 44, minHeight: 44 }}
+                      aria-label={`Move ${inst.full_name} up`}
+                    >
+                      <ChevronUp size={18} />
+                    </button>
+                    <button
+                      onClick={() => moveDown(i)}
+                      disabled={i === ranked.length - 1}
+                      className="flex items-center justify-center text-slate-400 hover:text-slate-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                      style={{ minWidth: 44, minHeight: 44 }}
+                      aria-label={`Move ${inst.full_name} down`}
+                    >
+                      <ChevronDown size={18} />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => removeFromRanking(inst)}
+                    className="flex items-center justify-center text-slate-300 hover:text-red-400 text-xl leading-none transition-colors"
+                    style={{ minWidth: 44, minHeight: 44 }}
+                    aria-label={`Remove ${inst.full_name} from ranking`}
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -330,7 +383,7 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
                 >
                   {inst.full_name.charAt(0)}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-600">{inst.full_name}</p>
                   {inst.total_reviews > 0 && (
                     <p className="text-xs text-slate-400">⭐ {inst.avg_overall?.toFixed(1)}</p>
@@ -338,7 +391,7 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
                 </div>
                 <button
                   onClick={() => addToRanking(inst)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
                   style={{ background: "#f97316" }}
                 >
                   + Add
@@ -349,16 +402,14 @@ export function PrivateRankingList({ initialRanked, unranked }: Props) {
         </div>
       )}
 
-      {/* Info note — text-sm for body-text readability, not caption-size */}
+      {/* Info note */}
       <div className="bg-orange-50 rounded-xl p-4 text-sm text-orange-700 leading-relaxed border border-orange-100">
         ℹ️ Your personal ranking is combined with other students&apos; rankings to generate Rovi&apos;s
         platform-wide public ranking — without revealing your individual list.
       </div>
 
-      {/* Saving indicator */}
       {saving && <p className="text-xs text-slate-400 text-center mt-3">Saving...</p>}
 
-      {/* Toast */}
       {toast && (
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full text-white text-sm font-medium"
