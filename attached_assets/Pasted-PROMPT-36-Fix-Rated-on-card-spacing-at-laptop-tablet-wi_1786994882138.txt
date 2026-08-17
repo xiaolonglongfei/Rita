@@ -1,0 +1,45 @@
+PROMPT #36 — Fix "Rated on" card spacing at laptop/tablet widths + full breakpoint audit
+
+CONTEXT:
+On a 14-inch laptop screen (~1280-1440px viewport width), the "Rated on" 
+stat card's three items (Value / Effectiveness / Punctuality) are cramped 
+with no visible gap between labels — "Effectiveness" and "Punctuality" run 
+together as "EffectivenessPunctuality" with no space. This was introduced 
+by Prompt #34's horizontal three-item layout, which was likely only tested 
+at mobile (375px) and a wide desktop width, missing the mid-range 
+laptop/tablet breakpoints where the three stat cards (Instructors / Reviews 
+/ Rated on) sit side-by-side and get tight.
+
+TASK:
+
+1. Fix the immediate spacing bug: ensure a minimum horizontal gap (e.g. 12-16px) 
+   between the three Value/Effectiveness/Punctuality items in the "Rated on" 
+   card, enforced at every breakpoint — not just relying on flex-grow/space-between 
+   which can collapse to zero gap when the container gets tight.
+
+2. Audit the full homepage stat-card row (Instructors / Reviews / Rated on) 
+   and every other page with responsive layout concerns across these specific 
+   viewport widths, not just mobile vs. desktop:
+   - 375px (phone)
+   - 768px (iPad portrait)
+   - 912px (Surface / iPad landscape)
+   - 1280px (small laptop, e.g. 14" screens at common scaling)
+   - 1440px (standard desktop)
+   - 1920px (large desktop)
+
+3. For the three-card row specifically: if the three cards don't comfortably 
+   fit side-by-side with proper internal spacing at a given width, they 
+   should wrap to a different layout (e.g. 2 cards + 1 below, or stack 
+   vertically) rather than staying in one row and compressing their internal 
+   content.
+
+DONE WHEN:
+[ ] "Value", "Effectiveness", "Punctuality" labels have clear visible 
+    spacing between them at all 6 tested widths, never touching
+[ ] Screenshot or confirmation provided at each of the 6 breakpoints above, 
+    for both the homepage stat cards and the instructor profile Score 
+    Breakdown triangle (which uses the same three-dimension labels)
+[ ] No text overlap or cramped spacing anywhere in the main nav, hero 
+    section, or stat cards at any tested width
+[ ] Mobile (375px) and previously-fixed desktop layouts from Prompts #30-34 
+    are unaffected — no regressions

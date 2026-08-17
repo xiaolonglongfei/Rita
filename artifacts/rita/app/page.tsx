@@ -84,7 +84,14 @@ export default async function HomePage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto mt-10 px-4">
+        {/*
+          Outer grid:
+          - 1 col on phone (< 640 px) — all three cards stack
+          - 2 cols at 640 px+ — Instructors | Reviews on row 1,
+            "Rated on" spans both columns on row 2 (always has room for its inner items)
+          No 3-col tier: a narrow third column would cramp the inner dimension labels.
+        */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mt-10 px-4">
           <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
             <div className="text-4xl mb-3">🎾</div>
             <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
@@ -101,13 +108,17 @@ export default async function HomePage() {
             <div className="text-sm text-slate-500 mt-1">Reviews</div>
           </a>
 
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          {/*
+            "Rated on" always spans both columns at sm+, giving the inner items
+            plenty of horizontal room at every breakpoint (≥ 360 px content area).
+            gap-x-8 (32 px) guarantees clear separation between the three labels.
+          */}
+          <div className="sm:col-span-2 bg-white rounded-2xl p-6 text-center shadow-sm">
             <div className="text-4xl mb-3">📊</div>
             <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
-            {/* Three dimensions — icon centered above label, matching ScoreTriangle convention */}
-            <div className="grid grid-cols-3 gap-2">
+            <div className="flex justify-center gap-x-8 gap-y-2 flex-wrap">
               {[
                 { emoji: "💰", label: "Value" },
                 { emoji: "📈", label: "Effectiveness" },
