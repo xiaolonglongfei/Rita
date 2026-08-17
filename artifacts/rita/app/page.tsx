@@ -85,39 +85,39 @@ export default async function HomePage() {
         </div>
 
         {/*
-          Outer grid:
-          - 1 col on phone (< 640 px) — all three cards stack
-          - 2 cols at 640 px+ — Instructors | Reviews on row 1,
-            "Rated on" spans both columns on row 2 (always has room for its inner items)
-          No 3-col tier: a narrow third column would cramp the inner dimension labels.
+          Two-row layout sharing the same max-w-3xl / px-4 container:
+          Row 1: 2-col grid (Instructors | Reviews) — or stacked on phone
+          Row 2: full-width "Rated on" card — always the same width as row 1
+          No col-span tricks: the "Rated on" card is structurally separate so its
+          left/right edges always match the outer edges of the row above it.
         */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mt-10 px-4">
-          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-            <div className="text-4xl mb-3">🎾</div>
-            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
-              {instructorCount ?? 0}
-            </div>
-            <div className="text-sm text-slate-500 mt-1">Instructors</div>
-          </a>
+        <div className="max-w-3xl mx-auto mt-10 px-4 flex flex-col gap-4">
+          {/* Row 1 — stat number cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+              <div className="text-4xl mb-3">🎾</div>
+              <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
+                {instructorCount ?? 0}
+              </div>
+              <div className="text-sm text-slate-500 mt-1">Instructors</div>
+            </a>
 
-          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-            <div className="text-4xl mb-3">⭐</div>
-            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
-              {reviewCount ?? 0}
-            </div>
-            <div className="text-sm text-slate-500 mt-1">Reviews</div>
-          </a>
+            <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+              <div className="text-4xl mb-3">⭐</div>
+              <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
+                {reviewCount ?? 0}
+              </div>
+              <div className="text-sm text-slate-500 mt-1">Reviews</div>
+            </a>
+          </div>
 
-          {/*
-            "Rated on" always spans both columns at sm+, giving the inner items
-            plenty of horizontal room at every breakpoint (≥ 360 px content area).
-            gap-x-8 (32 px) guarantees clear separation between the three labels.
-          */}
-          <div className="sm:col-span-2 bg-white rounded-2xl p-6 text-center shadow-sm">
+          {/* Row 2 — "Rated on" card: structurally full-width, no col-span needed */}
+          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
             <div className="text-4xl mb-3">📊</div>
             <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
+            {/* gap-x-8 (32 px) guarantees clear visual separation at every width */}
             <div className="flex justify-center gap-x-8 gap-y-2 flex-wrap">
               {[
                 { emoji: "💰", label: "Value" },
