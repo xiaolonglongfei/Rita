@@ -603,6 +603,9 @@ video {
 .z-40 {
   z-index: 40;
 }
+.col-span-2 {
+  grid-column: span 2 / span 2;
+}
 .-mx-6 {
   margin-left: -1.5rem;
   margin-right: -1.5rem;

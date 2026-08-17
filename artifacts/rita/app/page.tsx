@@ -85,39 +85,45 @@ export default async function HomePage() {
         </div>
 
         {/*
-          Two-row layout sharing the same max-w-3xl / px-4 container:
-          Row 1: 2-col grid (Instructors | Reviews) — or stacked on phone
-          Row 2: full-width "Rated on" card — always the same width as row 1
-          No col-span tricks: the "Rated on" card is structurally separate so its
-          left/right edges always match the outer edges of the row above it.
+          Single flat CSS grid — all three cards share the same column tracks.
+          "Rated on" uses col-span-2 which is mathematically identical to
+          columns 1+2 combined: left edge = col-1 start, right edge = col-2 end.
+          No separate layout context, no sub-pixel rounding divergence.
+
+          Breakpoints:
+          - < 640 px  → grid-cols-1  (all three stack; col-span-2 clamps to 1)
+          - ≥ 640 px  → grid-cols-2  (Instructors|Reviews row 1, Rated on spans row 2)
         */}
-        <div className="max-w-3xl mx-auto mt-10 px-4 flex flex-col gap-4">
-          {/* Row 1 — stat number cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-              <div className="text-4xl mb-3">🎾</div>
-              <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
-                {instructorCount ?? 0}
-              </div>
-              <div className="text-sm text-slate-500 mt-1">Instructors</div>
-            </a>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mt-10 px-4">
+          {/* Column 1, Row 1 */}
+          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+            <div className="text-4xl mb-3">🎾</div>
+            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
+              {instructorCount ?? 0}
+            </div>
+            <div className="text-sm text-slate-500 mt-1">Instructors</div>
+          </a>
 
-            <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-              <div className="text-4xl mb-3">⭐</div>
-              <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
-                {reviewCount ?? 0}
-              </div>
-              <div className="text-sm text-slate-500 mt-1">Reviews</div>
-            </a>
-          </div>
+          {/* Column 2, Row 1 */}
+          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
+            <div className="text-4xl mb-3">⭐</div>
+            <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
+              {reviewCount ?? 0}
+            </div>
+            <div className="text-sm text-slate-500 mt-1">Reviews</div>
+          </a>
 
-          {/* Row 2 — "Rated on" card: structurally full-width, no col-span needed */}
-          <div className="bg-white rounded-2xl p-6 text-center shadow-sm">
+          {/*
+            Row 2: col-span-2 spans both column tracks.
+            At grid-cols-1 (mobile) it clamps to the single column — still full width.
+            At grid-cols-2 (tablet+) it spans col-1 start → col-2 end exactly.
+            gap-x-8 (32 px) guarantees clear label separation at every width.
+          */}
+          <div className="col-span-2 bg-white rounded-2xl p-6 text-center shadow-sm">
             <div className="text-4xl mb-3">📊</div>
             <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
-            {/* gap-x-8 (32 px) guarantees clear visual separation at every width */}
             <div className="flex justify-center gap-x-8 gap-y-2 flex-wrap">
               {[
                 { emoji: "💰", label: "Value" },
