@@ -58,6 +58,39 @@ export async function sendWelcomeEmail({
   to: string;
   fullName: string;
 }) {
+  // US Open Fan Week bonus block — shown only through Aug 29, 2026 (inclusive).
+  // Hardcoded cutoff; remove this block after the campaign ends.
+  const showFanWeekBonus = new Date() < new Date("2026-08-30T00:00:00");
+
+  const fanWeekBlock = showFanWeekBonus
+    ? `
+        <div style="margin-top: 28px; background: #f8fafc; border: 1px solid #e2e8f0;
+                    border-radius: 12px; padding: 16px;">
+          <p style="margin: 0 0 4px; color: #94a3b8; font-size: 11px;
+                    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+            🎾 Bonus
+          </p>
+          <p style="margin: 0 0 6px; color: #1e2a38; font-size: 14px; font-weight: 700;">
+            Free US Open Fan Week access
+          </p>
+          <p style="margin: 0 0 14px; color: #475569; font-size: 13px; line-height: 1.6;">
+            Adults need a free Fan Access Pass to attend Fan Week (Aug 23–29) at the
+            USTA Billie Jean King National Tennis Center. Register directly with the
+            US Open — takes about a minute.
+          </p>
+          <a href="https://fanpass.usopen.org/register" target="_blank"
+             rel="noopener noreferrer"
+             style="display: inline-block; background: #f97316; color: white;
+                    padding: 10px 20px; border-radius: 8px; text-decoration: none;
+                    font-weight: 700; font-size: 13px;">
+            Get my free pass →
+          </a>
+          <p style="margin: 12px 0 0; color: #94a3b8; font-size: 11px;">
+            Not affiliated with or endorsed by the USTA or US Open.
+          </p>
+        </div>`
+    : "";
+
   try {
     await resend.emails.send({
       from: FROM_EMAIL,
@@ -81,6 +114,7 @@ export async function sendWelcomeEmail({
             🔒 All your reviews are completely anonymous.
             Your identity is never revealed to instructors.
           </p>
+          ${fanWeekBlock}
         </div>
       `,
     });

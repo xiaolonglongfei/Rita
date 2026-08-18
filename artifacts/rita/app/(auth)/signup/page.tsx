@@ -41,6 +41,11 @@ export default function SignUpPage() {
     // On success signupAction calls redirect() server-side — no client code needed
   }
 
+  // US Open Fan Week bonus: show only through Aug 29, 2026 (inclusive).
+  // Hardcoded cutoff — no config needed; just remove this block after the campaign.
+  const showFanWeekBonus = new Date() < new Date("2026-08-30T00:00:00");
+  const [fanWeekDismissed, setFanWeekDismissed] = useState(false);
+
   if (emailSent) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
@@ -61,6 +66,42 @@ export default function SignUpPage() {
           >
             Back to Login →
           </Link>
+
+          {/* US Open Fan Week bonus card — auto-hidden after Aug 29 2026 */}
+          {showFanWeekBonus && !fanWeekDismissed && (
+            <div className="mt-6 text-left rounded-xl border border-slate-200 bg-slate-50 p-4 relative">
+              <button
+                onClick={() => setFanWeekDismissed(true)}
+                aria-label="Dismiss"
+                className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 text-lg leading-none"
+              >
+                ×
+              </button>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+                🎾 Bonus
+              </p>
+              <p className="text-sm font-bold text-slate-800 mb-1">
+                Free US Open Fan Week access
+              </p>
+              <p className="text-xs text-slate-500 leading-relaxed mb-3">
+                Adults need a free Fan Access Pass to attend Fan Week (Aug 23–29) at the
+                USTA Billie Jean King National Tennis Center. Register directly with the
+                US Open — takes about a minute.
+              </p>
+              <a
+                href="https://fanpass.usopen.org/register"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 rounded-lg text-white text-xs font-bold"
+                style={{ background: "#f97316" }}
+              >
+                Get my free pass →
+              </a>
+              <p className="text-xs text-slate-400 mt-3">
+                Not affiliated with or endorsed by the USTA or US Open.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );

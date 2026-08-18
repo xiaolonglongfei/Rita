@@ -1,0 +1,39 @@
+PROMPT #38 — Add "Get your free US Open Fan Week pass" link after signup
+
+CONTEXT:
+As part of a growth campaign tied to US Open Fan Week (Aug 23-29, 2026), 
+we want to add a simple bonus link after a student completes Rovi signup — 
+pointing them to the OFFICIAL US Open Fan Access Pass registration page. 
+This is purely an outbound link/pointer, not any kind of automated 
+integration — do not attempt to auto-fill, auto-submit, or programmatically 
+interact with the USTA's registration system in any way. It's just a 
+"by the way, here's something else free you might want" nudge.
+
+TASK:
+
+1. On the post-signup confirmation screen (wherever the user lands right 
+   after completing Rovi registration), add a small dismissible card/banner:
+   
+   Heading: "Bonus: Free US Open Fan Week access"
+   Body: "Adults need a free Fan Access Pass to attend Fan Week (Aug 23-29) 
+   at the USTA Billie Jean King National Tennis Center. Register directly 
+   with the US Open — takes about a minute."
+   Button: "Get my free pass" → links to https://fanpass.usopen.org/register 
+   (opens in a new tab, target="_blank" rel="noopener noreferrer")
+   Small print below: "Not affiliated with or endorsed by the USTA or US Open."
+
+2. Add the same block (as a simple text + link, no need for fancy styling) 
+   to the "Welcome to Rovi" transactional email template sent via Resend.
+
+3. This should only be time-limited — wrap it in a simple date check so it 
+   automatically stops showing after Aug 29, 2026 (Fan Week ends). Hardcode 
+   the date check for now; doesn't need to be configurable.
+
+DONE WHEN:
+[ ] New signup sees the bonus card on the confirmation screen with a working 
+    link to fanpass.usopen.org/register
+[ ] Welcome email contains the same bonus block with working link
+[ ] Disclaimer text ("Not affiliated with...") is present in both places
+[ ] After Aug 29, 2026, neither the confirmation screen nor the welcome 
+    email shows this block anymore
+[ ] Link opens in a new tab so users don't lose their place on rovi.training
