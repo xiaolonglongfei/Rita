@@ -740,6 +740,10 @@ video {
 .w-8 {
   width: 2rem;
 }
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
+}
 .w-full {
   width: 100%;
 }

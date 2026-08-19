@@ -46,7 +46,7 @@ export default async function InstructorProfilePage({
       {created === "true" && (
         <div className="max-w-5xl mx-auto px-4 pt-4">
           <div
-            className="rounded-xl px-4 py-3 text-sm font-medium"
+            className="inline-flex w-fit rounded-xl px-4 py-3 text-sm font-medium"
             style={{ background: "#f4ffe0", color: "#4a6e00", border: "1px solid #b8d400" }}
           >
             ✓ Instructor added! You can now write a review for them.
