@@ -20,6 +20,7 @@ type InstructorRow = {
   avg_punctuality: number;
   review_count: number;
   public_rank: number | null;
+  internal_notes: string | null;
   created_at: string;
 };
 
@@ -68,6 +69,7 @@ function formatInstructor(i: InstructorRow) {
     avgPunctuality: i.avg_punctuality,
     reviewCount: i.review_count,
     publicRank: i.public_rank ?? null,
+    internalNotes: i.internal_notes ?? null,
     createdAt: i.created_at,
   };
 }
@@ -88,10 +90,11 @@ router.post("/admin/instructors", requireAuth, async (req, res): Promise<void> =
     .from("instructors")
     .insert({
       name: parsed.data.name,
-      specialty: parsed.data.specialty,
+      specialty: parsed.data.specialty ?? "",
       bio: parsed.data.bio ?? null,
       photo_url: parsed.data.photoUrl ?? null,
       location: parsed.data.location ?? null,
+      internal_notes: parsed.data.internalNotes || null,
     })
     .select("*")
     .single();
@@ -110,12 +113,13 @@ router.patch("/admin/instructors/:id", requireAuth, async (req, res): Promise<vo
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const updates: Record<string, unknown> = {};
-  if (parsed.data.name != null)      updates.name      = parsed.data.name;
-  if (parsed.data.specialty != null) updates.specialty = parsed.data.specialty;
-  if (parsed.data.bio != null)       updates.bio       = parsed.data.bio;
-  if (parsed.data.photoUrl != null)  updates.photo_url = parsed.data.photoUrl;
-  if (parsed.data.location != null)  updates.location  = parsed.data.location;
-  if (parsed.data.verified != null)  updates.verified  = parsed.data.verified;
+  if (parsed.data.name != null)             updates.name           = parsed.data.name;
+  if (parsed.data.specialty != null)        updates.specialty      = parsed.data.specialty;
+  if (parsed.data.bio != null)              updates.bio            = parsed.data.bio;
+  if (parsed.data.photoUrl != null)         updates.photo_url      = parsed.data.photoUrl;
+  if (parsed.data.location != null)         updates.location       = parsed.data.location;
+  if (parsed.data.verified != null)         updates.verified       = parsed.data.verified;
+  if (parsed.data.internalNotes !== undefined) updates.internal_notes = parsed.data.internalNotes || null;
 
   const { data, error } = await supabase
     .from("instructors")

@@ -1,0 +1,47 @@
+Add an internal-only "Internal Notes" field to Instructors (fixes the bio data-entry bug)
+
+Context:
+When adding instructor records from club website research, we sometimes have caveats
+about data accuracy — e.g. "first name only as published" or "spelling unconfirmed."
+There's currently no dedicated field for that, so these notes have occasionally been
+typed directly into the public Bio field by mistake and shown to real users on live
+profile pages. We need an admin-only field to hold these notes so this never happens
+again.
+
+1. Database
+   - Add a new nullable text column `internal_notes` to the `instructors` table via a
+     Supabase migration.
+   - Update the Drizzle schema in `lib/db/src/schema/instructors.ts` to include
+     `internalNotes: text("internal_notes")`.
+
+2. API — Admin only
+   - Add `internalNotes` (optional string) to `AdminCreateInstructorBody` and
+     `AdminUpdateInstructorBody` in `@workspace/api-zod`.
+   - In `artifacts/api-server/src/routes/admin.ts`:
+     - Include `internal_notes` in the `InstructorRow` type and in `formatInstructor()`.
+     - Pass `internal_notes` through on create (POST /admin/instructors) and on update,
+       using the submitted `internalNotes` value.
+
+3. API — Public (must stay excluded)
+   - Do NOT modify `artifacts/api-server/src/routes/instructors.ts`. Confirm its
+     `InstructorRow` type and `formatInstructor()` do NOT include `internal_notes` —
+     this field must never appear in any public-facing API response.
+
+4. Admin UI
+   - In `AddInstructorForm.tsx`, add a new textarea field below Bio, labeled
+     "Internal notes (admin-only — never shown to students or instructors)", bound to
+     a new `internalNotes` state value, submitted alongside the rest of the form.
+   - In `InstructorAdminTable.tsx`, surface `internalNotes` in the admin instructor
+     detail/edit view (e.g. an expandable row or a field in the edit modal) so it's
+     easy to find and update later.
+   - Keep Bio and Internal Notes visually distinct (separate labels/sections) so it's
+     obvious at a glance which one is public.
+
+5. Verification
+   - Confirm a value saved in Internal Notes does NOT appear anywhere on the public
+     instructor profile page (app/(main)/instructors/[id]/page.tsx) or in the public
+     /instructors list/search API response.
+   - Confirm it DOES appear and is editable in the admin panel.
+
+This is additive only — do not touch or reformat unrelated code, and existing bio/
+specialty/location fields and values should be unaffected.

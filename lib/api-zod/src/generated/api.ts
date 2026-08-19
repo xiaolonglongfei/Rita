@@ -443,9 +443,10 @@ export const AdminListInstructorsResponse = zod.array(AdminListInstructorsRespon
 export const AdminCreateInstructorBody = zod.object({
   "name": zod.string(),
   "bio": zod.string().optional(),
-  "specialty": zod.string(),
+  "specialty": zod.string().optional(),
   "photoUrl": zod.string().optional(),
-  "location": zod.string().optional()
+  "location": zod.string().optional(),
+  "internalNotes": zod.string().optional()
 })
 
 
@@ -462,7 +463,8 @@ export const AdminUpdateInstructorBody = zod.object({
   "specialty": zod.string().optional(),
   "photoUrl": zod.string().optional(),
   "location": zod.string().optional(),
-  "verified": zod.boolean().optional()
+  "verified": zod.boolean().optional(),
+  "internalNotes": zod.string().optional()
 })
 
 export const AdminUpdateInstructorResponse = zod.object({
@@ -479,6 +481,7 @@ export const AdminUpdateInstructorResponse = zod.object({
   "avgPunctuality": zod.number().optional(),
   "reviewCount": zod.number(),
   "publicRank": zod.number().nullish(),
+  "internalNotes": zod.string().nullish(),
   "createdAt": zod.string()
 })
 

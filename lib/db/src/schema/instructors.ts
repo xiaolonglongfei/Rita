@@ -16,6 +16,7 @@ export const instructorsTable = pgTable("instructors", {
   avgPunctuality: real("avg_punctuality").notNull().default(0),
   reviewCount: integer("review_count").notNull().default(0),
   publicRank: integer("public_rank"),
+  internalNotes: text("internal_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
