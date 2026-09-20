@@ -1,4 +1,3 @@
 {
-  "/page": "app/page.js",
-  "/win/page": "app/win/page.js"
+  "/page": "app/page.js"
 }

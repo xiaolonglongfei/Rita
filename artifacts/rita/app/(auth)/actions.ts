@@ -137,6 +137,12 @@ export async function giveawaySignupAction(
     return { error: "We couldn't create your account. Please try again." };
   }
 
+  if (data.user.identities?.length === 0) {
+    return {
+      error: "An account already exists for this email. Please sign in instead.",
+    };
+  }
+
   const service = createServiceClient();
   const { error: profileError } = await service.from("users").upsert({
     id: data.user.id,

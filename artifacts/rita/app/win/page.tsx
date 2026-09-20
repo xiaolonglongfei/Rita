@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   description: "Sign up and leave an anonymous review for your tennis coach to enter our $100 gift card giveaway.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function WinPage() {
   const status = getGiveawayStatus();
 
