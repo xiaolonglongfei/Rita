@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/resend";
+import { getGiveawayStatus } from "@/lib/giveaway";
 
 function getUrl() {
   return (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
@@ -93,4 +94,69 @@ export async function signupAction(
   }
 
   redirect("/instructors?welcome=true");
+}
+
+export async function giveawaySignupAction(
+  email: string,
+  password: string,
+  acceptedRules: boolean
+) {
+  if (getGiveawayStatus() !== "active") {
+    return { error: "This promotion is not currently accepting entries." };
+  }
+
+  if (!acceptedRules) {
+    return { error: "You must agree to the Official Rules & Terms to enter." };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  const supabase = await getServerSupabase();
+  const giveawayOptInAt = new Date().toISOString();
+  const fullName = "Rovi Member";
+  const normalizedEmail = email.trim().toLowerCase();
+
+  const { data, error } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
+        giveaway_opt_in_at: giveawayOptInAt,
+      },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data.user) {
+    return { error: "We couldn't create your account. Please try again." };
+  }
+
+  const service = createServiceClient();
+  const { error: profileError } = await service.from("users").upsert({
+    id: data.user.id,
+    email: normalizedEmail,
+    full_name: fullName,
+    is_admin: false,
+    giveaway_opt_in_at: giveawayOptInAt,
+  });
+
+  if (profileError) {
+    return {
+      error:
+        "Your account was created, but we couldn't record your giveaway entry. Please contact support before trying again.",
+    };
+  }
+
+  await sendWelcomeEmail({ to: normalizedEmail, fullName });
+
+  return {
+    entered: true,
+    emailConfirmationRequired: !data.session,
+  };
 }

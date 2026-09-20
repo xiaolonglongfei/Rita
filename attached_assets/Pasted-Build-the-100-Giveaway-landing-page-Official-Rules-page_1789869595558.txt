@@ -1,0 +1,66 @@
+Build the $100 Giveaway landing page + Official Rules page (Prompt #41)
+
+Context: We're launching a small QR-code-driven promotion. People scan a QR
+code on flyers/stickers at local tennis clubs, land on a new page, create a
+real Rovi account, and are entered into a periodic $100 gift card raffle.
+Reviews they later submit (during the promotion) earn extra entries, capped.
+
+1. New route: /win (the campaign landing page)
+   - Content, matching the approved "3-Step" design:
+     - Header band (navy background) with the Rovi wordmark and headline
+       "You could win a $100 gift card."
+     - 3-step explainer: "1. Sign up below with your email  2. Leave an
+       anonymous review for your coach  3. You're entered — winners drawn
+       periodically"
+     - A registration form: email + password fields (real account creation,
+       not just an email capture)
+     - A checkbox, UNCHECKED by default: "I agree to the Official Rules &
+       Terms of this promotion" with "Official Rules & Terms" linking to
+       /rules
+     - A submit button, DISABLED until the checkbox is checked, labeled
+       "Create Account & Enter to Win"
+     - Small print below the button: "No purchase necessary. Must be 18+
+       and a legal resident of the United States. See official rules for
+       details."
+   - On submit: this MUST create a real, fully-functional Rovi account
+     using whatever signup/registration logic the site already uses
+     elsewhere (find and reuse the existing auth signup path — do not
+     build a separate parallel registration flow). After the account is
+     created, also record that this account opted into the giveaway:
+     add a nullable `giveaway_opt_in_at` (timestamp) column to whichever
+     table holds user/profile records (inspect the schema first; use
+     Supabase's actual users/profiles table, not a new one), and set it
+     to the current timestamp when this form's signup succeeds.
+   - After successful signup, redirect to a simple confirmation state:
+     "You're entered! We'll email you if you win."
+
+2. New route: /rules (Official Rules, static content page)
+   - Plain, readable static page with this exact text as the page content
+     (headings as shown, no need for a fancy design -- this is a legal
+     reference page, just make it legible and on-brand):
+
+     [PASTE THE FULL "Rovi $100 Gift Card Giveaway — Official Rules" TEXT
+     FROM ABOVE HERE, SECTIONS 1 THROUGH 15, EXACTLY AS FINALIZED]
+
+3. Entry-counting logic (for later manual draws, not an automated drawing
+   feature -- we will run the actual random draw manually via SQL when it's
+   time, so this step is just about making sure the underlying data exists
+   to support that):
+   - Add a constant `GIVEAWAY_BONUS_ENTRY_CAP = 3` somewhere sensible
+     (e.g. a config/constants file).
+   - A user's total entries for a drawing = 1 baseline entry (if
+     `giveaway_opt_in_at` is set) + min(number of their reviews created
+     between `giveaway_opt_in_at` and now that are tied to a verified
+     session, GIVEAWAY_BONUS_ENTRY_CAP).
+   - This does not need a new table -- it can be computed with a query
+     at draw time. If it's easy to also expose this as a simple read-only
+     admin view/query (e.g. a SQL view `giveaway_entry_counts`), that's a
+     nice-to-have, not required.
+
+4. Promotion window: September 21, 2026 through December 31, 2026. If
+   there's a natural place to gate the /win signup form (e.g. show a
+   "this promotion has ended" message outside that window), add it, but
+   don't over-engineer this -- a simple date check is enough.
+
+Keep this additive: don't touch existing signup pages, the instructors
+pages, or anything unrelated to this feature.
