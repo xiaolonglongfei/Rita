@@ -1,8 +1,8 @@
-// File: /home/runner/workspace/artifacts/rita/app/rules/page.tsx
-import * as entry from '../../../../app/rules/page.js'
+// File: /home/runner/workspace/artifacts/rita/app/(auth)/signup/page.tsx
+import * as entry from '../../../../../app/(auth)/signup/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
-type TEntry = typeof import('../../../../app/rules/page.js')
+type TEntry = typeof import('../../../../../app/(auth)/signup/page.js')
 
 type SegmentParams<T extends Object = any> = T extends Record<string, any>
   ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }

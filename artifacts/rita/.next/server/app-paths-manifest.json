@@ -1,5 +1,6 @@
 {
+  "/terms/page": "app/terms/page.js",
   "/page": "app/page.js",
-  "/privacy/page": "app/privacy/page.js",
-  "/rules/page": "app/rules/page.js"
+  "/(auth)/signup/page": "app/(auth)/signup/page.js",
+  "/privacy/page": "app/privacy/page.js"
 }
