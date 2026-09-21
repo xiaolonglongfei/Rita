@@ -64,8 +64,15 @@ export async function forgotPasswordAction(email: string) {
 export async function signupAction(
   fullName: string,
   email: string,
-  password: string
+  password: string,
+  acceptedTerms: boolean
 ) {
+  if (!acceptedTerms) {
+    return {
+      error: "You must agree to the Terms of Service and Privacy Policy.",
+    };
+  }
+
   const supabase = await getServerSupabase();
 
   const { data, error } = await supabase.auth.signUp({

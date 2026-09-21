@@ -12,6 +12,7 @@ export default function SignUpPage() {
   const [error, setError] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [sentTo, setSentTo] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   async function handleSignUp() {
     setLoading(true);
@@ -23,7 +24,7 @@ export default function SignUpPage() {
       return;
     }
 
-    const result = await signupAction(fullName, email, password);
+    const result = await signupAction(fullName, email, password, acceptedTerms);
 
     if (result?.error) {
       setError(result.error);
@@ -157,11 +158,32 @@ export default function SignUpPage() {
             />
           </div>
 
+          <div className="flex items-start gap-3">
+            <input
+              id="signup-terms"
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={(e) => setAcceptedTerms(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-300"
+              data-testid="checkbox-signup-terms"
+            />
+            <label htmlFor="signup-terms" className="text-xs leading-5 text-slate-600">
+              I agree to the{" "}
+              <Link href="/terms" className="font-semibold text-orange-600 hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="font-semibold text-orange-600 hover:underline">
+                Privacy Policy
+              </Link>
+            </label>
+          </div>
+
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
           <button
             onClick={handleSignUp}
-            disabled={loading}
+            disabled={loading || !acceptedTerms}
             className="w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-50 mt-2 transition-opacity"
             style={{ background: "#f97316" }}
           >
