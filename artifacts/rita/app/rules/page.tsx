@@ -76,7 +76,7 @@ const sections = [
   {
     title: "12. Data Use",
     paragraphs: [
-      "By entering, you agree that Sponsor may use the contact information you provide to administer the Giveaway, including to notify you if you are selected as a winner and to arrange delivery of the Prize. Sponsor will not sell your entry information to third parties. See Rovi's Privacy Policy for additional detail.",
+      <>By entering, you agree that Sponsor may use the contact information you provide to administer the Giveaway, including to notify you if you are selected as a winner and to arrange delivery of the Prize. Sponsor will not sell your entry information to third parties. See Rovi&apos;s <Link href="/privacy" className="text-orange-600 underline underline-offset-2">Privacy Policy</Link> for additional detail.</>,
     ],
   },
   {
