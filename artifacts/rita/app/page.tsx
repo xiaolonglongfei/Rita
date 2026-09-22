@@ -1,5 +1,13 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Navbar from "@/components/shared/Navbar";
+import {
+  ChartNoAxesCombined,
+  CircleDollarSign,
+  Clock3,
+  MessageSquareText,
+  TrendingUp,
+  UsersRound,
+} from "lucide-react";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -84,55 +92,37 @@ export default async function HomePage() {
           </a>
         </div>
 
-        {/*
-          Single flat CSS grid — all three cards share the same column tracks.
-          "Rated on" uses col-span-2 which is mathematically identical to
-          columns 1+2 combined: left edge = col-1 start, right edge = col-2 end.
-          No separate layout context, no sub-pixel rounding divergence.
-
-          Breakpoints:
-          - < 640 px  → grid-cols-1  (all three stack; col-span-2 clamps to 1)
-          - ≥ 640 px  → grid-cols-2  (Instructors|Reviews row 1, Rated on spans row 2)
-        */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto mt-10 px-4">
-          {/* Column 1, Row 1 */}
-          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-            <div className="text-4xl mb-3">🎾</div>
+        <div className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-4 px-4 sm:grid-cols-2 lg:grid-cols-3">
+          <a href="/instructors" className="flex h-full flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md">
+            <UsersRound aria-hidden="true" className="mb-3 h-8 w-8 text-orange-500" strokeWidth={2} />
             <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
               {instructorCount ?? 0}
             </div>
             <div className="text-sm text-slate-500 mt-1">Instructors</div>
           </a>
 
-          {/* Column 2, Row 1 */}
-          <a href="/instructors" className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 cursor-pointer">
-            <div className="text-4xl mb-3">⭐</div>
+          <a href="/instructors" className="flex h-full flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md">
+            <MessageSquareText aria-hidden="true" className="mb-3 h-8 w-8 text-orange-500" strokeWidth={2} />
             <div className="text-3xl font-extrabold" style={{ color: "#f97316" }}>
               {reviewCount ?? 0}
             </div>
             <div className="text-sm text-slate-500 mt-1">Reviews</div>
           </a>
 
-          {/*
-            Row 2: col-span-2 spans both column tracks.
-            At grid-cols-1 (mobile) it clamps to the single column — still full width.
-            At grid-cols-2 (tablet+) it spans col-1 start → col-2 end exactly.
-            gap-x-8 (32 px) guarantees clear label separation at every width.
-          */}
-          <div className="col-span-2 bg-white rounded-2xl p-6 text-center shadow-sm">
-            <div className="text-4xl mb-3">📊</div>
+          <div className="flex h-full flex-col items-center rounded-2xl bg-white p-6 text-center shadow-sm">
+            <ChartNoAxesCombined aria-hidden="true" className="mb-3 h-8 w-8 text-orange-500" strokeWidth={2} />
             <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
-            <div className="flex justify-center gap-x-8 gap-y-2 flex-wrap">
+            <div className="flex w-full max-w-44 flex-col gap-3">
               {[
-                { emoji: "💰", label: "Value" },
-                { emoji: "📈", label: "Effectiveness" },
-                { emoji: "⏰", label: "Punctuality" },
-              ].map(({ emoji, label }) => (
-                <div key={label} className="flex flex-col items-center gap-1">
-                  <span className="text-xl leading-none">{emoji}</span>
-                  <span className="text-xs text-slate-500 font-medium text-center leading-tight">{label}</span>
+                { Icon: CircleDollarSign, label: "Value" },
+                { Icon: TrendingUp, label: "Effectiveness" },
+                { Icon: Clock3, label: "Punctuality" },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex items-center gap-3">
+                  <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-orange-500" strokeWidth={2} />
+                  <span className="text-sm font-medium text-slate-500">{label}</span>
                 </div>
               ))}
             </div>
