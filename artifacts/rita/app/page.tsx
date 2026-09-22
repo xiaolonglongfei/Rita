@@ -114,13 +114,13 @@ export default async function HomePage() {
             <div className="text-base font-extrabold mb-4" style={{ color: "#f97316" }}>
               Rated on
             </div>
-            <div className="flex w-full max-w-44 flex-col gap-3">
+            <div className="flex w-full max-w-44 flex-col items-center gap-3">
               {[
                 { Icon: CircleDollarSign, label: "Value" },
                 { Icon: TrendingUp, label: "Effectiveness" },
                 { Icon: Clock3, label: "Punctuality" },
               ].map(({ Icon, label }) => (
-                <div key={label} className="flex items-center gap-3">
+                <div key={label} className="inline-flex items-center justify-center gap-3">
                   <Icon aria-hidden="true" className="h-5 w-5 shrink-0 text-orange-500" strokeWidth={2} />
                   <span className="text-sm font-medium text-slate-500">{label}</span>
                 </div>
