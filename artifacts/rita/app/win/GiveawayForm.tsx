@@ -4,8 +4,13 @@ import { useState } from "react";
 import { giveawaySignupAction } from "@/app/(auth)/actions";
 import Link from "next/link";
 import { GiveawayStatus } from "./GiveawayStatus";
+import { isGiveawayEmailValid, validateGiveawayNames, type GiveawayNameErrors } from "@/lib/giveaway-signup";
 
 export function GiveawayForm() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [nameTouched, setNameTouched] = useState({ firstName: false, lastName: false });
+  const [serverNameErrors, setServerNameErrors] = useState<GiveawayNameErrors>({});
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
@@ -15,7 +20,12 @@ export function GiveawayForm() {
   const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
 
   const isPasswordValid = password.length >= 8;
-  const canSubmit = agreed && isPasswordValid && email.length > 0 && !loading;
+  const nameValidation = validateGiveawayNames(firstName, lastName);
+  const nameErrors = {
+    firstName: serverNameErrors.firstName ?? (nameTouched.firstName ? nameValidation.fieldErrors.firstName : undefined),
+    lastName: serverNameErrors.lastName ?? (nameTouched.lastName ? nameValidation.fieldErrors.lastName : undefined),
+  };
+  const canSubmit = nameValidation.valid && agreed && isPasswordValid && isGiveawayEmailValid(email) && !loading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,11 +33,14 @@ export function GiveawayForm() {
 
     setLoading(true);
     setError("");
+    setServerNameErrors({});
 
     try {
-      const result = await giveawaySignupAction(email, password, agreed);
+      const result = await giveawaySignupAction(email, password, agreed, firstName, lastName);
       
-      if (result?.error) {
+      if (result?.fieldErrors) {
+        setServerNameErrors(result.fieldErrors);
+      } else if (result?.error) {
         setError(result.error);
       } else if (result?.accountCreated) {
         setEmailConfirmationRequired(result.emailConfirmationRequired);
@@ -51,7 +64,60 @@ export function GiveawayForm() {
           {error}
         </div>
       )}
-      
+      <div className="space-y-1.5">
+        <label className="block text-sm font-bold text-rita-secondary" htmlFor="first-name">
+          First name
+        </label>
+        <input
+          id="first-name"
+          name="given-name"
+          type="text"
+          autoComplete="given-name"
+          required
+          maxLength={50}
+          value={firstName}
+          onChange={(e) => {
+            setFirstName(e.target.value);
+            setServerNameErrors((current) => ({ ...current, firstName: undefined }));
+          }}
+          onBlur={() => setNameTouched((current) => ({ ...current, firstName: true }))}
+          aria-invalid={!!nameErrors.firstName}
+          aria-describedby={nameErrors.firstName ? "first-name-error" : undefined}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rita-primary focus:border-rita-primary transition-shadow bg-gray-50 focus:bg-white text-base"
+          data-testid="input-first-name"
+        />
+        {nameErrors.firstName && (
+          <p id="first-name-error" role="alert" className="text-xs text-score-low font-semibold">{nameErrors.firstName}</p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-sm font-bold text-rita-secondary" htmlFor="last-name">
+          Last name
+        </label>
+        <input
+          id="last-name"
+          name="family-name"
+          type="text"
+          autoComplete="family-name"
+          required
+          maxLength={50}
+          value={lastName}
+          onChange={(e) => {
+            setLastName(e.target.value);
+            setServerNameErrors((current) => ({ ...current, lastName: undefined }));
+          }}
+          onBlur={() => setNameTouched((current) => ({ ...current, lastName: true }))}
+          aria-invalid={!!nameErrors.lastName}
+          aria-describedby={nameErrors.lastName ? "last-name-error" : undefined}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rita-primary focus:border-rita-primary transition-shadow bg-gray-50 focus:bg-white text-base"
+          data-testid="input-last-name"
+        />
+        {nameErrors.lastName && (
+          <p id="last-name-error" role="alert" className="text-xs text-score-low font-semibold">{nameErrors.lastName}</p>
+        )}
+      </div>
+
       <div className="space-y-1.5">
         <label className="block text-sm font-bold text-rita-secondary" htmlFor="email">
           Email Address

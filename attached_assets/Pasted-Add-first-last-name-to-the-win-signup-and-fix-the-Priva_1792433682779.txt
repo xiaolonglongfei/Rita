@@ -1,0 +1,39 @@
+Add first/last name to the /win signup and fix the Privacy Policy (Prompt #47)
+
+Context: The giveaway signup on /win only collects email + password, but the
+main /signup page also collects the user's name. Giveaway users therefore end
+up with incomplete profile records. Make /win collect the name too, and store
+it exactly the way the main signup stores it.
+
+1. Inspect first: find how the main signup page stores the name (a single
+   full_name column, or separate first/last columns, on the users/profile
+   table) and what validation it applies. Report back which you found.
+
+2. /win form (artifacts/rita/app/win/GiveawayForm.tsx and the server action)
+   - Add two required fields above Email: "First name" and "Last name".
+     Use autocomplete="given-name" and autocomplete="family-name".
+   - Storage must match the main signup exactly:
+     - If the main signup stores a single full name, save
+       "<first> <last>" (each trimmed, one space between, no double spaces)
+       into that same column, in the same format the main signup uses.
+     - If the table has separate first/last columns, save into those.
+   - Server-side validation in the server action (not only in the browser):
+     both fields required after trimming, max 50 characters each, no
+     empty/whitespace-only values. Show a clear inline error per field.
+   - The submit button stays disabled until first name, last name, a valid
+     email, a password of 8+ characters, and the rules checkbox are all
+     satisfied (keep the existing checks).
+   - Keep the existing behavior: an existing email must never overwrite an
+     existing account, and the giveaway_opt_in_at timestamp is still set on
+     success.
+   - Do not display the user's name anywhere public. Reviews stay anonymous.
+
+3. /privacy, Section 2 ("Information We Collect")
+   - Change the first bullet to: "Account information: When you create a
+     Rovi account, we collect your name, email address, and a password
+     (stored securely by our authentication provider; we never see or store
+     your password in plain text)."
+   - Set "Last updated" to 10/19/2026. Leave everything else unchanged.
+
+Keep this additive: don't touch the main /signup page, the Terms of Service,
+/rules, or any unrelated page.

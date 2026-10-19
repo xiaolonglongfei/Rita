@@ -22,7 +22,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="privacy-title">
             Rovi Privacy Policy
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 9/20/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/19/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">2. Information We Collect</h2>
             <div className="space-y-3">
-              <p><strong className="text-slate-900">Account information:</strong> When you create a Rovi account, we collect your email address and a password (stored securely by our authentication provider; we never see or store your password in plain text).</p>
+              <p><strong className="text-slate-900">Account information:</strong> When you create a Rovi account, we collect your name, email address, and a password (stored securely by our authentication provider; we never see or store your password in plain text).</p>
               <p><strong className="text-slate-900">Review content:</strong> The text and ratings (Value, Effectiveness, Punctuality) you submit about an instructor.</p>
               <p><strong className="text-slate-900">Session verification data:</strong> Information used to confirm that a review is tied to an actual lesson (mutual session verification between student and instructor accounts).</p>
               <p><strong className="text-slate-900">Giveaway participation:</strong> If you sign up through a promotional giveaway, we record the timestamp of your opt-in and, where applicable, which reviews qualify you for bonus entries.</p>

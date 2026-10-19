@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/resend";
 import { getGiveawayStatus } from "@/lib/giveaway";
+import { isGiveawayEmailValid, validateGiveawayNames } from "@/lib/giveaway-signup";
 
 function getUrl() {
   return (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
@@ -106,7 +107,9 @@ export async function signupAction(
 export async function giveawaySignupAction(
   email: string,
   password: string,
-  acceptedRules: boolean
+  acceptedRules: boolean,
+  firstName: string,
+  lastName: string
 ) {
   if (getGiveawayStatus() !== "active") {
     return { error: "This promotion is not currently accepting entries." };
@@ -116,13 +119,20 @@ export async function giveawaySignupAction(
     return { error: "You must agree to the Official Rules & Terms to enter." };
   }
 
+  const nameValidation = validateGiveawayNames(firstName, lastName);
+  if (!nameValidation.valid) return { fieldErrors: nameValidation.fieldErrors };
+
+  if (!isGiveawayEmailValid(email)) {
+    return { error: "Please enter a valid email address." };
+  }
+
   if (password.length < 8) {
     return { error: "Password must be at least 8 characters." };
   }
 
   const supabase = await getServerSupabase();
   const giveawayOptInAt = new Date().toISOString();
-  const fullName = "Rovi Member";
+  const fullName = nameValidation.fullName;
   const normalizedEmail = email.trim().toLowerCase();
   const origin = (await headers()).get("origin");
   if (!origin) return { error: "Unable to determine the confirmation return address. Please reload and try again." };
