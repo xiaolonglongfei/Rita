@@ -1,0 +1,126 @@
+Require a review to complete the giveaway entry (Prompt #46)
+
+Context: On /win, after a successful signup the user immediately sees
+"You're entered! We'll email you if you win." That's wrong. The point of the
+campaign is to get reviews, and the page's own "How to enter" steps list the
+review (step 2) before "You're entered" (step 3). A user is only entered once
+they have at least one qualifying review.
+
+Definitions (use ONE shared definition in both the UI and the draw query):
+- Opt-in: signup through /win with rules accepted -> giveaway_opt_in_at
+  (keep as is; it is the consent timestamp).
+- Qualifying review: a review by that user, created at/after
+  giveaway_opt_in_at and within the Promotion Period (Sept 21 - Dec 31,
+  2026), that was successfully saved, i.e. it passed the Layer 1 content
+  filter. Blocked submissions never count.
+- Entered = at least one qualifying review. No new column is needed; derive
+  this from the reviews table.
+- First inspect how reviews are created. If a review can only exist or count
+  after instructor-side session verification, do NOT silently require that
+  for the giveaway; use the earliest reliable "review submitted and
+  accepted" signal and report back to me exactly what you chose and why.
+
+1. /win after signup (replace the current "You're entered!" screen)
+   - Heading: "Account created. One more step!"
+   - Body: "Leave a review for your tennis coach to complete your entry for
+     the $100 gift card."
+   - Primary button: "Write your review" -> the existing write-review flow.
+   - Small text below: "Prefer not to write a review? See the official
+     rules for a free alternate way to enter." linking to /rules#how-to-enter
+   - Do NOT show "You're entered" here.
+   - If Supabase email confirmation is pending, show instead: "Check your
+     email to confirm your account, then come back and write your review to
+     complete your entry." Make sure the confirmation link returns the user
+     somewhere from which they can reach the write-review flow (for example
+     back to /win, which renders the right state per item 2). Inspect the
+     current confirmation behavior and handle whichever case applies.
+
+2. /win state for an already opted-in user (server-rendered from data):
+   - 0 qualifying reviews -> the "one more step" state from item 1.
+   - 1 or more qualifying reviews -> the existing "You're entered! We'll
+     email you if you win." screen.
+   - Keep the existing handling for: promotion not started, promotion ended,
+     and an existing email that must not be overwritten.
+
+3. After a user submits their FIRST qualifying review, show a short banner on
+   the review confirmation page: "You're entered in the $100 gift card
+   drawing! We'll email you if you win." Do not mention that more reviews
+   improve the odds anywhere in the UI. No banner if they are not opted in.
+
+4. Draw query (artifacts/rita/supabase/queries/giveaway_entry_counts.sql)
+   - Replace GIVEAWAY_BONUS_ENTRY_CAP with GIVEAWAY_MAX_ENTRIES = 4 (same
+     maximum as before: 1 baseline + up to 3 bonus).
+   - Total entries per user = LEAST(qualifying review count,
+     GIVEAWAY_MAX_ENTRIES). Users with 0 qualifying reviews have 0 entries
+     and must be excluded.
+   - Use the same qualifying-review definition as the UI. Add a comment that
+     alternate-method (emailed) entries are added to the pool manually at
+     draw time.
+
+5. /rules
+   - Replace Sections 4 and 5 with the text below, verbatim. Set "Last
+     updated" to 10/19/2026. Add an anchor id "how-to-enter" on Section 4
+     so the link from item 1 works. Leave every other section unchanged.
+
+   [PASTE THE NEW SECTIONS 4 AND 5 FROM ABOVE HERE]
+
+Keep this additive: don't touch the main /signup page, the Terms of Service,
+the Privacy Policy, or anything unrelated to this flow.
+
+有两件事需要你拿主意：
+
+"算 review"的门槛。 我的默认是"review 成功保存、通过内容过滤"就算，不要求教练那边确认 session，因为新用户第一次扫码来，很可能根本没有走完 session 验证，要求验证会让大部分人永远显示不了"已进入"。代价是：门槛低了，可能会有人随手给个不熟的教练打分来凑数。这靠内容过滤和 moderation 兜底，以后想收紧，可以只认已验证的 review。Replit 会先看现有 review 流程，再把它的实际选择报告给你，到时候贴给我看就行。
+如果你不想加"免费邮件参与"这一条，也可以，但建议先找律师确认"必须写 review 才能参加"这个设计在你们的规则下站得住，再决定要不要删。
+
+另外，注册后有不少人可能还是会掉队。等活动跑起来后，可以考虑给"注册了但还没留 review"的人发一封提醒邮件，这能明显提高转化，不过促销类邮件有额外的合规要求，我们到时候再单独设计。
+
+对，然后还有一个问题：在 scan 这个 QR 后的这个注册界面，我们只要求了它的 email，没要求它的 first name、last name。把这个也补上，因为这样的话，我们 database 才能和正常注册的这个用户一致。
+
+说得对。正常注册页（你之前截图那个）有 “Full Name” 字段，/win 只收 email 和密码，通过它注册的人在数据库里会缺姓名，后面做数据分析、发奖通知都会少一块。
+
+两点要先说清楚：
+
+正常注册页是一个 “Full Name” 单字段，不是 first / last 两个字段。 数据库里大概率只存一个 full_name。所以我在 prompt 里让 /win 用 First name 和 Last name 两个输入框，保存时拼成同样格式的 full name，和正常注册的用户保持一致。如果数据库里其实已经有 first/last 两列，Replit 会直接用那两列。两种情况它会先查再选，并把结果报告给你。
+我之前写的 Privacy Policy 第 2 条只写了收集"email 和密码"，没写姓名。 其实正常注册本来就在收姓名，所以这条已经不准确了。这次顺手一起改，不然隐私政策和实际收集的数据对不上。
+
+这条是 #47。它和 #46 都改 /win 的表单，建议等 #46 做完再发，避免 Replit 同时改同一个文件。
+
+Add first/last name to the /win signup and fix the Privacy Policy (Prompt #47)
+
+Context: The giveaway signup on /win only collects email + password, but the
+main /signup page also collects the user's name. Giveaway users therefore end
+up with incomplete profile records. Make /win collect the name too, and store
+it exactly the way the main signup stores it.
+
+1. Inspect first: find how the main signup page stores the name (a single
+   full_name column, or separate first/last columns, on the users/profile
+   table) and what validation it applies. Report back which you found.
+
+2. /win form (artifacts/rita/app/win/GiveawayForm.tsx and the server action)
+   - Add two required fields above Email: "First name" and "Last name".
+     Use autocomplete="given-name" and autocomplete="family-name".
+   - Storage must match the main signup exactly:
+     - If the main signup stores a single full name, save
+       "<first> <last>" (each trimmed, one space between, no double spaces)
+       into that same column, in the same format the main signup uses.
+     - If the table has separate first/last columns, save into those.
+   - Server-side validation in the server action (not only in the browser):
+     both fields required after trimming, max 50 characters each, no
+     empty/whitespace-only values. Show a clear inline error per field.
+   - The submit button stays disabled until first name, last name, a valid
+     email, a password of 8+ characters, and the rules checkbox are all
+     satisfied (keep the existing checks).
+   - Keep the existing behavior: an existing email must never overwrite an
+     existing account, and the giveaway_opt_in_at timestamp is still set on
+     success.
+   - Do not display the user's name anywhere public. Reviews stay anonymous.
+
+3. /privacy, Section 2 ("Information We Collect")
+   - Change the first bullet to: "Account information: When you create a
+     Rovi account, we collect your name, email address, and a password
+     (stored securely by our authentication provider; we never see or store
+     your password in plain text)."
+   - Set "Last updated" to 10/19/2026. Leave everything else unchanged.
+
+Keep this additive: don't touch the main /signup page, the Terms of Service,
+/rules, or any unrelated page.

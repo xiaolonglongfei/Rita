@@ -1,4 +1,5 @@
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { getGiveawayProgress } from "@/lib/giveaway-progress";
 import { notFound } from "next/navigation";
 import { ScoreTriangle } from "@/components/shared/ScoreTriangle";
 import { ReviewCard } from "@/components/review/ReviewCard";
@@ -9,10 +10,10 @@ export default async function InstructorProfilePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ created?: string }>;
+  searchParams: Promise<{ created?: string; reviewed?: string; submittedReview?: string }>;
 }) {
   const { id } = await params;
-  const { created } = await searchParams;
+  const { created, reviewed, submittedReview } = await searchParams;
   const supabase = createServiceClient();
 
   const [{ data: instructor }, { data: reviews }, { count: verifiedSessions }] =
@@ -34,6 +35,18 @@ export default async function InstructorProfilePage({
 
   if (!instructor) notFound();
 
+  let showGiveawayBanner = false;
+  if (reviewed === "true" && submittedReview) {
+    const auth = await createClient();
+    const { data: { user } } = await auth.auth.getUser();
+    if (user) {
+      const progress = await getGiveawayProgress(user.id);
+      showGiveawayBanner =
+        progress.firstReview?.id === submittedReview &&
+        progress.firstReview?.instructor_id === id;
+    }
+  }
+
   // Use the stored reviews_visible flag (set by DB trigger when instructor reaches 3+ approved reviews)
   // Fall back to computing it if the column isn't present yet in local types
   const reviewsVisible = (instructor as Record<string, unknown>).reviews_visible === true;
@@ -42,6 +55,11 @@ export default async function InstructorProfilePage({
 
   return (
     <div>
+      {showGiveawayBanner && (
+        <div role="status" data-testid="giveaway-entry-banner" className="mx-auto mt-4 max-w-5xl rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-slate-800">
+          You&apos;re entered in the $100 gift card drawing! We&apos;ll email you if you win.
+        </div>
+      )}
       {/* Success banner after instructor creation */}
       {created === "true" && (
         <div className="max-w-5xl mx-auto px-4 pt-4">

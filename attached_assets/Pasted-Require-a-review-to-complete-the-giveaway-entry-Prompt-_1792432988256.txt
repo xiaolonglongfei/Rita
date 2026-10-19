@@ -1,0 +1,68 @@
+Require a review to complete the giveaway entry (Prompt #46)
+
+Context: On /win, after a successful signup the user immediately sees
+"You're entered! We'll email you if you win." That's wrong. The point of the
+campaign is to get reviews, and the page's own "How to enter" steps list the
+review (step 2) before "You're entered" (step 3). A user is only entered once
+they have at least one qualifying review.
+
+Definitions (use ONE shared definition in both the UI and the draw query):
+- Opt-in: signup through /win with rules accepted -> giveaway_opt_in_at
+  (keep as is; it is the consent timestamp).
+- Qualifying review: a review by that user, created at/after
+  giveaway_opt_in_at and within the Promotion Period (Sept 21 - Dec 31,
+  2026), that was successfully saved, i.e. it passed the Layer 1 content
+  filter. Blocked submissions never count.
+- Entered = at least one qualifying review. No new column is needed; derive
+  this from the reviews table.
+- First inspect how reviews are created. If a review can only exist or count
+  after instructor-side session verification, do NOT silently require that
+  for the giveaway; use the earliest reliable "review submitted and
+  accepted" signal and report back to me exactly what you chose and why.
+
+1. /win after signup (replace the current "You're entered!" screen)
+   - Heading: "Account created. One more step!"
+   - Body: "Leave a review for your tennis coach to complete your entry for
+     the $100 gift card."
+   - Primary button: "Write your review" -> the existing write-review flow.
+   - Small text below: "Prefer not to write a review? See the official
+     rules for a free alternate way to enter." linking to /rules#how-to-enter
+   - Do NOT show "You're entered" here.
+   - If Supabase email confirmation is pending, show instead: "Check your
+     email to confirm your account, then come back and write your review to
+     complete your entry." Make sure the confirmation link returns the user
+     somewhere from which they can reach the write-review flow (for example
+     back to /win, which renders the right state per item 2). Inspect the
+     current confirmation behavior and handle whichever case applies.
+
+2. /win state for an already opted-in user (server-rendered from data):
+   - 0 qualifying reviews -> the "one more step" state from item 1.
+   - 1 or more qualifying reviews -> the existing "You're entered! We'll
+     email you if you win." screen.
+   - Keep the existing handling for: promotion not started, promotion ended,
+     and an existing email that must not be overwritten.
+
+3. After a user submits their FIRST qualifying review, show a short banner on
+   the review confirmation page: "You're entered in the $100 gift card
+   drawing! We'll email you if you win." Do not mention that more reviews
+   improve the odds anywhere in the UI. No banner if they are not opted in.
+
+4. Draw query (artifacts/rita/supabase/queries/giveaway_entry_counts.sql)
+   - Replace GIVEAWAY_BONUS_ENTRY_CAP with GIVEAWAY_MAX_ENTRIES = 4 (same
+     maximum as before: 1 baseline + up to 3 bonus).
+   - Total entries per user = LEAST(qualifying review count,
+     GIVEAWAY_MAX_ENTRIES). Users with 0 qualifying reviews have 0 entries
+     and must be excluded.
+   - Use the same qualifying-review definition as the UI. Add a comment that
+     alternate-method (emailed) entries are added to the pool manually at
+     draw time.
+
+5. /rules
+   - Replace Sections 4 and 5 with the text below, verbatim. Set "Last
+     updated" to 10/19/2026. Add an anchor id "how-to-enter" on Section 4
+     so the link from item 1 works. Leave every other section unchanged.
+
+   [PASTE THE NEW SECTIONS 4 AND 5 FROM ABOVE HERE]
+
+Keep this additive: don't touch the main /signup page, the Terms of Service,
+the Privacy Policy, or anything unrelated to this flow.

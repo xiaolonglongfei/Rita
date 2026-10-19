@@ -92,7 +92,8 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
         const data = await res.json();
         throw new Error(data.error || "Failed to submit review");
       }
-      router.push(`/instructors/${instructorId}?reviewed=true`);
+      const { review } = await res.json();
+      router.push(`/instructors/${instructorId}?reviewed=true&submittedReview=${encodeURIComponent(review.id)}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setSubmitting(false);

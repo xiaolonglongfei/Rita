@@ -2,6 +2,9 @@ import { Metadata } from "next";
 import { getGiveawayStatus } from "@/lib/giveaway";
 import { GiveawayForm } from "./GiveawayForm";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { getGiveawayProgress } from "@/lib/giveaway-progress";
+import { GiveawayStatus } from "./GiveawayStatus";
 
 export const metadata: Metadata = {
   title: "Win a $100 Gift Card | Rovi",
@@ -10,8 +13,13 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function WinPage() {
+export default async function WinPage() {
   const status = getGiveawayStatus();
+  const auth = await createClient();
+  const { data: { user } } = await auth.auth.getUser();
+  const progress = status === "active" && user
+    ? await getGiveawayProgress(user.id)
+    : null;
 
   return (
     <div className="min-h-[100dvh] bg-rita-gray-light flex flex-col font-sans">
@@ -81,7 +89,9 @@ export default function WinPage() {
             )}
 
             {status === "active" && (
-              <GiveawayForm />
+              progress?.optedIn
+                ? <GiveawayStatus entered={progress.qualifyingReviewCount > 0} />
+                : <GiveawayForm />
             )}
           </div>
           

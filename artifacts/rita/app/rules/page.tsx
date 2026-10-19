@@ -28,13 +28,15 @@ const sections = [
   {
     title: "4. How to Enter",
     paragraphs: [
-      "You may enter by creating a free Rovi account and completing the entry form linked from the Giveaway landing page during the Promotion Period. No purchase, payment, or review submission is required to enter or to receive a baseline entry. Limit one baseline entry per person, per drawing, per email address. Entries obtained through unauthorized or automated means will be void.",
+      "To enter, (a) create a free Rovi account through the Giveaway landing page during the Promotion Period, and (b) submit at least one qualifying review (defined in Section 5). Completing both steps earns you one (1) entry. NO PURCHASE OR PAYMENT OF ANY KIND IS REQUIRED TO ENTER OR WIN.",
+      'Alternate method of entry (no review required): To receive one (1) entry without submitting a review, send an email with the subject line "Giveaway Entry" to rovi.training.support@gmail.com during the Promotion Period, including your full name and the email address at which you may be contacted. Limit one (1) alternate-method entry per person, per drawing. Requests must be received before that drawing\'s entry cutoff date.',
+      "Limit one (1) Rovi account per person. Entries obtained through unauthorized or automated means will be void.",
     ],
   },
   {
     title: "5. Additional Entries",
     paragraphs: [
-      "Entrants may earn additional entries by submitting reviews on Rovi that are (a) tied to a verified session, and (b) approved by Rovi's content moderation process during the Promotion Period. Additional entries are capped at a maximum regardless of how many qualifying reviews are submitted beyond that cap; submitting more reviews than the cap requires does not further increase your odds. The exact number of entries per qualifying review and the cap are set by Sponsor and may vary, and are not required to be disclosed in advertising materials for the Giveaway.",
+      'You may earn additional entries by submitting additional qualifying reviews during the Promotion Period. Additional entries are capped at a maximum number of total entries set by Sponsor, regardless of how many qualifying reviews you submit beyond that cap; submitting more reviews than the cap requires does not further increase your odds. The exact number of entries per qualifying review and the cap are set by Sponsor and may vary, and are not required to be disclosed in advertising materials for the Giveaway. A "qualifying review" is a review you submit on Rovi during the Promotion Period, after creating your account through the Giveaway landing page, that is accepted under Rovi\'s review process and content moderation and is not later removed for violating Rovi\'s Terms of Service.',
     ],
   },
   {
@@ -115,7 +117,7 @@ export default function RulesPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="rules-title">
             Rovi $100 Gift Card Giveaway — Official Rules
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 9/19/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/19/2026</p>
         </header>
 
         <p className="my-8 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm font-extrabold leading-relaxed text-slate-900 sm:text-base" data-testid="rules-no-purchase-notice">
@@ -124,7 +126,7 @@ export default function RulesPage() {
 
         <div className="space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
           {sections.map((section) => (
-            <section key={section.title}>
+            <section key={section.title} id={section.title === "4. How to Enter" ? "how-to-enter" : undefined}>
               <h2 className="mb-2 text-xl font-bold text-slate-900">{section.title}</h2>
               {section.paragraphs.map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>

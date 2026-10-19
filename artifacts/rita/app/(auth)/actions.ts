@@ -2,7 +2,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import type { CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendWelcomeEmail } from "@/lib/resend";
@@ -124,11 +124,14 @@ export async function giveawaySignupAction(
   const giveawayOptInAt = new Date().toISOString();
   const fullName = "Rovi Member";
   const normalizedEmail = email.trim().toLowerCase();
+  const origin = (await headers()).get("origin");
+  if (!origin) return { error: "Unable to determine the confirmation return address. Please reload and try again." };
 
   const { data, error } = await supabase.auth.signUp({
     email: normalizedEmail,
     password,
     options: {
+      emailRedirectTo: new URL("/api/auth/callback?next=/win", origin).toString(),
       data: {
         full_name: fullName,
         giveaway_opt_in_at: giveawayOptInAt,
@@ -169,7 +172,7 @@ export async function giveawaySignupAction(
   await sendWelcomeEmail({ to: normalizedEmail, fullName });
 
   return {
-    entered: true,
+    accountCreated: true,
     emailConfirmationRequired: !data.session,
   };
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { giveawaySignupAction } from "@/app/(auth)/actions";
 import Link from "next/link";
+import { GiveawayStatus } from "./GiveawayStatus";
 
 export function GiveawayForm() {
   const [email, setEmail] = useState("");
@@ -10,7 +11,8 @@ export function GiveawayForm() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [entered, setEntered] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
+  const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
 
   const isPasswordValid = password.length >= 8;
   const canSubmit = agreed && isPasswordValid && email.length > 0 && !loading;
@@ -27,8 +29,9 @@ export function GiveawayForm() {
       
       if (result?.error) {
         setError(result.error);
-      } else if (result?.entered) {
-        setEntered(true);
+      } else if (result?.accountCreated) {
+        setEmailConfirmationRequired(result.emailConfirmationRequired);
+        setAccountCreated(true);
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -37,20 +40,8 @@ export function GiveawayForm() {
     }
   }
 
-  if (entered) {
-    return (
-      <div className="text-center py-10" data-testid="status-entered">
-        <div className="w-20 h-20 bg-rita-lime-light text-rita-lime-dark rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-rita-lime">
-          <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <div data-testid="confirmation-message">
-          <h3 className="text-2xl font-black text-rita-secondary mb-2 tracking-tight">You're entered!</h3>
-          <p className="text-rita-gray font-medium text-lg">We'll email you if you win.</p>
-        </div>
-      </div>
-    );
+  if (accountCreated) {
+    return <GiveawayStatus emailConfirmationRequired={emailConfirmationRequired} />;
   }
 
   return (
