@@ -8,6 +8,7 @@ export default async function NewReviewPage({
   searchParams: Promise<{ instructor_id?: string }>;
 }) {
   const { instructor_id } = await searchParams;
+  if (!instructor_id) redirect("/instructors?review=true");
   const supabase = await createClient();
 
   const {
@@ -33,11 +34,11 @@ export default async function NewReviewPage({
     user.email?.split("@")[0] ||
     "Student";
 
-  let instructor: { id: string; full_name: string } | null = null;
+  let instructor: { id: string; full_name: string; teaching_locations: string | null } | null = null;
   if (instructor_id) {
     const { data } = await supabase
       .from("instructors")
-      .select("id, full_name")
+      .select("id, full_name, teaching_locations")
       .eq("id", instructor_id)
       .single();
     instructor = data;
@@ -67,6 +68,7 @@ export default async function NewReviewPage({
             instructorId={instructor.id}
             instructorName={instructor.full_name}
             studentName={studentName}
+            instructorLocation={instructor.teaching_locations}
           />
         ) : (
           <div className="bg-white rounded-2xl border border-slate-100 p-6 text-center">

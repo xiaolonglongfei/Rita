@@ -111,8 +111,8 @@ export async function sendWelcomeEmail({
             Browse Instructors →
           </a>
           <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">
-            🔒 All your reviews are completely anonymous.
-            Your identity is never revealed to instructors.
+            Your rating and comments stay anonymous.
+            Names are never shown with reviews or ratings.
           </p>
           ${fanWeekBlock}
         </div>
@@ -147,7 +147,7 @@ export async function sendVerificationConfirmedEmail({
             Your review is now marked as <strong>Verified</strong>.
           </p>
           <p style="color: #94a3b8; font-size: 12px;">
-            🔒 Your identity remains anonymous. The instructor only confirmed the session details — they cannot see your rating.
+            Your rating and comments stay anonymous. The instructor only confirmed the session details and cannot see your rating.
           </p>
         </div>
       `,

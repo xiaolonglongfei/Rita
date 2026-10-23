@@ -1,5 +1,5 @@
-import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getGiveawayProgress } from "@/lib/giveaway-progress";
+import { createServiceClient } from "@/lib/supabase/server";
+import { CircleDot, MapPin, Star, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
 import { ScoreTriangle } from "@/components/shared/ScoreTriangle";
 import { ReviewCard } from "@/components/review/ReviewCard";
@@ -10,10 +10,10 @@ export default async function InstructorProfilePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ created?: string; reviewed?: string; submittedReview?: string }>;
+  searchParams: Promise<{ created?: string }>;
 }) {
   const { id } = await params;
-  const { created, reviewed, submittedReview } = await searchParams;
+  const { created } = await searchParams;
   const supabase = createServiceClient();
 
   const [{ data: instructor }, { data: reviews }, { count: verifiedSessions }] =
@@ -35,18 +35,6 @@ export default async function InstructorProfilePage({
 
   if (!instructor) notFound();
 
-  let showGiveawayBanner = false;
-  if (reviewed === "true" && submittedReview) {
-    const auth = await createClient();
-    const { data: { user } } = await auth.auth.getUser();
-    if (user) {
-      const progress = await getGiveawayProgress(user.id);
-      showGiveawayBanner =
-        progress.firstReview?.id === submittedReview &&
-        progress.firstReview?.instructor_id === id;
-    }
-  }
-
   // Use the stored reviews_visible flag (set by DB trigger when instructor reaches 3+ approved reviews)
   // Fall back to computing it if the column isn't present yet in local types
   const reviewsVisible = (instructor as Record<string, unknown>).reviews_visible === true;
@@ -55,16 +43,11 @@ export default async function InstructorProfilePage({
 
   return (
     <div>
-      {showGiveawayBanner && (
-        <div role="status" data-testid="giveaway-entry-banner" className="mx-auto mt-4 max-w-5xl rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-slate-800">
-          You&apos;re entered in the $100 gift card drawing! We&apos;ll email you if you win.
-        </div>
-      )}
       {/* Success banner after instructor creation */}
       {created === "true" && (
         <div className="max-w-5xl mx-auto px-4 pt-4">
           <div
-            className="inline-flex w-fit rounded-xl px-4 py-3 text-sm font-medium"
+            className="w-fit max-w-full rounded-xl px-4 py-3 text-sm font-medium"
             style={{ background: "#f4ffe0", color: "#4a6e00", border: "1px solid #b8d400" }}
           >
             ✓ Instructor added! You can now write a review for them.
@@ -73,30 +56,30 @@ export default async function InstructorProfilePage({
       )}
 
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 -mx-6 -mt-6 px-6 py-6 mb-8">
-        <div className="max-w-5xl mx-auto flex items-start gap-5">
+      <div className="bg-white border-b border-slate-100 px-4 py-6 mb-8 sm:-mx-6 sm:-mt-6 sm:px-6">
+        <div className="max-w-5xl mx-auto flex min-w-0 items-start gap-3 sm:gap-5">
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
             style={{ background: "#f97316" }}
           >
             {instructor.full_name.charAt(0)}
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 break-words">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-slate-800">{instructor.full_name}</h1>
+              <h1 className="min-w-0 break-words text-2xl font-bold text-slate-800">{instructor.full_name}</h1>
               <InstructorBadge isClaimed={instructor.is_claimed} />
             </div>
-            <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
-              <span>🎾 Tennis</span>
+            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3 mt-2 text-sm text-slate-600">
+              <span className="inline-flex items-center gap-2"><CircleDot aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Tennis</span>
               {instructor.teaching_locations && (
-                <span>📍 {instructor.teaching_locations}</span>
+                <span className="inline-flex min-w-0 items-start gap-2"><MapPin aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /><span className="min-w-0 break-words">{instructor.teaching_locations}</span></span>
               )}
             </div>
             <div className="flex items-center gap-4 mt-3 flex-wrap">
               {reviewsVisible && (instructor.total_reviews ?? 0) > 0 ? (
                 <>
-                  <span className="text-2xl font-bold" style={{ color: "#f97316" }}>
-                    ⭐ {instructor.avg_overall?.toFixed(1)}
+                  <span className="inline-flex items-center gap-2 text-2xl font-bold" style={{ color: "#f97316" }}>
+                    <Star aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> {instructor.avg_overall?.toFixed(1)}
                   </span>
                   <span className="text-sm text-slate-400">
                     {instructor.total_reviews} reviews
@@ -151,8 +134,9 @@ export default async function InstructorProfilePage({
                 </a>
               </div>
 
-              <p className="text-xs text-slate-400 mb-4">
-                🔒 All reviews are anonymous. Reviewer identities are never disclosed.
+              <p className="flex items-start gap-2 text-xs text-slate-600 mb-4">
+                <ShieldCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" />
+                <span>Reviews are anonymous. Names are never shown with reviews or ratings.</span>
               </p>
 
               {reviewsVisible ? (

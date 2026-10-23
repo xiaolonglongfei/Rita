@@ -2,3 +2,4 @@
 - [Supabase URL normalizer](supabase-url-normalizer.md) — getSupabaseUrl() in lib/supabase/url.ts strips path suffix; must be used in middleware too
 - [Supabase service key env var workaround](supabase-svc-key.md) — Replit secrets don't propagate to running workflows; use SUPABASE_SVC_KEY in .env.local + code fallback
 - [Giveaway entry policy](giveaway-entry-policy.md) — signup records consent, not an entry; saved Layer-1-accepted reviews qualify without instructor verification.
+- [Product copy scope](product-copy-scope.md) — region-neutral positioning; public reviews are anonymous, but claimed instructors privately see session identity.

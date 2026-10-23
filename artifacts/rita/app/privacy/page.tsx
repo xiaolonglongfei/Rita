@@ -22,14 +22,14 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="privacy-title">
             Rovi Privacy Policy
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/19/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/23/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">1. Overview</h2>
             <p>
-              Rovi (rovi.training) is a free platform where students and parents can leave anonymous, verified reviews of private tennis instructors in Westchester County, NY. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using Rovi, you agree to this policy.
+              Rovi (rovi.training) is a free platform where students and parents can leave anonymous, verified reviews of private tennis instructors. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using Rovi, you agree to this policy.
             </p>
           </section>
 
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">4. Anonymity of Reviews</h2>
             <p>
-              Reviews on Rovi are anonymous: your identity is never shown to the instructor you reviewed or to other members of the public, and an instructor&apos;s individual review count and scores are only made visible once enough reviews have accumulated, specifically to make it harder to guess who wrote any single review. Internally, our systems retain a link between your account and the reviews you&apos;ve submitted — this is necessary to verify sessions, prevent abuse, and operate features like the giveaway — but this internal record is never disclosed publicly or to instructors.
+              Reviews on Rovi are anonymous: your name is never shown alongside a published review or its rating. When you submit a review, an instructor who has claimed their profile is asked to confirm that the session took place; for that confirmation they see your name and the session&apos;s date, time, and location, but not your rating or comments. Internally, our systems retain a link between your account and the reviews you&apos;ve submitted — this is necessary to verify sessions, prevent abuse, and operate features like the giveaway — but this internal record is never disclosed publicly or to instructors.
             </p>
           </section>
 

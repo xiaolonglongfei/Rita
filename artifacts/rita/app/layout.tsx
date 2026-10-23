@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 export const metadata: Metadata = {
   title: "Rovi — Find the Right Tennis Instructor",
   description:
-    "Data-driven reviews and rankings for tennis instructors in Westchester County, NY.",
+    "Data-driven reviews and rankings for tennis instructors.",
 };
 
 export default function RootLayout({

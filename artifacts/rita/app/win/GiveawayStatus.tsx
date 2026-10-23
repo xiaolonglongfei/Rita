@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check } from "lucide-react";
 
 export function GiveawayStatus({
   entered = false,
@@ -9,6 +10,9 @@ export function GiveawayStatus({
 }) {
   return (
     <div className="text-center py-10" data-testid={entered ? "status-entered" : "status-review-required"}>
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rita-lime-light text-rita-secondary ring-1 ring-rita-lime">
+        <Check aria-hidden="true" className="h-8 w-8" />
+      </div>
       <h3 className="text-2xl font-black text-rita-secondary mb-2 tracking-tight">
         {entered ? "You're entered!" : "Account created. One more step!"}
       </h3>
@@ -22,7 +26,7 @@ export function GiveawayStatus({
               : "Leave a review for your tennis coach to complete your entry for the $100 gift card."}
           </p>
           {!emailConfirmationRequired && (
-            <Link href="/reviews/new" className="mt-6 inline-block rounded-lg bg-rita-primary px-6 py-3 font-bold text-white">
+            <Link href="/instructors?review=true" className="mt-6 inline-block rounded-lg bg-rita-primary px-6 py-3 font-bold text-white">
               Write your review
             </Link>
           )}

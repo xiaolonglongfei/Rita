@@ -6,7 +6,7 @@ import Link from "next/link";
 import { GiveawayStatus } from "./GiveawayStatus";
 import { isGiveawayEmailValid, validateGiveawayNames, type GiveawayNameErrors } from "@/lib/giveaway-signup";
 
-export function GiveawayForm() {
+export function GiveawayForm({ onAccountCreated }: { onAccountCreated?: () => void } = {}) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [nameTouched, setNameTouched] = useState({ firstName: false, lastName: false });
@@ -45,6 +45,7 @@ export function GiveawayForm() {
       } else if (result?.accountCreated) {
         setEmailConfirmationRequired(result.emailConfirmationRequired);
         setAccountCreated(true);
+        onAccountCreated?.();
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -165,7 +166,7 @@ export function GiveawayForm() {
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="w-5 h-5 text-rita-primary border-gray-300 rounded focus:ring-rita-primary focus:ring-offset-2 transition-all cursor-pointer"
+            className="w-5 h-5 accent-rita-primary text-rita-primary border-gray-300 rounded focus:ring-rita-primary focus:ring-offset-2 transition-all cursor-pointer"
             data-testid="checkbox-terms"
           />
         </div>

@@ -16,3 +16,17 @@ body {
     @apply bg-white text-rita-charcoal antialiased;
   }
 }
+
+/* Scope native iOS picker normalization to the review form, not other inputs. */
+.review-form .session-input {
+  @apply block box-border w-full min-w-0 max-w-full h-11 appearance-none rounded-lg border border-slate-200 bg-white px-3 text-left text-sm text-slate-700 focus:outline-none focus:border-orange-300;
+  -webkit-appearance: none;
+}
+.review-form .session-input::-webkit-date-and-time-value {
+  min-height: 1.25em;
+  text-align: left;
+}
+.review-form .session-input::-webkit-datetime-edit {
+  padding: 0;
+  min-width: 0;
+}

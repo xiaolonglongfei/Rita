@@ -22,7 +22,7 @@ export default function TermsPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="terms-title">
             Rovi Terms of Service
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 9/20/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/23/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
@@ -40,7 +40,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">2. Description of the Service</h2>
             <p>
-              Rovi is a platform where students and parents can leave anonymous, verified reviews of private tennis instructors in Westchester County, NY, and browse other users&apos; reviews to help choose an instructor.
+              Rovi is a platform where students and parents can leave anonymous, verified reviews of private tennis instructors, and browse other users&apos; reviews to help choose an instructor.
             </p>
           </section>
 

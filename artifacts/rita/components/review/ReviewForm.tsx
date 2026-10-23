@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CalendarDays, Clock3, MapPin, Info, ShieldCheck, CircleDollarSign, TrendingUp } from "lucide-react";
+import { getLocalSessionDefaults } from "@/lib/session-defaults";
 import { VerticalSlider } from "./VerticalSlider";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +15,7 @@ interface ReviewFormProps {
   instructorId: string;
   instructorName: string;
   studentName: string;
+  instructorLocation?: string | null;
 }
 
 function scoreColor(s: number): string {
@@ -21,12 +24,19 @@ function scoreColor(s: number): string {
   return "#c83030";
 }
 
-export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
+export function ReviewForm({ instructorId, instructorName, instructorLocation }: ReviewFormProps) {
   const [step, setStep] = useState<1 | 2>(1);
 
   const [sessionDate, setSessionDate] = useState("");
   const [sessionTime, setSessionTime] = useState("");
-  const [sessionLocation, setSessionLocation] = useState("");
+  const [sessionLocation, setSessionLocation] = useState(instructorLocation ?? "");
+  const [today, setToday] = useState("");
+
+  useEffect(() => {
+    const local = getLocalSessionDefaults();
+    setSessionTime(local.time);
+    setToday(local.date);
+  }, []);
 
   const [value, setValue] = useState(5);
   const [effectiveness, setEffectiveness] = useState(5);
@@ -40,14 +50,13 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
   const router = useRouter();
 
   const overall = (value + effectiveness + punctuality) / 3;
-  const today = new Date().toISOString().split("T")[0];
 
   function handleStep1Submit() {
     if (!sessionDate || !sessionTime || !sessionLocation.trim()) {
       setError("Please fill in all session details");
       return;
     }
-    if (new Date(sessionDate) > new Date()) {
+    if (sessionDate > getLocalSessionDefaults().date) {
       setError("Session date cannot be in the future");
       return;
     }
@@ -93,7 +102,7 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
         throw new Error(data.error || "Failed to submit review");
       }
       const { review } = await res.json();
-      router.push(`/instructors/${instructorId}?reviewed=true&submittedReview=${encodeURIComponent(review.id)}`);
+      router.push(`/reviews/submitted?review=${encodeURIComponent(review.id)}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setSubmitting(false);
@@ -101,14 +110,14 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 max-w-md mx-auto shadow-sm">
+    <div className="review-form min-w-0 w-full bg-white rounded-2xl border border-slate-100 p-5 sm:p-6 max-w-md mx-auto shadow-sm">
       {/* Header */}
       <div className="mb-6 pb-5 border-b border-slate-100 text-center">
         <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">
           Reviewing
         </p>
         <p className="text-lg font-bold text-slate-800">{instructorName}</p>
-        <p className="text-xs text-slate-400 mt-1">🔒 Your review is completely anonymous</p>
+        <p className="flex items-center justify-center gap-2 text-xs text-slate-600 mt-1"><ShieldCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" />Your rating and comments stay anonymous</p>
       </div>
 
       {/* Step indicator */}
@@ -151,12 +160,13 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
       {step === 1 && (
         <div className="flex flex-col gap-4">
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
-              📅 Session Date <span className="text-red-400">*</span>
+            <label htmlFor="session-date" className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+              <CalendarDays aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Session Date <span className="text-red-400">*</span>
             </label>
             <input
               type="date"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              id="session-date"
+              className="session-input"
               value={sessionDate}
               onChange={(e) => setSessionDate(e.target.value)}
               max={today}
@@ -164,33 +174,35 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
-              🕐 Session Time <span className="text-red-400">*</span>
+            <label htmlFor="session-time" className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+              <Clock3 aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Session Time <span className="text-red-400">*</span>
             </label>
             <input
               type="time"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              id="session-time"
+              className="session-input"
               value={sessionTime}
               onChange={(e) => setSessionTime(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
-              📍 Session Location <span className="text-red-400">*</span>
+            <label htmlFor="session-location" className="text-xs font-semibold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+              <MapPin aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Session Location <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
-              placeholder="e.g. Pound Ridge Tennis Club"
-              className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
+              id="session-location"
+              placeholder="e.g. Your tennis club"
+              className="session-input"
               value={sessionLocation}
               onChange={(e) => setSessionLocation(e.target.value)}
             />
           </div>
 
-          <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 leading-relaxed">
-            ℹ️ Your instructor will be asked to confirm this session happened. They will see your
-            name, date, time, and location — but not your rating.
+          <div className="flex items-start gap-2 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
+            <Info aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" />
+            <span>If your instructor has a Rovi profile, they&apos;ll be asked to confirm this session happened. They&apos;ll see your name, date, time, and location, but never your rating or comments.</span>
           </div>
 
           {error && <p className="text-sm text-red-500 text-center">{error}</p>}
@@ -211,17 +223,17 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
           {/* Session summary */}
           <div className="bg-slate-50 rounded-xl p-3 mb-5 text-xs text-slate-600">
             <p className="font-semibold text-slate-700 mb-1">Session details:</p>
-            <p>
-              📅{" "}
-              {new Date(sessionDate).toLocaleDateString("en-US", {
+            <p className="flex items-start gap-2">
+              <CalendarDays aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" />
+              {new Date(`${sessionDate}T12:00:00`).toLocaleDateString("en-US", {
                 weekday: "long",
                 year: "numeric",
                 month: "long",
                 day: "numeric",
               })}
             </p>
-            <p>🕐 {sessionTime}</p>
-            <p>📍 {sessionLocation}</p>
+            <p className="flex items-start gap-2"><Clock3 aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" />{sessionTime}</p>
+            <p className="flex items-start gap-2"><MapPin aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /><span className="min-w-0 break-words">{sessionLocation}</span></p>
             <button
               onClick={() => setStep(1)}
               className="text-orange-500 font-semibold mt-1 hover:underline"
@@ -231,17 +243,17 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
           </div>
 
           {/* Vertical sliders */}
-          <div className="flex justify-center gap-10 mb-6">
-            <VerticalSlider label="Value" emoji="💰" value={value} onChange={setValue} />
+          <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-6">
+            <VerticalSlider label="Value" icon={CircleDollarSign} value={value} onChange={setValue} />
             <VerticalSlider
               label="Effectiveness"
-              emoji="📈"
+              icon={TrendingUp}
               value={effectiveness}
               onChange={setEffectiveness}
             />
             <VerticalSlider
               label="Punctuality"
-              emoji="⏰"
+              icon={Clock3}
               value={punctuality}
               onChange={setPunctuality}
             />
@@ -308,8 +320,8 @@ export function ReviewForm({ instructorId, instructorName }: ReviewFormProps) {
             {submitting ? "Submitting..." : "Submit Anonymous Review"}
           </button>
 
-          <p className="text-xs text-slate-400 text-center mt-3">
-            🔒 Your identity is never revealed to the instructor
+          <p className="flex items-center justify-center gap-2 text-xs text-slate-600 text-center mt-3">
+            <ShieldCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Your rating and comments stay anonymous
           </p>
         </div>
       )}

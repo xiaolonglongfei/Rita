@@ -7,6 +7,12 @@ description: Column name differences between old code and new Supabase project s
 
 **How to apply:** Any new route or page querying these tables must use the new column names.
 
+Browser-test database helpers may target the unrelated legacy PostgreSQL database rather than the Next.js app's Supabase database.
+
+**Why:** A test run found numeric instructor IDs in that database while the actual app API returned UUID instructor IDs, incorrectly treating working profiles as missing.
+
+**How to apply:** For app fixtures, use the app's runtime Supabase client configuration. Confirm the fixture's database matches the running app API before drawing conclusions or changing data.
+
 ## instructors
 - `name` → `full_name`
 - `photo_url` → `avatar_url`

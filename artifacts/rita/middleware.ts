@@ -43,7 +43,10 @@ export async function middleware(request: NextRequest) {
   // /reviews and /sessions and /profile require auth; /ranking is public
   const protectedRoutes = ["/reviews", "/sessions", "/profile"];
 
-  if (!user && protectedRoutes.some((r) => path.startsWith(r))) {
+  // The submitted page performs its own ownership check and must show a generic
+  // Thanks state (not a sign-in redirect) to visitors without a session.
+  const publicReviewRoute = path === "/reviews/submitted" || path === "/reviews/new";
+  if (!user && !publicReviewRoute && protectedRoutes.some((r) => path.startsWith(r))) {
     const redirectUrl = new URL("/login", request.url);
     redirectUrl.searchParams.set("next", path);
     return NextResponse.redirect(redirectUrl);

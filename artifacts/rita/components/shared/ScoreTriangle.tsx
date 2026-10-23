@@ -71,7 +71,7 @@ export function ScoreTriangle({
       </p>
 
       <div className="flex justify-center mb-4">
-        <svg width="300" height="270" viewBox="0 0 300 270">
+        <svg width="300" height="270" viewBox="0 0 300 270" className="h-auto max-w-full">
           <defs>
             <linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#f97316" stopOpacity="0.25" />

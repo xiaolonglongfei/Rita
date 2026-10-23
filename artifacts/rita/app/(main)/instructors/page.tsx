@@ -39,6 +39,11 @@ export default function InstructorsPage() {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(true);
+  const [startingReview, setStartingReview] = useState(false);
+
+  useEffect(() => {
+    setStartingReview(new URLSearchParams(window.location.search).get("review") === "true");
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -56,9 +61,14 @@ export default function InstructorsPage() {
 
   return (
     <div>
+      {startingReview && (
+        <p role="status" className="mb-5 rounded-xl border border-rita-lime bg-rita-lime-light px-4 py-3 text-sm font-medium text-rita-secondary">
+          Find your coach to start your review.
+        </p>
+      )}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Find a Tennis Instructor</h1>
-        <p className="text-sm text-slate-500 mt-1">Browse verified instructors in Westchester County</p>
+        <p className="text-sm text-slate-500 mt-1">Browse verified instructors</p>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-6">

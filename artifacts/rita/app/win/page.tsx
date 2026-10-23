@@ -1,10 +1,9 @@
 import { Metadata } from "next";
 import { getGiveawayStatus } from "@/lib/giveaway";
-import { GiveawayForm } from "./GiveawayForm";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
-import { GiveawayStatus } from "./GiveawayStatus";
+import { GiveawayContent } from "./GiveawayContent";
 
 export const metadata: Metadata = {
   title: "Win a $100 Gift Card | Rovi",
@@ -27,8 +26,8 @@ export default async function WinPage() {
       <header className="bg-rita-secondary text-white py-5 px-4 shadow-md sticky top-0 z-10 border-b-4 border-rita-lime" data-testid="campaign-header">
         <div className="max-w-md mx-auto flex flex-col items-center text-center">
           <Link href="/" className="inline-block focus:outline-none focus:ring-2 focus:ring-rita-lime rounded-sm">
-            <div className="text-3xl font-black tracking-tight text-rita-lime mb-1 uppercase hover:opacity-90 transition-opacity" data-testid="rovi-wordmark">
-              Rovi
+            <div className="text-3xl font-black tracking-tight text-white mb-1 hover:opacity-90 transition-opacity" data-testid="rovi-wordmark">
+              Rovi<span className="text-rita-lime">.</span>
             </div>
           </Link>
           <h1 className="text-xl md:text-2xl font-bold tracking-tight text-white mt-1" data-testid="campaign-headline">
@@ -37,28 +36,13 @@ export default async function WinPage() {
         </div>
       </header>
 
-      <main className="flex-grow flex flex-col items-center px-4 py-8 md:py-12">
+      <main className="flex-grow flex flex-col items-center px-4 py-5 md:py-12">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col border border-gray-100">
           
-          {/* Steps */}
-          <div className="p-6 md:p-8 bg-rita-primary text-white">
-            <h2 className="text-lg font-black mb-5 tracking-wide uppercase text-white/90" data-testid="steps-heading">
-              How to enter:
-            </h2>
-            <ul className="space-y-4 font-semibold text-lg" data-testid="campaign-steps">
-              <li className="flex items-start">
-                <span className="leading-tight">1. Sign up below with your email</span>
-              </li>
-              <li className="flex items-start">
-                <span className="leading-tight">2. Leave an anonymous review for your coach</span>
-              </li>
-              <li className="flex items-start">
-                <span className="leading-tight">3. You're entered — winners drawn periodically</span>
-              </li>
-            </ul>
-          </div>
-
           {/* Form / Status Box */}
+          {status === "active" ? (
+            <GiveawayContent optedIn={progress?.optedIn ?? false} entered={(progress?.qualifyingReviewCount ?? 0) > 0} />
+          ) : (
           <div className="p-6 md:p-8">
             {status === "upcoming" && (
               <div className="text-center py-10" data-testid="status-upcoming">
@@ -88,12 +72,8 @@ export default async function WinPage() {
               </div>
             )}
 
-            {status === "active" && (
-              progress?.optedIn
-                ? <GiveawayStatus entered={progress.qualifyingReviewCount > 0} />
-                : <GiveawayForm />
-            )}
           </div>
+          )}
           
           {/* Small Print */}
           <div className="p-5 bg-gray-50 border-t border-gray-100 text-center">

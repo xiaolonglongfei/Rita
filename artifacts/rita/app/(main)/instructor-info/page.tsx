@@ -14,7 +14,7 @@ export default function InstructorInfoPage() {
           </h1>
 
           <p className="text-slate-500 text-sm leading-relaxed mb-8">
-            Rovi is currently in early access in Westchester County, NY.
+            Rovi is currently in early access.
             We are personally onboarding instructors to ensure the quality
             and integrity of every profile on our platform.
           </p>

@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
 
 interface VerticalSliderProps {
   label: string;
-  emoji: string;
+  icon: LucideIcon;
   value: number;
   onChange: (value: number) => void;
 }
@@ -18,7 +19,7 @@ function scoreColor(v: number): string {
   return "#c83030";
 }
 
-export function VerticalSlider({ label, emoji, value, onChange }: VerticalSliderProps) {
+export function VerticalSlider({ label, icon: Icon, value, onChange }: VerticalSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const color = scoreColor(value);
@@ -62,7 +63,7 @@ export function VerticalSlider({ label, emoji, value, onChange }: VerticalSlider
   }, [value]);
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex min-w-0 flex-col items-center gap-2">
       {/* Score number above */}
       <div className="text-2xl font-bold transition-colors duration-200" style={{ color }}>
         {value.toFixed(1)}
@@ -128,7 +129,7 @@ export function VerticalSlider({ label, emoji, value, onChange }: VerticalSlider
         className="text-xs font-semibold text-slate-500 text-center"
         style={{ maxWidth: 72 }}
       >
-        {emoji} {label}
+        <Icon aria-hidden="true" className="mx-auto mb-1 h-5 w-5 text-rita-primary" /> {label}
       </div>
     </div>
   );
