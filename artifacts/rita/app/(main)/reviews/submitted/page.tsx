@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Check, EyeOff, ShieldCheck, Users } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
+import { GIVEAWAY_MAX_ENTRIES } from "@/lib/giveaway";
 
 export const metadata: Metadata = {
   title: "Review submitted | Rovi",
@@ -21,6 +22,7 @@ type Details = {
   isClaimed: boolean;
   email: string | null;
   showGiveaway: boolean;
+  qualifyingReviewCount: number;
 };
 
 async function loadDetails(reviewParam: unknown): Promise<Details | null> {
@@ -49,12 +51,11 @@ async function loadDetails(reviewParam: unknown): Promise<Details | null> {
       .maybeSingle();
 
     let showGiveaway = false;
+    let qualifyingReviewCount = 0;
     try {
       const progress = await getGiveawayProgress(user.id);
-      showGiveaway =
-        progress.optedIn &&
-        progress.qualifyingReviewCount === 1 &&
-        progress.firstReview?.id === review.id;
+      showGiveaway = progress.optedIn;
+      qualifyingReviewCount = progress.qualifyingReviewCount;
     } catch {
       showGiveaway = false;
     }
@@ -66,6 +67,7 @@ async function loadDetails(reviewParam: unknown): Promise<Details | null> {
       isClaimed: Boolean(instructor?.is_claimed),
       email: user.email ?? null,
       showGiveaway,
+      qualifyingReviewCount,
     };
   } catch {
     return null;
@@ -109,7 +111,15 @@ export default async function ReviewSubmittedPage({
     );
   }
 
-  const { name, isClaimed, email, showGiveaway, instructorId } = details;
+  const { name, isClaimed, email, showGiveaway, qualifyingReviewCount, instructorId } = details;
+  const maxReached = qualifyingReviewCount >= GIVEAWAY_MAX_ENTRIES;
+  const giveawayHeading = maxReached
+    ? "You've earned the maximum number of entries for this giveaway. Thank you!"
+    : qualifyingReviewCount === 1
+      ? "You're entered in the $100 gift card drawing!"
+      : qualifyingReviewCount > 1
+        ? "Another entry added to the $100 gift card drawing!"
+        : null;
 
   return (
     <div className="mx-auto w-full max-w-md py-10" data-testid="review-submitted">
@@ -127,12 +137,17 @@ export default async function ReviewSubmittedPage({
             className="mt-6 rounded-xl border border-rita-lime bg-rita-lime-light p-4 text-rita-secondary"
             data-testid="giveaway-entered-card"
           >
-            <p className="font-bold">You&apos;re entered in the $100 gift card drawing</p>
-            <p className="mt-1 break-words text-sm">
+            {giveawayHeading && <p className="font-bold">{giveawayHeading}</p>}
+            {qualifyingReviewCount === 1 && <p className="mt-1 break-words text-sm">
               {email
                 ? <>We&apos;ll email you at <span className="font-semibold">{email}</span> if you win.</>
                 : <>We&apos;ll email you if you win.</>}
-            </p>
+            </p>}
+            {!maxReached && (
+              <p className="mt-2 text-sm">
+                Had lessons with another coach? Review them too, each review adds an entry.
+              </p>
+            )}
           </div>
         )}
 
@@ -169,6 +184,9 @@ export default async function ReviewSubmittedPage({
         >
           Review another coach
         </Link>
+        <p className="mt-2 text-center text-xs text-rita-secondary">
+          Only review coaches you&apos;ve actually had a lesson with.
+        </p>
         <div className="mt-4 text-center">
           <Link
             href={`/instructors/${instructorId}`}

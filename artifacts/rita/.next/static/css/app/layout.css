@@ -1131,12 +1131,6 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(245 251 204 / var(--tw-bg-opacity, 1));
 }
-.bg-rita-lime\/15 {
-  background-color: rgb(184 212 0 / 0.15);
-}
-.bg-rita-lime\/30 {
-  background-color: rgb(184 212 0 / 0.3);
-}
 .bg-rita-primary {
   --tw-bg-opacity: 1;
   background-color: rgb(249 115 22 / var(--tw-bg-opacity, 1));

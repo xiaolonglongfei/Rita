@@ -23,6 +23,7 @@ function loadTs(relativePath, dependencies = {}) {
 }
 
 const { getLocalSessionDefaults } = loadTs("lib/session-defaults.ts");
+const giveaway = loadTs("lib/giveaway.ts");
 test("local defaults floor five minutes and respect midnight and DST", () => {
   const oldTZ = process.env.TZ;
   process.env.TZ = "America/New_York";
@@ -85,6 +86,7 @@ function fixture({ signedIn = true, owned = true, claimed = true, optedIn = true
     "@/lib/giveaway-progress": { getGiveawayProgress: async () => ({
       optedIn, qualifyingReviewCount: count, firstReview: first ? { id: first } : null,
     }) },
+    "@/lib/giveaway": giveaway,
   }).default;
   return { page, filters, dbCalls: () => dbCalls };
 }
@@ -141,8 +143,40 @@ test("foreign reviews, unauthenticated visitors and invalid IDs show no details"
   }
 });
 
-test("giveaway card requires opt-in, exactly one qualifying review, and this review", async () => {
-  for (const options of [{ optedIn: false }, { count: 0 }, { count: 2 }, { first: "other-review" }]) {
+test("non-opted-in users never see the giveaway card", async () => {
+  for (const count of [0, 1, 2, giveaway.GIVEAWAY_MAX_ENTRIES]) {
+    const options = { optedIn: false, count };
     assert.ok(!find(await render(fixture(options)), "giveaway-entered-card"));
+  }
+});
+
+const encouragement = "Had lessons with another coach? Review them too, each review adds an entry.";
+test("first qualifying review shows exact entry, email and encouragement copy", async () => {
+  const page = await render(fixture({ count: 1, first: "another-owned-review" }));
+  const card = find(page, "giveaway-entered-card");
+  assert.equal(text(card), "You're entered in the $100 gift card drawing!We'll email you at private@example.test if you win." + encouragement);
+});
+
+test("additional qualifying reviews below the cap show exact encouragement without counts", async () => {
+  for (let count = 2; count < giveaway.GIVEAWAY_MAX_ENTRIES; count++) {
+    const card = find(await render(fixture({ count })), "giveaway-entered-card");
+    assert.equal(text(card), "Another entry added to the $100 gift card drawing!" + encouragement);
+  }
+});
+
+test("at or above the shared cap shows thanks without entry count or encouragement", async () => {
+  for (const count of [giveaway.GIVEAWAY_MAX_ENTRIES, giveaway.GIVEAWAY_MAX_ENTRIES + 1]) {
+    const card = find(await render(fixture({ count })), "giveaway-entered-card");
+    assert.equal(text(card), "You've earned the maximum number of entries for this giveaway. Thank you!");
+  }
+});
+
+test("zero qualifying reviews never claim an entry; lesson reminder appears for all owned reviews", async () => {
+  const card = find(await render(fixture({ count: 0 })), "giveaway-entered-card");
+  assert.equal(text(card), encouragement);
+  for (const optedIn of [true, false]) {
+    const page = await render(fixture({ optedIn }));
+    assert.ok(text(page).includes("Only review coaches you've actually had a lesson with."));
+    assert.equal(find(page, "button-review-another").props.href, "/instructors");
   }
 });
