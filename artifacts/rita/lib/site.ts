@@ -21,7 +21,7 @@ export const SITE_IMAGE = {
   url: siteUrl("/opengraph.jpg"),
   width: 1200,
   height: 630,
-  alt: "Rovi: honest, anonymous, verified reviews of tennis instructors",
+  alt: "Rovi: real reviews of private instructors. Tennis.",
 };
 
 export function pageMetadata(

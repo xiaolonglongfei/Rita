@@ -37,7 +37,7 @@ test("one www HTTPS origin and query-free absolute canonicals", () => {
       assert.equal(image.url, "https://www.rovi.training/opengraph.jpg");
       assert.equal(image.width, 1200);
       assert.equal(image.height, 630);
-      assert.equal(image.alt, "Rovi: honest, anonymous, verified reviews of tennis instructors");
+      assert.equal(image.alt, "Rovi: real reviews of private instructors. Tennis.");
     }
   }
 });
