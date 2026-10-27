@@ -4,12 +4,9 @@ import { Check, EyeOff, ShieldCheck, Users } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
 import { GIVEAWAY_MAX_ENTRIES } from "@/lib/giveaway";
+import { privatePageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Review submitted | Rovi",
-  description: "Thanks for reviewing your coach on Rovi.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = privatePageMetadata("/reviews/submitted", "Review submitted", "Thanks for reviewing your coach on Rovi.");
 
 export const dynamic = "force-dynamic";
 

@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Terms of Service | Rovi",
-  description: "Terms governing the use of Rovi and rovi.training.",
-};
+export const metadata: Metadata = pageMetadata("/terms", "Terms of Service", "Terms governing the use of Rovi and rovi.training.");
 
 export default function TermsPage() {
   return (

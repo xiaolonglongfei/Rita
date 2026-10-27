@@ -4,11 +4,9 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
 import { GiveawayContent } from "./GiveawayContent";
+import { privatePageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Win a $100 Gift Card | Rovi",
-  description: "Sign up and leave an anonymous review for your tennis coach to enter our $100 gift card giveaway.",
-};
+export const metadata: Metadata = privatePageMetadata("/win", "Win a $100 Gift Card", "Sign up and leave an anonymous review for your tennis coach to enter our $100 gift card giveaway.");
 
 export const dynamic = "force-dynamic";
 

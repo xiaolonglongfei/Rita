@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Official Giveaway Rules | Rovi",
-  description: "Official rules for the Rovi $100 Gift Card Giveaway.",
-};
+export const metadata: Metadata = pageMetadata("/rules", "Official Giveaway Rules", "Official rules for the Rovi $100 Gift Card Giveaway.");
 
 const sections = [
   {

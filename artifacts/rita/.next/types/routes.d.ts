@@ -4,7 +4,7 @@
 type AppRoutes = "/" | "/admin" | "/admin/instructors" | "/admin/moderation" | "/admin/users" | "/forgot-password" | "/instructor-info" | "/instructors" | "/instructors/[id]" | "/instructors/new" | "/login" | "/privacy" | "/profile" | "/ranking" | "/reset-password" | "/reviews/new" | "/reviews/submitted" | "/rules" | "/sessions" | "/signup" | "/terms" | "/test-auth" | "/win"
 type AppRouteHandlerRoutes = "/api/auth/callback" | "/api/instructors" | "/api/instructors/[id]" | "/api/moderation" | "/api/moderation/[id]" | "/api/notifications" | "/api/rankings/private" | "/api/rankings/public" | "/api/reviews" | "/api/reviews/[id]/verify" | "/api/sessions"
 type PageRoutes = never
-type LayoutRoutes = "/" | "/admin"
+type LayoutRoutes = "/" | "/admin" | "/forgot-password" | "/instructor-info" | "/instructors/new" | "/login" | "/profile" | "/ranking" | "/reset-password" | "/reviews" | "/sessions" | "/signup"
 type RedirectRoutes = never
 type RewriteRoutes = never
 type Routes = AppRoutes | PageRoutes | LayoutRoutes | RedirectRoutes | RewriteRoutes | AppRouteHandlerRoutes
@@ -37,6 +37,7 @@ interface ParamMap {
   "/profile": {}
   "/ranking": {}
   "/reset-password": {}
+  "/reviews": {}
   "/reviews/new": {}
   "/reviews/submitted": {}
   "/rules": {}
@@ -53,6 +54,16 @@ export type ParamsOf<Route extends Routes> = ParamMap[Route]
 interface LayoutSlotMap {
   "/": never
   "/admin": never
+  "/forgot-password": never
+  "/instructor-info": never
+  "/instructors/new": never
+  "/login": never
+  "/profile": never
+  "/ranking": never
+  "/reset-password": never
+  "/reviews": never
+  "/sessions": never
+  "/signup": never
 }
 
 

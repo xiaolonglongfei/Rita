@@ -1,6 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { notFound } from "next/navigation";
+
+export const metadata = { robots: { index: false, follow: false } };
 
 export default async function TestAuthPage() {
+  if (process.env.NODE_ENV === "production") notFound();
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
 

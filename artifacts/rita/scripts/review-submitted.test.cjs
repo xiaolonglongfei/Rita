@@ -13,7 +13,7 @@ function loadTs(relativePath, dependencies = {}) {
   }).outputText;
   const module = { exports: {} };
   vm.runInNewContext(output, {
-    module, exports: module.exports, Date,
+    module, exports: module.exports, Date, URL, process: { env: {} },
     require: (name) => {
       if (!(name in dependencies)) throw new Error(`Unexpected dependency: ${name}`);
       return dependencies[name];
@@ -24,6 +24,7 @@ function loadTs(relativePath, dependencies = {}) {
 
 const { getLocalSessionDefaults } = loadTs("lib/session-defaults.ts");
 const giveaway = loadTs("lib/giveaway.ts");
+const site = loadTs("lib/site.ts");
 test("local defaults floor five minutes and respect midnight and DST", () => {
   const oldTZ = process.env.TZ;
   process.env.TZ = "America/New_York";
@@ -87,6 +88,7 @@ function fixture({ signedIn = true, owned = true, claimed = true, optedIn = true
       optedIn, qualifyingReviewCount: count, firstReview: first ? { id: first } : null,
     }) },
     "@/lib/giveaway": giveaway,
+    "@/lib/site": site,
   }).default;
   return { page, filters, dbCalls: () => dbCalls };
 }

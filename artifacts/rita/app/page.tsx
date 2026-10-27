@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import Navbar from "@/components/shared/Navbar";
+import { pageMetadata, SITE_TITLE, SITE_DESCRIPTION, SITE_URL, SITE_IMAGE } from "@/lib/site";
 import {
   ChartNoAxesCombined,
   CircleDollarSign,
@@ -8,6 +9,8 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
+
+export const metadata = pageMetadata("/", SITE_TITLE, SITE_DESCRIPTION);
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -51,6 +54,13 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "Organization", name: "Rovi", alternateName: "Rovi Tennis", url: SITE_URL, logo: SITE_IMAGE.url },
+          { "@type": "WebSite", name: "Rovi", alternateName: ["Rovi Tennis", "Rovi Tennis Instructor Reviews"], url: SITE_URL },
+        ],
+      }).replace(/</g, "\\u003c") }} />
       <Navbar
         initialUser={user}
         instructorProfile={instructorProfile}

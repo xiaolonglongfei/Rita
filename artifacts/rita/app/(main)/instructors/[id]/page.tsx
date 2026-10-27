@@ -4,6 +4,23 @@ import { notFound } from "next/navigation";
 import { ScoreTriangle } from "@/components/shared/ScoreTriangle";
 import { ReviewCard } from "@/components/review/ReviewCard";
 import { InstructorBadge } from "@/components/instructor/InstructorBadge";
+import { getInstructorProfile } from "@/lib/instructor-profile";
+import { isIndexableInstructor, plainTextBio } from "@/lib/instructor-seo";
+import { pageMetadata } from "@/lib/site";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const instructor = await getInstructorProfile(id);
+  if (!instructor || instructor.is_test === true) notFound();
+  const name = instructor.full_name;
+  const location = instructor.teaching_locations?.trim() || "an independent tennis club";
+  return pageMetadata(
+    `/instructors/${id}`,
+    `${name} — Tennis Instructor at ${location}`,
+    plainTextBio(instructor.bio) || `Reviews and ratings for ${name}, tennis instructor at ${location}.`,
+    { index: isIndexableInstructor(instructor), follow: true },
+  );
+}
 
 export default async function InstructorProfilePage({
   params,
@@ -14,11 +31,12 @@ export default async function InstructorProfilePage({
 }) {
   const { id } = await params;
   const { created } = await searchParams;
+  const instructor = await getInstructorProfile(id);
+  if (!instructor || instructor.is_test === true) notFound();
   const supabase = createServiceClient();
 
-  const [{ data: instructor }, { data: reviews }, { count: verifiedSessions }] =
+  const [{ data: reviews }, { count: verifiedSessions }] =
     await Promise.all([
-      supabase.from("instructors").select("*").eq("id", id).single(),
       supabase
         .from("reviews")
         .select("id, rating_value, rating_effectiveness, rating_punctuality, comment, created_at, student_id, is_verified")
@@ -32,8 +50,6 @@ export default async function InstructorProfilePage({
         .eq("instructor_id", id)
         .not("verified_at", "is", null),
     ]);
-
-  if (!instructor) notFound();
 
   // Use the stored reviews_visible flag (set by DB trigger when instructor reaches 3+ approved reviews)
   // Fall back to computing it if the column isn't present yet in local types

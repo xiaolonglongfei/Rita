@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy | Rovi",
-  description: "Learn what information Rovi collects, how it is used, and the choices available to you.",
-};
+export const metadata: Metadata = pageMetadata("/privacy", "Privacy Policy", "Learn what information Rovi collects, how it is used, and the choices available to you.");
 
 export default function PrivacyPage() {
   return (

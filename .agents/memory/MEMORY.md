@@ -3,3 +3,4 @@
 - [Supabase service key env var workaround](supabase-svc-key.md) — Replit secrets don't propagate to running workflows; use SUPABASE_SVC_KEY in .env.local + code fallback
 - [Giveaway entry policy](giveaway-entry-policy.md) — signup records consent, not an entry; saved Layer-1-accepted reviews qualify without instructor verification.
 - [Product copy scope](product-copy-scope.md) — region-neutral positioning; public reviews are anonymous, but claimed instructors privately see session identity.
+- [Canonical host](canonical-host.md) — production is www on Vercel; apex redirects 308. Legal domain mentions stay unchanged.

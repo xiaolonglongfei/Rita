@@ -1,179 +1,19 @@
-"use client";
+import { InstructorsList } from "@/components/instructor/InstructorsList";
+import { getInitialInstructorPage } from "@/lib/instructor-directory";
+import { pageMetadata } from "@/lib/site";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { MapPin, Search, ChevronDown } from "lucide-react";
+export const metadata = pageMetadata(
+  "/instructors",
+  "Find a Tennis Instructor",
+  "Browse verified tennis instructors and find the right coach for you or your child.",
+);
+export const dynamic = "force-dynamic";
 
-const WESTCHESTER_LOCATIONS = [
-  "Scarsdale",
-  "White Plains",
-  "Rye",
-  "Harrison",
-  "Mamaroneck",
-  "Bronxville",
-  "Larchmont",
-  "New Rochelle",
-  "Tarrytown",
-  "Pound Ridge",
-  "Bedford",
-];
-
-type Instructor = {
-  id: string;
-  name: string;
-  location: string | null;
-  claimed: boolean;
-  avgScore: number | null;
-  reviewCount: number;
-};
-
-function scoreColor(s: number) {
-  if (s >= 4.0) return "#f97316";
-  if (s >= 2.5) return "#c89000";
-  return "#c83030";
-}
-
-export default function InstructorsPage() {
-  const [instructors, setInstructors] = useState<Instructor[]>([]);
-  const [total, setTotal] = useState(0);
-  const [search, setSearch] = useState("");
-  const [location, setLocation] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [startingReview, setStartingReview] = useState(false);
-
-  useEffect(() => {
-    setStartingReview(new URLSearchParams(window.location.search).get("review") === "true");
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    const params = new URLSearchParams({ limit: "50" });
-    if (search) params.set("search", search);
-    if (location) params.set("location", location);
-    fetch(`/api/instructors?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setInstructors(d.items ?? []);
-        setTotal(d.total ?? 0);
-        setLoading(false);
-      });
-  }, [search, location]);
-
-  return (
-    <div>
-      {startingReview && (
-        <p role="status" className="mb-5 rounded-xl border border-rita-lime bg-rita-lime-light px-4 py-3 text-sm font-medium text-rita-secondary">
-          Find your coach to start your review.
-        </p>
-      )}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Find a Tennis Instructor</h1>
-        <p className="text-sm text-slate-500 mt-1">Browse verified instructors</p>
-      </div>
-
-      <div className="flex flex-wrap gap-3 mb-6">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search by name…"
-            className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rita-primary"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="relative">
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
-          <select
-            className="appearance-none pl-4 pr-10 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-rita-primary bg-white text-slate-700"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-          >
-            <option value="">All Locations</option>
-            {WESTCHESTER_LOCATIONS.map((loc) => (
-              <option key={loc} value={loc}>
-                {loc}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-24 bg-slate-100 rounded-2xl animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <>
-          <p className="text-xs text-rita-gray mb-4">{total} instructors</p>
-          <div className="space-y-3">
-            {instructors.map((i) => (
-              <Link
-                key={i.id}
-                href={`/instructors/${i.id}`}
-                className="flex items-center gap-4 p-5 border border-slate-100 rounded-2xl hover:border-rita-primary hover:shadow-sm transition-all bg-white"
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0"
-                  style={{ background: "#f97316" }}
-                >
-                  {i.name[0]}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-bold text-rita-charcoal">{i.name}</span>
-                    {i.claimed && (
-                      <span
-                        className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold"
-                        style={{ background: "#fff7ed", color: "#f97316", border: "1px solid #fed7aa" }}
-                      >
-                        ✓ Claimed
-                      </span>
-                    )}
-                  </div>
-                  {i.location && (
-                    <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3" /> {i.location}
-                    </p>
-                  )}
-                </div>
-                <div className="flex-shrink-0 text-right">
-                  {i.reviewCount > 0 && i.avgScore != null ? (
-                    <div>
-                      <span className="font-bold text-base" style={{ color: "#f97316" }}>
-                        ⭐ {i.avgScore.toFixed(1)}
-                      </span>
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        {i.reviewCount} {i.reviewCount === 1 ? "review" : "reviews"}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-xs text-slate-400 italic">No reviews yet</span>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-6 bg-white rounded-xl border border-dashed border-slate-200 p-5 text-center">
-            <p className="text-sm text-slate-500 mb-3">
-              {instructors.length === 0
-                ? "No instructors found matching your search."
-                : "Can't find the instructor you're looking for?"}
-            </p>
-            <a
-              href="/instructors/new"
-              className="inline-block text-sm font-semibold px-5 py-2.5 rounded-xl text-white"
-              style={{ background: "#f97316" }}
-            >
-              + Add an Instructor
-            </a>
-          </div>
-        </>
-      )}
-    </div>
-  );
+export default async function InstructorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ review?: string }>;
+}) {
+  const [initialPage, query] = await Promise.all([getInitialInstructorPage(), searchParams]);
+  return <InstructorsList initialItems={initialPage.items} initialTotal={initialPage.total} startingReview={query.review === "true"} />;
 }

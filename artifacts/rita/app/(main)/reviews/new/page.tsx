@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ReviewForm } from "@/components/review/ReviewForm";
+import { privatePageMetadata } from "@/lib/site";
+
+export const metadata = privatePageMetadata("/reviews/new", "Review Your Tennis Instructor");
 
 export default async function NewReviewPage({
   searchParams,
