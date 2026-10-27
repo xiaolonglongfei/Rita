@@ -33,8 +33,12 @@ test("one www HTTPS origin and query-free absolute canonicals", () => {
     assert.equal(metadata.openGraph.url, metadata.alternates.canonical);
     assert.equal(metadata.openGraph.title, "Find a Tennis Instructor | Rovi");
     assert.equal(metadata.twitter.card, "summary_large_image");
-    assert.equal(metadata.openGraph.images[0].width, 1280);
-    assert.equal(metadata.twitter.images[0], "https://www.rovi.training/opengraph.jpg");
+    for (const image of [metadata.openGraph.images[0], metadata.twitter.images[0]]) {
+      assert.equal(image.url, "https://www.rovi.training/opengraph.jpg");
+      assert.equal(image.width, 1200);
+      assert.equal(image.height, 630);
+      assert.equal(image.alt, "Rovi: honest, anonymous, verified reviews of tennis instructors");
+    }
   }
 });
 

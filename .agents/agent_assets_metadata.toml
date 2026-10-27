@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "MfmChp5YIIQt58J6AOB_P"
+uri = "file://generated-artifacts/brand-assets-audit.txt"
+type = "text"
+title = "Brand asset audit — every remaining match"
+description = "Complete file-and-line inventory of all 142 remaining Rita/Westchester matching lines, with reasons each internal identifier, comment, documentation reference, or data value was left unchanged. Includes the verified asset URLs and rendered icon tags."
+logical_id = "8fc6d349-a184-48c1-8e19-c8f365bd42a6"
+content_hash = "sha256:ebc21394031ab68f43f4876ec265774c11524649e07fe882cb94eb9aa52fb7da"
+size = 13316
+mtime_ms = 1793110568852
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/8fc6d349-a184-48c1-8e19-c8f365bd42a6/92010595-3de3-43ee-9da3-085898544f36"
+storage_version_token = "1793110629563584"
+content_type = "text/plain"

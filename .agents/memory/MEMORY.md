@@ -4,3 +4,4 @@
 - [Giveaway entry policy](giveaway-entry-policy.md) — signup records consent, not an entry; saved Layer-1-accepted reviews qualify without instructor verification.
 - [Product copy scope](product-copy-scope.md) — region-neutral positioning; public reviews are anonymous, but claimed instructors privately see session identity.
 - [Canonical host](canonical-host.md) — production is www on Vercel; apex redirects 308. Legal domain mentions stay unchanged.
+- [Interim brand assets](interim-brand-assets.md) — supplied wordmark icons/social image are placeholders, not a final logo; omit Organization logo for now.

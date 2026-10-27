@@ -19,9 +19,9 @@ export function siteUrl(path = "/") {
 
 export const SITE_IMAGE = {
   url: siteUrl("/opengraph.jpg"),
-  width: 1280,
-  height: 720,
-  alt: "Rovi tennis instructor reviews",
+  width: 1200,
+  height: 630,
+  alt: "Rovi: honest, anonymous, verified reviews of tennis instructors",
 };
 
 export function pageMetadata(
@@ -49,7 +49,7 @@ export function pageMetadata(
       card: "summary_large_image",
       title: fullTitle,
       description,
-      images: [SITE_IMAGE.url],
+      images: [SITE_IMAGE],
     },
   };
 }
