@@ -71,7 +71,7 @@ export async function POST(
       user_id: review.student_id,
       type: "verification_confirmed",
       related_review_id: id,
-      message: `Your session on ${review.session_date} has been verified`,
+      message: `Your lesson on ${review.session_date} was confirmed`,
     });
 
     // Email to student (best-effort)

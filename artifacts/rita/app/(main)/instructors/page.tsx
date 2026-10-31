@@ -5,7 +5,7 @@ import { pageMetadata } from "@/lib/site";
 export const metadata = pageMetadata(
   "/instructors",
   "Find a Tennis Instructor",
-  "Browse verified tennis instructors and find the right coach for you or your child.",
+  "Browse tennis instructors and find the right coach for you or your child.",
 );
 export const dynamic = "force-dynamic";
 

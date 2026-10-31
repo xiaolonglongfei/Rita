@@ -20,7 +20,7 @@ export default function TermsPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="terms-title">
             Rovi Terms of Service
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/23/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/31/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
@@ -38,7 +38,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">2. Description of the Service</h2>
             <p>
-              Rovi is a platform where students and parents can leave anonymous, verified reviews of private tennis instructors, and browse other users&apos; reviews to help choose an instructor.
+              Rovi is a platform where students and parents can leave anonymous reviews of private tennis instructors, and browse other users&apos; reviews to help choose an instructor.
             </p>
           </section>
 
@@ -59,7 +59,7 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">5. Reviews and User Content</h2>
             <p>
-              When you submit a review or other content (&quot;User Content&quot;), you retain ownership of it, but you grant Rovi a worldwide, royalty-free, non-exclusive license to host, display, reproduce, and distribute that content on Rovi in connection with operating the service. Reviews must reflect your own genuine experience with the instructor in question; Rovi verifies that a review is tied to a real session between the reviewer and instructor accounts, but does not verify the truth of the opinions expressed within a review.
+              When you submit a review or other content (&quot;User Content&quot;), you retain ownership of it, but you grant Rovi a worldwide, royalty-free, non-exclusive license to host, display, reproduce, and distribute that content on Rovi in connection with operating the service. Reviews must reflect your own genuine experience with the instructor in question. Where an instructor has joined Rovi, the instructor can confirm that a lesson took place. Rovi does not verify the truth of the opinions expressed within a review.
             </p>
           </section>
 

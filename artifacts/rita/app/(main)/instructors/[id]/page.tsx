@@ -102,7 +102,7 @@ export default async function InstructorProfilePage({
                   </span>
                   {(verifiedSessions ?? 0) > 0 && (
                     <span className="text-sm text-slate-400">
-                      ✓ {verifiedSessions} verified {verifiedSessions === 1 ? "session" : "sessions"}
+                      ✓ {verifiedSessions} confirmed {verifiedSessions === 1 ? "lesson" : "lessons"}
                     </span>
                   )}
                 </>
@@ -157,6 +157,9 @@ export default async function InstructorProfilePage({
 
               {reviewsVisible ? (
                 <div className="flex flex-col gap-3">
+                  <p className="text-xs leading-relaxed text-slate-600">
+                    &apos;Lesson confirmed&apos; means the instructor confirmed the lesson took place. Instructors never see ratings or comments.
+                  </p>
                   {enrichedReviews.map((review) => (
                     <ReviewCard key={review.id} review={review} />
                   ))}

@@ -125,7 +125,7 @@ test("owned claimed review has persistent confirmation and exact private-session
 
 test("unclaimed confirmation does not imply a confirmation request was sent", async () => {
   const page = await render(fixture({ claimed: false }));
-  assert.ok(text(page).includes("Your review is saved and marked 'pending verification' until Example Coach confirms the session."));
+  assert.ok(text(page).includes("Your review is saved and marked 'Not yet confirmed' until Example Coach confirms the lesson."));
   assert.ok(!text(page).includes("has been asked"));
 });
 

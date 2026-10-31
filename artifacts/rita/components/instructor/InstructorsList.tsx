@@ -66,7 +66,7 @@ export function InstructorsList({
       )}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-800">Find a Tennis Instructor</h1>
-        <p className="text-sm text-slate-500 mt-1">Browse verified instructors</p>
+        <p className="text-sm text-slate-500 mt-1">Browse instructors and read honest reviews from students and parents.</p>
       </div>
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-[200px] max-w-md">

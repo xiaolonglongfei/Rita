@@ -83,7 +83,7 @@ export default async function HomePage() {
           .
         </h1>
         <p className="text-lg text-rita-gray max-w-2xl mx-auto mb-10">
-          Real reviews from real students — honest, anonymous, and verified.
+          Honest, anonymous reviews from students and parents, each tied to a specific lesson.
         </p>
         <div className="flex gap-4 justify-center flex-wrap mt-8">
           <a

@@ -162,7 +162,7 @@ export default async function ReviewSubmittedPage({
               <span>
                 {isClaimed
                   ? `${name} has been asked to confirm the session. They'll see your name, date, time and location, but never your rating or comments.`
-                  : `Your review is saved and marked 'pending verification' until ${name} confirms the session.`}
+                  : `Your review is saved and marked 'Not yet confirmed' until ${name} confirms the lesson.`}
               </span>
             </li>
             <li className="flex gap-3">

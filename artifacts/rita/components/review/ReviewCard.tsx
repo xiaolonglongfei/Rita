@@ -33,12 +33,12 @@ export function ReviewCard({ review }: ReviewCardProps) {
           ⭐ {overall.toFixed(1)}
         </span>
         {review.is_verified ? (
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">
-            ✓ Verified
+          <span title="The instructor confirmed this lesson took place. Instructors never see ratings or comments." className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700">
+            ✓ Lesson confirmed
           </span>
         ) : (
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-400">
-            Unverified
+          <span title="The instructor has not confirmed this lesson yet." className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+            Not yet confirmed
           </span>
         )}
       </div>

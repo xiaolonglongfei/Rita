@@ -74,11 +74,10 @@ export default function InstructorInfoPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-700">
-                  Start receiving verified reviews
+                  Start confirming lessons
                 </p>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Once activated, students can verify sessions with you
-                  and you will be notified of new review requests.
+                  Once activated, students can ask you to confirm their lessons. You will see the lesson date, time and place, but never the rating or comments.
                 </p>
               </div>
             </div>

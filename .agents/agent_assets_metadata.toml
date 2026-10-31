@@ -14,3 +14,17 @@ mtime_ms = 1793110568852
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/8fc6d349-a184-48c1-8e19-c8f365bd42a6/92010595-3de3-43ee-9da3-085898544f36"
 storage_version_token = "1793110629563584"
 content_type = "text/plain"
+
+[[outputs]]
+id = "sfJX08tF9SGWsHc1Unl8T"
+uri = "file://generated-artifacts/lesson-confirmation-wording-audit.txt"
+type = "text"
+title = "Lesson confirmation wording audit"
+description = "Every search hit and its disposition: 187 original matching lines and 173 remaining matches, including internal fields, admin-only labels, authentication wording, and accurate legal disclaimers. Lists copy changes and unchanged exceptions."
+logical_id = "4034acba-74a3-4b58-b8dc-32a454daa604"
+content_hash = "sha256:653fcb23f026c692c81071d4a229a497fd84b1117db9388d104852a5d1bc7e78"
+size = 77859
+mtime_ms = 1793473640382
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/4034acba-74a3-4b58-b8dc-32a454daa604/942e6c2c-87d9-4cff-9452-8b64a7dcf895"
+storage_version_token = "1793473706754126"
+content_type = "text/plain"

@@ -22,13 +22,13 @@ export async function sendVerificationRequestEmail({
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `A student wants you to verify a session`,
+      subject: `A student asked you to confirm a lesson`,
       html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <h2 style="color: #1e2a38;">Rovi<span style="color: #b8d400;">.</span></h2>
           <p style="color: #1e2a38; font-size: 16px;">Hi ${instructorName},</p>
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            <strong>${studentName}</strong> has submitted a review and is asking you to confirm the session happened.
+            <strong>${studentName}</strong> has submitted a review and is asking you to confirm the lesson happened.
           </p>
           <div style="background: #fff7ed; border-radius: 12px; padding: 16px; margin: 20px 0;">
             <p style="margin: 4px 0; color: #1e2a38; font-size: 14px;">📅 ${new Date(sessionDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
@@ -136,18 +136,18 @@ export async function sendVerificationConfirmedEmail({
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
-      subject: `Your session has been verified ✓`,
+      subject: `Your lesson was confirmed ✓`,
       html: `
         <div style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <h2 style="color: #1e2a38;">Rovi<span style="color: #b8d400;">.</span></h2>
           <p style="color: #1e2a38; font-size: 16px;">Good news!</p>
           <p style="color: #475569; font-size: 14px; line-height: 1.6;">
-            <strong>${instructorName}</strong> has confirmed your session on 
+            <strong>${instructorName}</strong> has confirmed your lesson on
             ${new Date(sessionDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}.
-            Your review is now marked as <strong>Verified</strong>.
+            Your review now shows '<strong>Lesson confirmed</strong>'.
           </p>
           <p style="color: #94a3b8; font-size: 12px;">
-            Your rating and comments stay anonymous. The instructor only confirmed the session details and cannot see your rating.
+            Your rating and comments stay anonymous. The instructor only confirmed the lesson details and cannot see your rating or comments.
           </p>
         </div>
       `,

@@ -197,7 +197,7 @@ export async function POST(request: Request) {
     type: "review_submitted",
     message: `Your review for ${
       instructorData?.full_name ?? "the instructor"
-    } has been submitted and is pending verification.`,
+    } has been submitted and is not yet confirmed.`,
   });
 
   // If instructor has claimed their profile, send them a verification request
@@ -219,7 +219,7 @@ export async function POST(request: Request) {
       type: "verification_requested",
       related_review_id: review.id,
       related_instructor_id: instructor_id,
-      message: `A student wants you to verify a session on ${session_date}`,
+      message: `A student asked you to confirm a lesson on ${session_date}`,
     });
 
     // Email to instructor (best-effort, never blocks the response)

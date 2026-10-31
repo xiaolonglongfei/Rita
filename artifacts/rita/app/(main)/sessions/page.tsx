@@ -56,14 +56,14 @@ export default async function SessionsPage() {
         {/* Instructor verification panel */}
         {instructorProfile && (
           <div className="mb-8">
-            <h2 className="text-lg font-bold text-slate-800 mb-1">Pending Verifications</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-1">Pending Confirmations</h2>
             <p className="text-sm text-slate-500 mb-4">
-              Students are requesting you to verify these sessions.
+              Students are asking you to confirm these lessons.
             </p>
 
             {pendingVerifications.length === 0 ? (
               <div className="bg-white rounded-xl border border-slate-100 p-6 text-center">
-                <p className="text-sm text-slate-400">No pending verification requests</p>
+                <p className="text-sm text-slate-400">No pending confirmation requests</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -107,7 +107,7 @@ export default async function SessionsPage() {
         <div>
           <h2 className="text-lg font-bold text-slate-800 mb-1">My Reviews</h2>
           <p className="text-sm text-slate-500 mb-4">
-            Your submitted reviews and verification status.
+            Your submitted reviews and confirmation status.
           </p>
 
           {!myReviews || myReviews.length === 0 ? (
@@ -155,12 +155,15 @@ export default async function SessionsPage() {
                       </p>
                       <span
                         className="text-xs font-semibold px-2.5 py-1 rounded-full flex-shrink-0"
+                        title={r.is_verified
+                          ? "The instructor confirmed this lesson took place. Instructors never see ratings or comments."
+                          : "The instructor has not confirmed this lesson yet."}
                         style={{
                           background: r.is_verified ? "#dcfce7" : "#f1f5f9",
-                          color: r.is_verified ? "#16a34a" : "#64748b",
+                          color: r.is_verified ? "#15803d" : "#475569",
                         }}
                       >
-                        {r.is_verified ? "✓ Verified" : "Pending verification"}
+                        {r.is_verified ? "✓ Lesson confirmed" : "Not yet confirmed"}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">

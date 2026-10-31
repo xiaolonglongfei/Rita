@@ -9,7 +9,7 @@ if (configuredSite.hostname === "rovi.training" || configuredSite.hostname === "
 export const SITE_URL = configuredSite.origin;
 export const SITE_TITLE = "Rovi — Tennis Instructor Reviews";
 export const SITE_DESCRIPTION =
-  "Honest, anonymous, verified reviews of tennis instructors. Find the right coach for you or your child.";
+  "Honest, anonymous reviews of tennis instructors from students and parents. Find the right coach for you or your child.";
 
 /** Absolute canonical on our host, without query strings or fragments. */
 export function siteUrl(path = "/") {
@@ -21,7 +21,7 @@ export const SITE_IMAGE = {
   url: siteUrl("/opengraph.jpg"),
   width: 1200,
   height: 630,
-  alt: "Rovi: real reviews of private instructors. Tennis.",
+  alt: "Rovi: honest reviews of private instructors. Tennis.",
 };
 
 export function pageMetadata(

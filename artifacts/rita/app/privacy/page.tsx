@@ -20,14 +20,14 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="privacy-title">
             Rovi Privacy Policy
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/23/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/31/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">1. Overview</h2>
             <p>
-              Rovi (rovi.training) is a free platform where students and parents can leave anonymous, verified reviews of private tennis instructors. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using Rovi, you agree to this policy.
+              Rovi (rovi.training) is a free platform where students and parents can leave anonymous reviews of private tennis instructors. This Privacy Policy explains what information we collect, how we use it, and the choices you have. By using Rovi, you agree to this policy.
             </p>
           </section>
 
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
             <div className="space-y-3">
               <p><strong className="text-slate-900">Account information:</strong> When you create a Rovi account, we collect your name, email address, and a password (stored securely by our authentication provider; we never see or store your password in plain text).</p>
               <p><strong className="text-slate-900">Review content:</strong> The text and ratings (Value, Effectiveness, Punctuality) you submit about an instructor.</p>
-              <p><strong className="text-slate-900">Session verification data:</strong> Information used to confirm that a review is tied to an actual lesson (mutual session verification between student and instructor accounts).</p>
+              <p><strong className="text-slate-900">Lesson details:</strong> the date, time and place of the lesson that you enter with a review, and, where an instructor has joined Rovi and confirmed the lesson, that confirmation.</p>
               <p><strong className="text-slate-900">Giveaway participation:</strong> If you sign up through a promotional giveaway, we record the timestamp of your opt-in and, where applicable, which reviews qualify you for bonus entries.</p>
               <p><strong className="text-slate-900">Usage data:</strong> Basic, aggregated site usage analytics (pages visited, general traffic patterns) collected through our hosting provider&apos;s analytics tool. This does not identify you individually.</p>
               <p><strong className="text-slate-900">Communications:</strong> If you contact us, we keep a record of that correspondence to respond to you.</p>
@@ -48,8 +48,8 @@ export default function PrivacyPage() {
             <h2 className="mb-2 text-xl font-bold text-slate-900">3. How We Use Your Information</h2>
             <p className="mb-3">We use the information above to:</p>
             <ul className="list-disc space-y-2 pl-6">
-              <li>Operate the core service — creating and displaying instructor ratings, verifying sessions, and enforcing our review-quality safeguards (including automated content screening for things like personal information, contact details, or inappropriate language)</li>
-              <li>Send you account-related emails (welcome messages, session verification requests, password resets) and, if applicable, giveaway-related notifications</li>
+              <li>Operate the core service — creating and displaying instructor ratings, supporting lesson confirmation, and enforcing our review-quality safeguards (including automated content screening for things like personal information, contact details, or inappropriate language)</li>
+              <li>Send you account-related emails (welcome messages, lesson confirmation requests, password resets) and, if applicable, giveaway-related notifications</li>
               <li>Maintain the integrity and safety of the platform (for example, investigating suspected abuse, spam, or policy violations)</li>
               <li>Improve the product based on aggregate usage patterns</li>
             </ul>
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">4. Anonymity of Reviews</h2>
             <p>
-              Reviews on Rovi are anonymous: your name is never shown alongside a published review or its rating. When you submit a review, an instructor who has claimed their profile is asked to confirm that the session took place; for that confirmation they see your name and the session&apos;s date, time, and location, but not your rating or comments. Internally, our systems retain a link between your account and the reviews you&apos;ve submitted — this is necessary to verify sessions, prevent abuse, and operate features like the giveaway — but this internal record is never disclosed publicly or to instructors.
+              Reviews on Rovi are anonymous: your name is never shown alongside a published review or its rating. When you submit a review, an instructor who has claimed their profile is asked to confirm that the session took place; for that confirmation they see your name and the session&apos;s date, time, and location, but not your rating or comments. Internally, our systems retain a link between your account and the reviews you&apos;ve submitted — this is necessary to support lesson confirmation, prevent abuse, and operate features like the giveaway — but this internal record is never disclosed publicly or to instructors.
             </p>
           </section>
 
