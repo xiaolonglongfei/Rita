@@ -129,9 +129,9 @@ test("sitemap uses eligible profiles only, lastModified and all paginated rows",
     "@/lib/site": site, "@/lib/supabase/server": { createServiceClient: () => db.client },
   }).default;
   const urls = await sitemap();
-  assert.equal(urls.length, 1006);
+  assert.equal(urls.length, 1007);
   assert.ok(urls.every(({ url }) => url.startsWith("https://www.rovi.training/")));
-  assert.equal(urls[5].lastModified, "2026-10-20T00:00:00Z");
+  assert.equal(urls.find(({ url }) => url.includes("/instructors/")).lastModified, "2026-10-20T00:00:00Z");
   assert.ok(!urls.some(({ url }) => /\/(private|test|inactive)$/.test(url)));
   assert.deepEqual(db.ranges, [[0, 999], [1000, 1999]]);
 });

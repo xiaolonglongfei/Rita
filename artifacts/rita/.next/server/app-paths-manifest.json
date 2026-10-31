@@ -1,8 +1,12 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/sitemap.xml/route": "app/sitemap.xml/route.js",
+  "/api/instructors/route": "app/api/instructors/route.js",
+  "/api/moderation/[id]/route": "app/api/moderation/[id]/route.js",
   "/page": "app/page.js",
+  "/guidelines/page": "app/guidelines/page.js",
   "/terms/page": "app/terms/page.js",
-  "/privacy/page": "app/privacy/page.js",
-  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js",
-  "/(main)/instructors/page": "app/(main)/instructors/page.js"
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(main)/instructors/page": "app/(main)/instructors/page.js",
+  "/admin/moderation/page": "app/admin/moderation/page.js"
 }

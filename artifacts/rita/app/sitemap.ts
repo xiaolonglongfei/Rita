@@ -5,7 +5,7 @@ import { siteUrl } from "@/lib/site";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const pages: MetadataRoute.Sitemap = ["/", "/instructors", "/rules", "/terms", "/privacy"]
+  const pages: MetadataRoute.Sitemap = ["/", "/instructors", "/rules", "/terms", "/privacy", "/guidelines"]
     .map((path) => ({ url: siteUrl(path) }));
   // PostgREST can cap a response at 1,000 rows; paginate so no eligible profile
   // silently disappears as the directory grows.

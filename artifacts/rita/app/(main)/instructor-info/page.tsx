@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 export default function InstructorInfoPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-16 px-4">
@@ -85,6 +87,9 @@ export default function InstructorInfoPage() {
           </div>
 
           <div className="flex flex-col gap-3">
+            <p className="text-xs text-slate-600">
+              Questions about a review? See our <Link href="/guidelines" className="text-orange-600 underline underline-offset-2">review guidelines</Link>.
+            </p>
             <a
               href="/instructors"
               className="w-full py-3 rounded-xl text-white font-bold text-sm text-center"

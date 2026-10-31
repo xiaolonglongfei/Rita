@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { Footer } from "@/components/shared/Footer";
 import { SITE_URL, SITE_TITLE, SITE_DESCRIPTION, SITE_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body>
         {children}
+        <Footer />
         <Analytics />
       </body>
     </html>

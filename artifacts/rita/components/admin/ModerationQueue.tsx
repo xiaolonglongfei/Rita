@@ -8,6 +8,7 @@ interface Review {
   rating_effectiveness: number;
   rating_punctuality: number;
   comment: string | null;
+  moderation_note?: string | null;
   is_flagged: boolean;
   flag_reason: string | null;
   moderation_status: string;
@@ -19,16 +20,32 @@ interface Review {
 export function ModerationQueue({ reviews: initialReviews }: { reviews: Review[] }) {
   const [reviews, setReviews] = useState(initialReviews);
   const [acting, setActing] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleAction(reviewId: string, action: "approve" | "remove") {
+  async function handleAction(reviewId: string, action: "approve" | "remove" | "comment_removed") {
     setActing(reviewId);
+    setError(null);
+    setSuccess(null);
     try {
-      await fetch(`/api/moderation/${reviewId}`, {
+      const review = reviews.find((r) => r.id === reviewId);
+      const response = await fetch(`/api/moderation/${reviewId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, moderationNote: notes[reviewId] ?? review?.moderation_note ?? "" }),
       });
-      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Moderation action failed. Please try again.");
+      if (action === "comment_removed") {
+        setReviews((prev) => prev.map((r) => r.id === reviewId
+          ? { ...r, comment: null, moderation_note: result.moderationNote } : r));
+        setSuccess("Comment removed. Ratings and moderation status are unchanged.");
+      } else {
+        setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Moderation action failed. Please try again.");
     } finally {
       setActing(null);
     }
@@ -45,6 +62,8 @@ export function ModerationQueue({ reviews: initialReviews }: { reviews: Review[]
 
   return (
     <div className="flex flex-col gap-3">
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {success && <p role="status" className="rounded-lg bg-green-50 p-3 text-sm text-green-800">{success}</p>}
       {reviews.map((review) => {
         const overall =
           (review.rating_value + review.rating_effectiveness + review.rating_punctuality) / 3;
@@ -85,7 +104,18 @@ export function ModerationQueue({ reviews: initialReviews }: { reviews: Review[]
               </p>
             )}
 
-            <div className="flex gap-2">
+            <label htmlFor={`moderation-note-${review.id}`} className="mb-1 block text-xs font-semibold text-slate-600">
+              Internal note (optional)
+            </label>
+            <input
+              id={`moderation-note-${review.id}`}
+              value={notes[review.id] ?? review.moderation_note ?? ""}
+              onChange={(event) => setNotes((prev) => ({ ...prev, [review.id]: event.target.value }))}
+              disabled={isActing}
+              maxLength={500}
+              className="mb-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            />
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleAction(review.id, "approve")}
                 disabled={isActing}
@@ -101,6 +131,13 @@ export function ModerationQueue({ reviews: initialReviews }: { reviews: Review[]
                 style={{ background: "#ef4444" }}
               >
                 ✗ Remove
+              </button>
+              <button
+                onClick={() => handleAction(review.id, "comment_removed")}
+                disabled={isActing || !review.comment}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-semibold disabled:opacity-50"
+              >
+                Remove comment only
               </button>
             </div>
           </div>

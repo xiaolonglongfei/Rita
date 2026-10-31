@@ -13,6 +13,12 @@ Browser-test database helpers may target the unrelated legacy PostgreSQL databas
 
 **How to apply:** For app fixtures, use the app's runtime Supabase client configuration. Confirm the fixture's database matches the running app API before drawing conclusions or changing data.
 
+Synthetic review fixtures can create additional dependent records through remote database triggers; deleting the review alone is not complete cleanup.
+
+**Why:** Lesson records and rating history can outlive fixture reviews, and some foreign keys prevent deleting their parent instructor. These remote triggers are not defined in the app's source.
+
+**How to apply:** Discover the current Supabase foreign-key relationships before cleanup, remove only records belonging to the isolated fixture, and delete dependent records before test instructors/accounts. Do not infer cascade behavior from the legacy database.
+
 ## instructors
 - `name` → `full_name`
 - `photo_url` → `avatar_url`

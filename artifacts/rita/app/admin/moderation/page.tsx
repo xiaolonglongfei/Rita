@@ -8,7 +8,7 @@ export default async function AdminModerationPage() {
     .from("reviews")
     .select(
       `id, rating_value, rating_effectiveness, rating_punctuality,
-       comment, is_flagged, flag_reason, moderation_status, session_date,
+       comment, moderation_note, is_flagged, flag_reason, moderation_status, session_date,
        student_id, instructor_id,
        users!reviews_student_id_fkey (full_name, email),
        instructors!reviews_instructor_id_fkey (full_name)`

@@ -66,7 +66,8 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">6. Content You May Not Post</h2>
             <p>
-              You agree not to submit content that: contains another person&apos;s personal contact information (phone numbers, emails, addresses, social media handles); is obscene, threatening, hateful, or discriminatory; is knowingly false; infringes someone else&apos;s rights; or otherwise violates the law or Rovi&apos;s content guidelines. Rovi uses automated screening and may remove content, at its discretion, that violates this section.
+              You agree not to submit content that: contains another person&apos;s personal contact information (phone numbers, emails, addresses, social media handles); is obscene, threatening, hateful, or discriminatory; is knowingly false; infringes someone else&apos;s rights; or otherwise violates the law or Rovi&apos;s content guidelines. Rovi uses automated screening and may remove content, at its discretion, that violates this section.{" "}
+              <Link href="/guidelines" className="text-orange-600 underline underline-offset-2">See our Review Guidelines &amp; Removal Policy</Link>.
             </p>
           </section>
 
@@ -84,7 +85,8 @@ export default function TermsPage() {
               <a href="mailto:rovi.training.support@gmail.com" className="text-orange-600 underline underline-offset-2">
                 rovi.training.support@gmail.com
               </a>{" "}
-              describing the review and the basis for your request. Rovi will review the request in good faith and may remove or retain the content at its discretion. Submitting a dispute does not guarantee removal.
+              describing the review and the basis for your request. Rovi will review the request in good faith and may remove or retain the content at its discretion. Submitting a dispute does not guarantee removal.{" "}
+              <Link href="/guidelines" className="text-orange-600 underline underline-offset-2">See our Review Guidelines &amp; Removal Policy</Link>.
             </p>
           </section>
 

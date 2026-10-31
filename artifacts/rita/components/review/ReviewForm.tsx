@@ -5,6 +5,7 @@ import { CalendarDays, Clock3, MapPin, Info, ShieldCheck, CircleDollarSign, Tren
 import { getLocalSessionDefaults } from "@/lib/session-defaults";
 import { VerticalSlider } from "./VerticalSlider";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   checkReviewContentLayer1,
   blockerMessage,
@@ -277,6 +278,9 @@ export function ReviewForm({ instructorId, instructorName, instructorLocation }:
             <label className="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-2">
               Comment <span className="font-normal normal-case">(optional)</span>
             </label>
+            <p className="mb-2 text-xs text-slate-600">
+              Ratings are all we need. Add a comment only if you&apos;d like to.
+            </p>
             <textarea
               className={`w-full border rounded-lg p-3 text-sm text-slate-700 resize-none focus:outline-none transition-colors ${
                 commentError
@@ -294,6 +298,9 @@ export function ReviewForm({ instructorId, instructorName, instructorLocation }:
               onBlur={handleCommentBlur}
               maxLength={500}
             />
+            <Link href="/guidelines" className="mt-1 inline-block text-xs text-orange-600 underline underline-offset-2">
+              Review guidelines
+            </Link>
             <div className="flex justify-between items-start mt-1 gap-2">
               <div className="flex-1">
                 {commentError && (

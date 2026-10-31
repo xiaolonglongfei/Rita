@@ -880,6 +880,9 @@ video {
 .resize-none {
   resize: none;
 }
+.list-decimal {
+  list-style-type: decimal;
+}
 .list-disc {
   list-style-type: disc;
 }
@@ -938,6 +941,13 @@ video {
 }
 .gap-8 {
   gap: 2rem;
+}
+.gap-x-6 {
+  -moz-column-gap: 1.5rem;
+       column-gap: 1.5rem;
+}
+.gap-y-3 {
+  row-gap: 0.75rem;
 }
 .space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
@@ -1170,6 +1180,10 @@ video {
   --tw-bg-opacity: 1;
   background-color: rgb(254 249 195 / var(--tw-bg-opacity, 1));
 }
+.bg-red-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
+}
 .p-3 {
   padding: 0.75rem;
 }
@@ -1274,6 +1288,9 @@ video {
 }
 .pb-5 {
   padding-bottom: 1.25rem;
+}
+.pb-6 {
+  padding-bottom: 1.5rem;
 }
 .pb-7 {
   padding-bottom: 1.75rem;
@@ -1544,6 +1561,10 @@ video {
 .text-yellow-700 {
   --tw-text-opacity: 1;
   color: rgb(161 98 7 / var(--tw-text-opacity, 1));
+}
+.text-green-800 {
+  --tw-text-opacity: 1;
+  color: rgb(22 101 52 / var(--tw-text-opacity, 1));
 }
 .underline {
   text-decoration-line: underline;
@@ -1898,6 +1919,10 @@ body {
 
   .sm\:gap-6 {
     gap: 1.5rem;
+  }
+
+  .sm\:p-10 {
+    padding: 2.5rem;
   }
 
   .sm\:p-6 {
