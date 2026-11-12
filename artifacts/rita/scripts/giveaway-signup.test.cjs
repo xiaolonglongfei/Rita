@@ -24,8 +24,8 @@ function loadTs(relativePath, dependencies = {}) {
 }
 
 const validation = loadTs("lib/giveaway-signup.ts");
-function actionFixture({ status = "active", existing = false, authError = null, session = {} } = {}) {
-  const calls = { auth: [], profiles: [], welcome: [] };
+function actionFixture({ status = "active", existing = false, authError = null, session = {}, clubSlug = "club-fit-jefferson-valley" } = {}) {
+  const calls = { auth: [], profiles: [], welcome: [], clubs: [] };
   const action = loadTs("app/(auth)/actions.ts", {
     "@supabase/ssr": {
       createServerClient: () => ({ auth: {
@@ -45,7 +45,11 @@ function actionFixture({ status = "active", existing = false, authError = null, 
     "next/navigation": { redirect: () => { throw new Error("Unexpected redirect"); } },
     "@/lib/supabase/server": {
       createServiceClient: () => ({
-        from: (table) => ({
+        from: (table) => table === "clubs" ? {
+          select() { return this; },
+          eq(column, value) { calls.clubs.push(value); return this; },
+          async maybeSingle() { return { data: calls.clubs.at(-1) === clubSlug ? { slug: clubSlug } : null, error: null }; },
+        } : ({
           upsert: async (profile) => {
             assert.equal(table, "users");
             calls.profiles.push(profile);
@@ -130,7 +134,7 @@ test("invalid email, short password, unchecked rules and inactive promotion reje
   }
 });
 
-function formFixture(action = async () => ({ fieldErrors: { firstName: "First name is required." } })) {
+function formFixture(action = async () => ({ fieldErrors: { firstName: "First name is required." } }), clubSource) {
   const state = [];
   let cursor = 0;
   const { GiveawayForm } = loadTs("app/win/GiveawayForm.tsx", {
@@ -148,6 +152,7 @@ function formFixture(action = async () => ({ fieldErrors: { firstName: "First na
     "./GiveawayStatus": { GiveawayStatus: () => null },
     "@/app/(auth)/actions": { giveawaySignupAction: action },
     "@/lib/giveaway-signup": validation,
+    "@/lib/club-source": { getGiveawayClubSource: () => clubSource },
   });
   const render = () => { cursor = 0; return GiveawayForm(); };
   function find(predicate, element = render()) {
@@ -206,7 +211,31 @@ test("actual form sends both names and displays server field errors inline", asy
   form.fill("input-password", "password123");
   form.field("checkbox-terms").props.onChange({ target: { checked: true } });
   await form.render().props.onSubmit({ preventDefault() {} });
-  assert.deepEqual(argumentsSent, ["member@example.test", "password123", true, "Taylor", "Morgan"]);
+  assert.deepEqual(argumentsSent, ["member@example.test", "password123", true, "Taylor", "Morgan", undefined]);
   assert.equal(form.find((e) => e.props?.id === "last-name-error").props.children, "Last name must be 50 characters or fewer.");
   assert.equal(form.field("input-last-name").props["aria-invalid"], true);
+});
+
+test("signup saves only an existing club without changing consent or welcome behavior", async () => {
+  for (const club of ["club-fit-jefferson-valley", "unknown-club", undefined, "", {}, 42]) {
+    const { action, calls } = actionFixture();
+    const result = await action("member@example.test", "password123", true, "Taylor", "Morgan", club);
+    assert.equal(result.accountCreated, true);
+    assert.equal(calls.profiles[0].signup_club, club === "club-fit-jefferson-valley" ? club : undefined);
+    assert.equal(Object.hasOwn(calls.profiles[0], "signup_club"), club === "club-fit-jefferson-valley");
+    assert.equal(calls.profiles[0].giveaway_opt_in_at, calls.auth[0].options.data.giveaway_opt_in_at);
+    assert.equal(calls.welcome.length, 1);
+  }
+});
+
+test("actual giveaway form forwards club attribution as the optional sixth argument", async () => {
+  let argumentsSent;
+  const form = formFixture(async (...args) => { argumentsSent = args; return { error: "Test" }; }, "club-fit-jefferson-valley");
+  form.fill("input-first-name", "Taylor");
+  form.fill("input-last-name", "Morgan");
+  form.fill("input-email", "member@example.test");
+  form.fill("input-password", "password123");
+  form.field("checkbox-terms").props.onChange({ target: { checked: true } });
+  await form.render().props.onSubmit({ preventDefault() {} });
+  assert.equal(argumentsSent[5], "club-fit-jefferson-valley");
 });

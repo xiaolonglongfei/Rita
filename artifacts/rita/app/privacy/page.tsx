@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="privacy-title">
             Rovi Privacy Policy
           </h1>
-          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/31/2026</p>
+          <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 11/11/2026</p>
         </header>
 
         <div className="mt-8 space-y-8 text-[15px] leading-7 text-slate-700 sm:text-base">
@@ -39,6 +39,9 @@ export default function PrivacyPage() {
               <p><strong className="text-slate-900">Lesson details:</strong> the date, time and place of the lesson that you enter with a review, and, where an instructor has joined Rovi and confirmed the lesson, that confirmation.</p>
               <p><strong className="text-slate-900">Giveaway participation:</strong> If you sign up through a promotional giveaway, we record the timestamp of your opt-in and, where applicable, which reviews qualify you for bonus entries.</p>
               <p><strong className="text-slate-900">Usage data:</strong> Basic, aggregated site usage analytics (pages visited, general traffic patterns) collected through our hosting provider&apos;s analytics tool. This does not identify you individually.</p>
+              <ul className="list-disc pl-6">
+                <li><strong className="text-slate-900">Referral source:</strong> if you arrive from a page about a particular club, we record which club page you came from so we can understand which outreach is useful.</li>
+              </ul>
               <p><strong className="text-slate-900">Communications:</strong> If you contact us, we keep a record of that correspondence to respond to you.</p>
               <p>We do not knowingly collect payment information, government ID numbers, or other sensitive identifiers — Rovi does not require any of these to use the service.</p>
             </div>

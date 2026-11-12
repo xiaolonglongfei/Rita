@@ -106,8 +106,9 @@ test("public and legal copy limits confirmation claims; legal disclaimers remain
   const privacy = source("app/privacy/page.tsx");
   assert.ok(terms.includes("Where an instructor has joined Rovi, the instructor can confirm that a lesson took place. Rovi does not verify the truth of the opinions expressed within a review."));
   assert.ok(terms.includes("Rovi does not create, write, or verify the substance of User Content"));
+  assert.ok(terms.includes("Last updated: 10/31/2026"));
+  assert.ok(privacy.includes("Last updated: 11/11/2026"));
   for (const page of [terms, privacy]) {
-    assert.ok(page.includes("Last updated: 10/31/2026"));
     assert.doesNotMatch(page, /anonymous, verified|verifies that a review|Session verification data/);
   }
   assert.ok(privacy.includes("supporting lesson confirmation"));

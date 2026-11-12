@@ -5,6 +5,7 @@ import { giveawaySignupAction } from "@/app/(auth)/actions";
 import Link from "next/link";
 import { GiveawayStatus } from "./GiveawayStatus";
 import { isGiveawayEmailValid, validateGiveawayNames, type GiveawayNameErrors } from "@/lib/giveaway-signup";
+import { getGiveawayClubSource } from "@/lib/club-source";
 
 export function GiveawayForm({ onAccountCreated }: { onAccountCreated?: () => void } = {}) {
   const [firstName, setFirstName] = useState("");
@@ -36,7 +37,7 @@ export function GiveawayForm({ onAccountCreated }: { onAccountCreated?: () => vo
     setServerNameErrors({});
 
     try {
-      const result = await giveawaySignupAction(email, password, agreed, firstName, lastName);
+      const result = await giveawaySignupAction(email, password, agreed, firstName, lastName, getGiveawayClubSource());
       
       if (result?.fieldErrors) {
         setServerNameErrors(result.fieldErrors);

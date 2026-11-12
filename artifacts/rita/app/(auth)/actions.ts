@@ -109,7 +109,8 @@ export async function giveawaySignupAction(
   password: string,
   acceptedRules: boolean,
   firstName: string,
-  lastName: string
+  lastName: string,
+  signupClub?: unknown
 ) {
   if (getGiveawayStatus() !== "active") {
     return { error: "This promotion is not currently accepting entries." };
@@ -164,12 +165,19 @@ export async function giveawaySignupAction(
   }
 
   const service = createServiceClient();
+  let validSignupClub: string | undefined;
+  if (typeof signupClub === "string" && signupClub.trim()) {
+    const { data: club } = await service.from("clubs").select("slug")
+      .eq("slug", signupClub.trim()).maybeSingle();
+    if (club) validSignupClub = club.slug;
+  }
   const { error: profileError } = await service.from("users").upsert({
     id: data.user.id,
     email: normalizedEmail,
     full_name: fullName,
     is_admin: false,
     giveaway_opt_in_at: giveawayOptInAt,
+    ...(validSignupClub ? { signup_club: validSignupClub } : {}),
   });
 
   if (profileError) {

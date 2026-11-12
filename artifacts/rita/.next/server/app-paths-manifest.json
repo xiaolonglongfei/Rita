@@ -1,12 +1,8 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
-  "/api/instructors/route": "app/api/instructors/route.js",
-  "/api/moderation/[id]/route": "app/api/moderation/[id]/route.js",
   "/page": "app/page.js",
-  "/guidelines/page": "app/guidelines/page.js",
-  "/terms/page": "app/terms/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(main)/instructors/page": "app/(main)/instructors/page.js",
-  "/admin/moderation/page": "app/admin/moderation/page.js"
+  "/win/page": "app/win/page.js",
+  "/(main)/clubs/[slug]/page": "app/(main)/clubs/[slug]/page.js"
 }
