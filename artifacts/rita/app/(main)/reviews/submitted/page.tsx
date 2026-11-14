@@ -5,6 +5,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
 import { GIVEAWAY_MAX_ENTRIES } from "@/lib/giveaway";
 import { privatePageMetadata } from "@/lib/site";
+import { notFound } from "next/navigation";
 
 export const metadata: Metadata = privatePageMetadata("/reviews/submitted", "Review submitted", "Thanks for reviewing your coach on Rovi.");
 
@@ -22,7 +23,7 @@ type Details = {
   qualifyingReviewCount: number;
 };
 
-async function loadDetails(reviewParam: unknown): Promise<Details | null> {
+async function loadDetails(reviewParam: unknown): Promise<Details | "not-found" | null> {
   const reviewId = typeof reviewParam === "string" ? reviewParam : null;
   if (!reviewId || !UUID_RE.test(reviewId)) return null;
   try {
@@ -45,7 +46,9 @@ async function loadDetails(reviewParam: unknown): Promise<Details | null> {
       .from("instructors")
       .select("full_name, is_claimed")
       .eq("id", review.instructor_id)
+      .is("opted_out_at", null)
       .maybeSingle();
+    if (!instructor) return "not-found";
 
     let showGiveaway = false;
     let qualifyingReviewCount = 0;
@@ -86,6 +89,7 @@ export default async function ReviewSubmittedPage({
 }) {
   const params = await searchParams;
   const details = await loadDetails(params.review);
+  if (details === "not-found") notFound();
 
   if (!details) {
     return (

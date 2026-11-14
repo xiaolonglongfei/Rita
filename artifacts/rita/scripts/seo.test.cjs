@@ -106,11 +106,12 @@ function database(rows) {
       const local = [];
       const query = {
         select() { return query; },
+        is(key, value) { filters.push([key, value]); local.push([key, value]); return query; },
         eq(key, value) { filters.push([key, value]); local.push([key, value]); return query; },
         order() { return query; },
         async range(start, end) {
           ranges.push([start, end]);
-          const filtered = rows.filter(row => local.every(([key, value]) => row[key] === value));
+          const filtered = rows.filter(row => local.every(([key, value]) => value === null ? row[key] == null : row[key] === value));
           return { data: filtered.slice(start, end + 1), count: filtered.length, error: null };
         },
       };
@@ -123,7 +124,7 @@ test("sitemap uses eligible profiles only, lastModified and all paginated rows",
   const rows = Array.from({ length: 1001 }, (_, index) => ({
     ...coach, id: String(index), updated_at: "2026-10-20T00:00:00Z",
   }));
-  rows.push({ ...coach, id: "private", reviews_visible: false }, { ...coach, id: "test", is_test: true }, { ...coach, id: "inactive", is_active: false });
+  rows.push({ ...coach, id: "private", reviews_visible: false }, { ...coach, id: "test", is_test: true }, { ...coach, id: "inactive", is_active: false }, { ...coach, id: "removed", opted_out_at: "2026-11-14T00:00:00Z" });
   const db = database(rows);
   const sitemap = loadTs("app/sitemap.ts", {
     "@/lib/site": site, "@/lib/supabase/server": { createServiceClient: () => db.client },
@@ -132,7 +133,7 @@ test("sitemap uses eligible profiles only, lastModified and all paginated rows",
   assert.equal(urls.length, 1007);
   assert.ok(urls.every(({ url }) => url.startsWith("https://www.rovi.training/")));
   assert.equal(urls.find(({ url }) => url.includes("/instructors/")).lastModified, "2026-10-20T00:00:00Z");
-  assert.ok(!urls.some(({ url }) => /\/(private|test|inactive)$/.test(url)));
+  assert.ok(!urls.some(({ url }) => /\/(private|test|inactive|removed)$/.test(url)));
   assert.deepEqual(db.ranges, [[0, 999], [1000, 1999]]);
 });
 test("server-rendered directory uses API privacy rules and serializes only safe fields", async () => {
@@ -140,6 +141,7 @@ test("server-rendered directory uses API privacy rules and serializes only safe 
     { ...coach, id: "hidden", reviews_visible: false, avg_overall: 4.987, total_reviews: 2, is_claimed: false },
     { ...coach, id: "visible", avg_overall: 4.5, total_reviews: 3, is_claimed: true },
     { ...coach, id: "test", is_test: true }, { ...coach, id: "inactive", is_active: false },
+    { ...coach, id: "removed", opted_out_at: "2026-11-14T00:00:00Z" },
   ]);
   const directory = loadTs("lib/instructor-directory.ts", {
     "server-only": {},

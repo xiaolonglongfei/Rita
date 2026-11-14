@@ -1,5 +1,6 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { getInstructorProfile } from "@/lib/instructor-profile";
 
 export async function GET() {
   const authClient = await createClient();
@@ -9,7 +10,8 @@ export async function GET() {
   const db = createServiceClient();
   const { data, error } = await db
     .from("sessions")
-    .select("*, instructors(full_name)")
+    .select("*, instructors!inner(full_name)")
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id)
     .order("session_date", { ascending: false });
 
@@ -32,10 +34,12 @@ export async function GET() {
 export async function POST(request: Request) {
   const authClient = await createClient();
   const { data: { user } } = await authClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const db = createServiceClient();
   const body = await request.json();
+  if (!(await getInstructorProfile(body.instructorId ?? ""))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { data, error } = await db
     .from("sessions")
     .insert({

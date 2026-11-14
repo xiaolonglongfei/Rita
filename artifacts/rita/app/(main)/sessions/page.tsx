@@ -14,6 +14,7 @@ export default async function SessionsPage() {
   const { data: instructorProfile } = await db
     .from("instructors")
     .select("id, full_name")
+    .is("opted_out_at", null)
     .eq("claimed_by", user.id)
     .single();
 
@@ -44,8 +45,9 @@ export default async function SessionsPage() {
   const { data: myReviews } = await db
     .from("reviews")
     .select(
-      "id, session_date, session_location, is_verified, rating_value, rating_effectiveness, rating_punctuality, instructors!reviews_instructor_id_fkey (full_name)"
+      "id, session_date, session_location, is_verified, rating_value, rating_effectiveness, rating_punctuality, instructors!reviews_instructor_id_fkey!inner (full_name)"
     )
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id)
     .order("session_date", { ascending: false });
 

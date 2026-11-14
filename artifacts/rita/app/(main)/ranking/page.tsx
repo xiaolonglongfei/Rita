@@ -16,10 +16,11 @@ export default async function RankingPage() {
     .from("student_rankings")
     .select(
       `id, rank_position, instructor_id,
-       instructors!student_rankings_instructor_id_fkey (
+       instructors!student_rankings_instructor_id_fkey!inner (
          id, full_name, avg_value, avg_effectiveness, avg_punctuality, avg_overall, total_reviews
        )`
     )
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id)
     .order("rank_position", { ascending: true });
 
@@ -27,10 +28,11 @@ export default async function RankingPage() {
     .from("reviews")
     .select(
       `instructor_id,
-       instructors!reviews_instructor_id_fkey (
+       instructors!reviews_instructor_id_fkey!inner (
          id, full_name, avg_value, avg_effectiveness, avg_punctuality, avg_overall, total_reviews
        )`
     )
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id);
 
   type InstructorRow = {

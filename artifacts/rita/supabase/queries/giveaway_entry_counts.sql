@@ -12,6 +12,7 @@ qualifying_reviews AS (
   SELECT u.id AS user_id, u.email, u.giveaway_opt_in_at, r.id AS review_id
   FROM public.users AS u
   JOIN public.reviews AS r ON r.student_id = u.id
+  JOIN public.instructors AS i ON i.id = r.instructor_id AND i.opted_out_at IS NULL
   CROSS JOIN settings AS s
   WHERE u.giveaway_opt_in_at IS NOT NULL
     AND r.moderation_status = 'approved'

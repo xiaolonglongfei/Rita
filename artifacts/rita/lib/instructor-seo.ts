@@ -2,8 +2,9 @@ export function isIndexableInstructor(instructor: {
   is_active?: boolean | null;
   is_test?: boolean | null;
   reviews_visible?: boolean | null;
+  opted_out_at?: string | null;
 }) {
-  return instructor.is_active === true &&
+  return instructor.opted_out_at == null && instructor.is_active === true &&
     instructor.is_test === false &&
     instructor.reviews_visible === true;
 }

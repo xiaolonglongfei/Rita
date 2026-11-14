@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { sendVerificationRequestEmail } from "@/lib/resend";
 import { checkReviewContentLayer1, blockerMessage } from "@/lib/moderation/layer1";
+import { getInstructorProfile } from "@/lib/instructor-profile";
 
 /*
  * Expected content_filter_logs schema (verify in Supabase — do not auto-create):
@@ -30,7 +31,8 @@ export async function GET() {
   const db = createServiceClient();
   const { data, error } = await db
     .from("reviews")
-    .select("*, instructors(full_name)")
+    .select("*, instructors!inner(full_name)")
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -62,8 +64,6 @@ export async function POST(request: Request) {
   const {
     data: { user },
   } = await authClient.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const body = await request.json();
   const {
     instructor_id,
@@ -75,6 +75,11 @@ export async function POST(request: Request) {
     session_time,
     session_location,
   } = body;
+
+  if (instructor_id && !(await getInstructorProfile(instructor_id))) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   if (
     !instructor_id ||
@@ -189,12 +194,15 @@ export async function POST(request: Request) {
     .from("instructors")
     .select("full_name, is_claimed, claimed_by")
     .eq("id", instructor_id)
+    .is("opted_out_at", null)
     .single();
 
   // Notification to reviewer (student)
   await db.from("notifications").insert({
     user_id: user.id,
     type: "review_submitted",
+    related_review_id: review.id,
+    related_instructor_id: instructor_id,
     message: `Your review for ${
       instructorData?.full_name ?? "the instructor"
     } has been submitted and is not yet confirmed.`,

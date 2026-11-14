@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { supabase } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
+import { visibleNotifications } from "../lib/instructor-privacy";
 
 const router: IRouter = Router();
 
@@ -32,7 +33,7 @@ router.get("/notifications", requireAuth, async (req, res): Promise<void> => {
     .order("created_at", { ascending: false });
 
   if (error) { res.status(500).json({ error: error.message }); return; }
-  res.json((data as NotificationRow[]).map(formatNotification));
+  res.json((await visibleNotifications(data as NotificationRow[])).map(formatNotification));
 });
 
 router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<void> => {
@@ -49,7 +50,9 @@ router.patch("/notifications/:id/read", requireAuth, async (req, res): Promise<v
     .single();
 
   if (error || !data) { res.status(404).json({ error: "Notification not found" }); return; }
-  res.json(formatNotification(data as NotificationRow));
+  const visible = await visibleNotifications([data as NotificationRow]);
+  if (!visible.length) { res.status(404).json({ error: "Notification not found" }); return; }
+  res.json(formatNotification(visible[0]));
 });
 
 router.patch("/notifications/read-all", requireAuth, async (req, res): Promise<void> => {

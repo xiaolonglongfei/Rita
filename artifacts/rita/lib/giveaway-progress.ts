@@ -5,7 +5,7 @@ import { getGiveawayReviewFilters } from "@/lib/giveaway";
 /**
  * Qualifying = saved/Layer-1-accepted, still approved, created at/after opt-in,
  * within [promotion start, promotion end), and no later than the drawing/now.
- * Instructor verification is deliberately NOT required.
+ * Opted-out instructors are excluded; instructor verification is NOT required.
  * The draw SQL is generated from the same getGiveawayReviewFilters definition.
  */
 export async function getGiveawayProgress(userId: string, now = new Date()) {
@@ -22,7 +22,8 @@ export async function getGiveawayProgress(userId: string, now = new Date()) {
 
   let query = db
     .from("reviews")
-    .select("id, instructor_id", { count: "exact" })
+    .select("id, instructor_id, instructors!inner(id)", { count: "exact" })
+    .is("instructors.opted_out_at", null)
     .eq("student_id", userId);
   for (const { column, operator, value } of getGiveawayReviewFilters(
     profile.giveaway_opt_in_at,
@@ -38,6 +39,6 @@ export async function getGiveawayProgress(userId: string, now = new Date()) {
   return {
     optedIn: true,
     qualifyingReviewCount: count ?? 0,
-    firstReview: data?.[0] ?? null,
+    firstReview: data?.[0] ? { id: data[0].id, instructor_id: data[0].instructor_id } : null,
   };
 }

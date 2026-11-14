@@ -40,6 +40,7 @@ router.get("/rankings/public", async (req, res): Promise<void> => {
   const { data, error } = await supabase
     .from("instructors")
     .select("id, name, photo_url, specialty, avg_score, review_count, verified")
+    .is("opted_out_at", null)
     .gt("review_count", 0)
     .order("avg_score", { ascending: false })
     .order("review_count", { ascending: false })
@@ -54,7 +55,7 @@ router.get("/rankings/private", requireAuth, async (req, res): Promise<void> => 
 
   const [{ data: myReviews }, { data: allInstructors }] = await Promise.all([
     supabase.from("reviews").select("instructor_id, overall_score").eq("user_id", userId).eq("status", "approved"),
-    supabase.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").gt("review_count", 0),
+    supabase.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").is("opted_out_at", null).gt("review_count", 0),
   ]);
 
   const reviews = (myReviews ?? []) as ReviewRow[];

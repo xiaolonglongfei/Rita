@@ -11,7 +11,8 @@ export async function GET() {
   const db = createServiceClient();
   const { data } = await db
     .from("student_rankings")
-    .select("*, instructors(*)")
+    .select("*, instructors!inner(*)")
+    .is("instructors.opted_out_at", null)
     .eq("student_id", user.id)
     .order("rank_position", { ascending: true });
 
@@ -28,6 +29,16 @@ export async function PUT(request: Request) {
   const { rankings } = await request.json();
 
   const db = createServiceClient();
+
+  if (rankings?.length) {
+    const ids = [...new Set<string>(rankings.map((r: { instructor_id: string }) => r.instructor_id))];
+    const { data, error } = await db.from("instructors").select("id")
+      .in("id", ids).is("opted_out_at", null);
+    if (error) return NextResponse.json({ error: "Unable to load instructors" }, { status: 500 });
+    if (data.length !== ids.length) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+  }
 
   await db.from("student_rankings").delete().eq("student_id", user.id);
 

@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (let offset = 0; ; offset += batchSize) {
     const { data, error } = await db.from("instructors")
       .select("id, updated_at")
+      .is("opted_out_at", null)
       .eq("is_active", true).eq("is_test", false).eq("reviews_visible", true)
       .order("id", { ascending: true }).range(offset, offset + batchSize - 1);
     if (error) throw new Error("Unable to generate instructor sitemap.");

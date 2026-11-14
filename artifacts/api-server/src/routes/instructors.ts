@@ -64,7 +64,7 @@ router.get("/instructors", async (req, res): Promise<void> => {
   const limit = params.success && params.data.limit ? Number(params.data.limit) : 20;
   const offset = (page - 1) * limit;
 
-  let query = supabase.from("instructors").select("*", { count: "exact" });
+  let query = supabase.from("instructors").select("*", { count: "exact" }).is("opted_out_at", null);
 
   if (search) query = query.or(`name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (specialty) query = query.ilike("specialty", `%${specialty}%`);
@@ -80,9 +80,9 @@ router.get("/instructors", async (req, res): Promise<void> => {
 router.get("/instructors/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(raw, 10);
-  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (isNaN(id)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const { data, error } = await supabase.from("instructors").select("*").eq("id", id).single();
+  const { data, error } = await supabase.from("instructors").select("*").eq("id", id).is("opted_out_at", null).single();
   if (error || !data) { res.status(404).json({ error: "Instructor not found" }); return; }
   res.json(formatInstructor(data as InstructorRow));
 });
@@ -90,7 +90,11 @@ router.get("/instructors/:id", async (req, res): Promise<void> => {
 router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const instructorId = parseInt(raw, 10);
-  if (isNaN(instructorId)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (isNaN(instructorId)) { res.status(404).json({ error: "Instructor not found" }); return; }
+
+  const { data: visibleInstructor } = await supabase.from("instructors").select("id")
+    .eq("id", instructorId).is("opted_out_at", null).maybeSingle();
+  if (!visibleInstructor) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data, error } = await supabase
     .from("reviews")
@@ -126,9 +130,9 @@ router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
 router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const instructorId = parseInt(raw, 10);
-  if (isNaN(instructorId)) { res.status(400).json({ error: "Invalid id" }); return; }
+  if (isNaN(instructorId)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const { data: instructor, error: ie } = await supabase.from("instructors").select("*").eq("id", instructorId).single();
+  const { data: instructor, error: ie } = await supabase.from("instructors").select("*").eq("id", instructorId).is("opted_out_at", null).single();
   if (ie || !instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data: reviews } = await supabase

@@ -1,8 +1,8 @@
 {
+  "/api/reviews/route": "app/api/reviews/route.js",
+  "/api/sessions/route": "app/api/sessions/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
-  "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/page": "app/page.js",
-  "/win/page": "app/win/page.js",
-  "/(main)/clubs/[slug]/page": "app/(main)/clubs/[slug]/page.js"
+  "/(main)/instructors/page": "app/(main)/instructors/page.js",
+  "/(main)/reviews/new/page": "app/(main)/reviews/new/page.js"
 }

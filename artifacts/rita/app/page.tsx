@@ -27,6 +27,7 @@ export default async function HomePage() {
     const { data: profile } = await db
       .from("instructors")
       .select("id, full_name")
+      .is("opted_out_at", null)
       .eq("claimed_by", user.id)
       .single();
 
@@ -45,10 +46,11 @@ export default async function HomePage() {
   }
 
   const [{ count: instructorCount }, { count: reviewCount }] = await Promise.all([
-    db.from("instructors").select("*", { count: "exact", head: true }).eq("is_test", false).eq("is_active", true),
+    db.from("instructors").select("*", { count: "exact", head: true }).eq("is_test", false).eq("is_active", true).is("opted_out_at", null),
     db
       .from("reviews")
-      .select("*", { count: "exact", head: true })
+      .select("*, instructors!inner(id)", { count: "exact", head: true })
+      .is("instructors.opted_out_at", null)
       .eq("moderation_status", "approved"),
   ]);
 

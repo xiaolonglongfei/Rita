@@ -48,7 +48,8 @@ function formatReview(
 router.get("/reviews", requireAuth, async (req, res): Promise<void> => {
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, instructors(name), users(name, avatar_url)")
+    .select("*, instructors!inner(name), users(name, avatar_url)")
+    .is("instructors.opted_out_at", null)
     .eq("user_id", req.session.userId!)
     .order("created_at", { ascending: false });
 
@@ -63,6 +64,9 @@ router.post("/reviews", requireAuth, async (req, res): Promise<void> => {
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
 
   const { instructorId, sessionId, value, effectiveness, punctuality, comment } = parsed.data;
+  const { data: visibleInstructor } = await supabase.from("instructors").select("id")
+    .eq("id", instructorId).is("opted_out_at", null).maybeSingle();
+  if (!visibleInstructor) { res.status(404).json({ error: "Instructor not found" }); return; }
   const overallScore = (value + effectiveness + punctuality) / 3;
 
   const { data: review, error } = await supabase
@@ -105,7 +109,8 @@ router.get("/reviews/:id", requireAuth, async (req, res): Promise<void> => {
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, instructors(name), users(name, avatar_url)")
+    .select("*, instructors!inner(name), users(name, avatar_url)")
+    .is("instructors.opted_out_at", null)
     .eq("id", id)
     .single();
 

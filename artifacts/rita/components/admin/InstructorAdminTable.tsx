@@ -11,6 +11,7 @@ interface Instructor {
   is_claimed: boolean;
   avg_overall: number;
   total_reviews: number;
+  opted_out_at?: string | null;
 }
 
 export function InstructorAdminTable({ instructors }: { instructors: Instructor[] }) {
@@ -149,6 +150,11 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                 >
                   <td className="px-4 py-3 font-medium text-slate-800">
                     {inst.full_name}
+                    {inst.opted_out_at && (
+                      <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600">
+                        Opted out
+                      </span>
+                    )}
                     {inst.internal_notes && (
                       <span
                         className="ml-2 text-xs font-normal px-1.5 py-0.5 rounded bg-amber-100 text-amber-700"

@@ -16,25 +16,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/layout.js"
     ],
-    "/(main)/clubs/[slug]/page": [
+    "/(main)/reviews/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(main)/clubs/[slug]/page.js"
+      "static/chunks/app/(main)/reviews/layout.js"
     ],
-    "/win/page": [
+    "/(main)/reviews/new/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/win/page.js"
+      "static/chunks/app/(main)/reviews/new/page.js"
     ],
-    "/sitemap.xml/route": [
+    "/api/reviews/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/sitemap.xml/route.js"
+      "static/chunks/app/api/reviews/route.js"
     ],
-    "/_not-found/page": [
+    "/api/sessions/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/api/sessions/route.js"
+    ],
+    "/(main)/instructors/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/instructors/page.js"
     ]
   }
 }

@@ -21,6 +21,7 @@ type InstructorRow = {
   review_count: number;
   public_rank: number | null;
   internal_notes: string | null;
+  opted_out_at?: string | null;
   created_at: string;
 };
 
@@ -70,6 +71,7 @@ function formatInstructor(i: InstructorRow) {
     reviewCount: i.review_count,
     publicRank: i.public_rank ?? null,
     internalNotes: i.internal_notes ?? null,
+    optedOutAt: i.opted_out_at ?? null,
     createdAt: i.created_at,
   };
 }
@@ -137,7 +139,13 @@ router.delete("/admin/instructors/:id", requireAuth, async (req, res): Promise<v
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  await supabase.from("instructors").delete().eq("id", id);
+  const { data: removedCoach, error: lookupError } = await supabase.from("instructors")
+    .select("opted_out_at").eq("id", id).maybeSingle();
+  if (lookupError) { res.status(500).json({ error: "Unable to load instructor" }); return; }
+  if (removedCoach?.opted_out_at) {
+    res.status(409).json({ error: "Opted-out instructors must be retained." }); return;
+  }
+  await supabase.from("instructors").delete().eq("id", id).is("opted_out_at", null);
   res.sendStatus(204);
 });
 

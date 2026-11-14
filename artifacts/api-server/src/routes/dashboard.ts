@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { supabase } from "@workspace/db";
 import { requireAuth } from "../lib/auth";
+import { visibleNotifications } from "../lib/instructor-privacy";
 
 const router: IRouter = Router();
 
@@ -13,10 +14,10 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
     { data: userNotifications },
     { data: topInstructorsRaw },
   ] = await Promise.all([
-    supabase.from("sessions").select("id, session_date, created_at").eq("user_id", userId),
-    supabase.from("reviews").select("id, overall_score, created_at").eq("user_id", userId),
-    supabase.from("notifications").select("id").eq("user_id", userId).eq("read", false),
-    supabase.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").gt("review_count", 0).order("avg_score", { ascending: false }).limit(5),
+    supabase.from("sessions").select("id, session_date, created_at, instructors!inner(id)").is("instructors.opted_out_at", null).eq("user_id", userId),
+    supabase.from("reviews").select("id, overall_score, created_at, instructors!inner(id)").is("instructors.opted_out_at", null).eq("user_id", userId),
+    supabase.from("notifications").select("*").eq("user_id", userId).eq("read", false),
+    supabase.from("instructors").select("id, name, photo_url, specialty, avg_score, review_count, verified").is("opted_out_at", null).gt("review_count", 0).order("avg_score", { ascending: false }).limit(5),
   ]);
 
   type SessionRow = { id: number; session_date: string; created_at: string };
@@ -45,7 +46,7 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
   res.json({
     totalSessions: sessions.length,
     reviewsSubmitted: reviews.length,
-    unreadNotifications: (userNotifications ?? []).length,
+    unreadNotifications: (await visibleNotifications(userNotifications ?? [])).length,
     topInstructors: topInstructors.map((i, idx) => ({
       rank: idx + 1,
       instructorId: i.id,

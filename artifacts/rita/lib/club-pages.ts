@@ -35,6 +35,7 @@ export async function getClubCoaches(teachingLocation: string): Promise<ClubCoac
   for (let start = 0; ; start += 1000) {
     const { data, error } = await db.from("instructors")
       .select("id, full_name, bio, teaching_locations")
+      .is("opted_out_at", null)
       .eq("is_active", true).eq("is_test", false)
       .ilike("teaching_locations", `%${escapedLocation}%`)
       .order("full_name", { ascending: true }).order("id", { ascending: true })

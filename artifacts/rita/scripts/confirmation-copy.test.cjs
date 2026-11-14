@@ -61,6 +61,7 @@ test("student session history renders both lesson states and tooltips without ch
       createServiceClient: () => ({ from(table) {
         const query = {
           select() { return query; },
+          is() { return query; },
           eq(...args) { filters.push([table, ...args]); return query; },
           async single() { return { data: null }; },
           async order() { return { data: [{ ...review, is_verified: false }, { ...review, id: "other", is_verified: true }] }; },

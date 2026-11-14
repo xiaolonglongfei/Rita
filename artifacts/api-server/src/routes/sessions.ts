@@ -32,7 +32,8 @@ function formatSession(s: SessionRow, instructorName?: string | null) {
 router.get("/sessions", requireAuth, async (req, res): Promise<void> => {
   const { data, error } = await supabase
     .from("sessions")
-    .select("*, instructors(name)")
+    .select("*, instructors!inner(name)")
+    .is("instructors.opted_out_at", null)
     .eq("user_id", req.session.userId!);
 
   if (error) { res.status(500).json({ error: error.message }); return; }
@@ -43,6 +44,10 @@ router.get("/sessions", requireAuth, async (req, res): Promise<void> => {
 router.post("/sessions", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateSessionBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const { data: visibleInstructor } = await supabase.from("instructors").select("id")
+    .eq("id", parsed.data.instructorId).is("opted_out_at", null).maybeSingle();
+  if (!visibleInstructor) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data: session, error } = await supabase
     .from("sessions")
@@ -67,7 +72,8 @@ router.get("/sessions/:id", requireAuth, async (req, res): Promise<void> => {
 
   const { data, error } = await supabase
     .from("sessions")
-    .select("*, instructors(name)")
+    .select("*, instructors!inner(name)")
+    .is("instructors.opted_out_at", null)
     .eq("id", id)
     .eq("user_id", req.session.userId!)
     .single();
@@ -87,7 +93,8 @@ router.post("/sessions/:id/verify", requireAuth, async (req, res): Promise<void>
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("*")
+    .select("*, instructors!inner(id)")
+    .is("instructors.opted_out_at", null)
     .eq("id", id)
     .eq("user_id", req.session.userId!)
     .single();

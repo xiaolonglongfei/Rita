@@ -33,6 +33,7 @@ test("club data queries live clubs only, limits public coach fields, and require
     "@/lib/supabase/server": { createServiceClient: () => ({ from(table) {
       const q = {
         select(fields) { calls.push([table, "select", fields]); return q; },
+        is(...args) { calls.push([table, ...args]); return q; },
         eq(...args) { calls.push([table, ...args]); return q; },
         ilike(field, value) { locationFilter = value; return q; },
         order(...args) { calls.push([table, "order", ...args]); return q; },
@@ -49,6 +50,7 @@ test("club data queries live clubs only, limits public coach fields, and require
   assert.equal(locationFilter, `%${location}%`);
   assert.ok(calls.some(([table, col, value]) => table === "instructors" && col === "is_active" && value === true));
   assert.ok(calls.some(([table, col, value]) => table === "instructors" && col === "is_test" && value === false));
+  assert.ok(calls.some(([table, col, value]) => table === "instructors" && col === "opted_out_at" && value === null));
   assert.equal(calls.find(([table, op]) => table === "instructors" && op === "select")[2], "id, full_name, bio, teaching_locations");
   await helpers.getClubCoaches("Club_100% Tennis");
   assert.equal(locationFilter, "%Club\\_100\\% Tennis%");
@@ -61,7 +63,7 @@ test("club coach lookup retrieves all candidate pages and fails explicitly on da
   const helper = load("lib/club-pages.ts", {
     "server-only": {}, react: { cache: f => f },
     "@/lib/supabase/server": { createServiceClient: () => ({ from() {
-      const q = { select() { return q; }, eq() { return q; }, ilike() { return q; }, order() { return q; },
+      const q = { select() { return q; }, is() { return q; }, eq() { return q; }, ilike() { return q; }, order() { return q; },
         async range(start, end) { ranges.push([start, end]); return { data: start === 0 ? Array(1000).fill(row) : [row], error: fail ? {} : null }; } };
       return q;
     } }) },

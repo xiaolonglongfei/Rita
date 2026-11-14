@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
+import { getInstructorProfile } from "@/lib/instructor-profile";
 import { ReviewForm } from "@/components/review/ReviewForm";
 import { privatePageMetadata } from "@/lib/site";
 
@@ -12,6 +13,8 @@ export default async function NewReviewPage({
 }) {
   const { instructor_id } = await searchParams;
   if (!instructor_id) redirect("/instructors?review=true");
+  const instructor = await getInstructorProfile(instructor_id);
+  if (!instructor) notFound();
   const supabase = await createClient();
 
   const {
@@ -36,16 +39,6 @@ export default async function NewReviewPage({
     user.user_metadata?.full_name ||
     user.email?.split("@")[0] ||
     "Student";
-
-  let instructor: { id: string; full_name: string; teaching_locations: string | null } | null = null;
-  if (instructor_id) {
-    const { data } = await supabase
-      .from("instructors")
-      .select("id, full_name, teaching_locations")
-      .eq("id", instructor_id)
-      .single();
-    instructor = data;
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">

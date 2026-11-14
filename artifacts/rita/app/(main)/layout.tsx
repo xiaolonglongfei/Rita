@@ -20,6 +20,7 @@ export default async function MainLayout({
     const { data: profile } = await db
       .from("instructors")
       .select("id, full_name")
+      .is("opted_out_at", null)
       .eq("claimed_by", user.id)
       .single();
 

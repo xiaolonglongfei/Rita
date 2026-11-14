@@ -14,6 +14,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("instructors")
     .select("*", { count: "exact" })
+    .is("opted_out_at", null)
     .eq("is_test", false)   // never expose QA/test records to real users
     .eq("is_active", true); // hide former/inactive instructors from public browse
 
@@ -71,11 +72,14 @@ export async function POST(request: Request) {
   // Duplicate check (case-insensitive)
   const { data: existing } = await supabase
     .from("instructors")
-    .select("id, full_name")
+    .select("id, full_name, opted_out_at")
     .ilike("full_name", full_name)
     .limit(1);
 
   if (existing && existing.length > 0) {
+    if (existing[0].opted_out_at) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json(
       {
         error: `An instructor named "${existing[0].full_name}" already exists. Please search for them instead.`,

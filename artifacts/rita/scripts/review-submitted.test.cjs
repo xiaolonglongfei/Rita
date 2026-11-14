@@ -56,13 +56,14 @@ test("local defaults floor five minutes and respect midnight and DST", () => {
 });
 
 const reviewId = "11111111-1111-4111-8111-111111111111";
-function fixture({ signedIn = true, owned = true, claimed = true, optedIn = true, count = 1, first = reviewId } = {}) {
+function fixture({ signedIn = true, owned = true, claimed = true, optedIn = true, count = 1, first = reviewId, removed = false } = {}) {
   const filters = [];
   let dbCalls = 0;
   const jsx = (type, props) => ({ type, props });
   const page = loadTs("app/(main)/reviews/submitted/page.tsx", {
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "next/link": { default: "a" },
+    "next/navigation": { notFound() { throw new Error("NOT_FOUND"); } },
     "lucide-react": { Check: "Check", EyeOff: "EyeOff", ShieldCheck: "ShieldCheck", Users: "Users" },
     "@/lib/supabase/server": {
       createClient: async () => ({ auth: { getUser: async () => ({
@@ -73,11 +74,12 @@ function fixture({ signedIn = true, owned = true, claimed = true, optedIn = true
           dbCalls++;
           const query = {
             select() { return query; },
+            is() { return query; },
             eq(column, value) { filters.push([table, column, value]); return query; },
             async maybeSingle() {
               return { data: table === "reviews"
                 ? owned ? { id: reviewId, instructor_id: "coach-id" } : null
-                : { full_name: "Example Coach", is_claimed: claimed }, error: null };
+                : removed ? null : { full_name: "Example Coach", is_claimed: claimed }, error: null };
             },
           };
           return query;
@@ -181,4 +183,8 @@ test("zero qualifying reviews never claim an entry; lesson reminder appears for 
     assert.ok(text(page).includes("Only review coaches you've actually had a lesson with."));
     assert.equal(find(page, "button-review-another").props.href, "/instructors");
   }
+});
+
+test("a saved confirmation link for a removed coach returns notFound without a profile link", async () => {
+  await assert.rejects(render(fixture({ removed: true })), /NOT_FOUND/);
 });

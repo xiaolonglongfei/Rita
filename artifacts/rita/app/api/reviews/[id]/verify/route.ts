@@ -32,11 +32,18 @@ export async function POST(
   }
 
   const db = createServiceClient();
+  const { data: visibleReview } = await db.from("reviews")
+    .select("id, instructors!inner(id)")
+    .eq("id", id).is("instructors.opted_out_at", null).maybeSingle();
+  if (!visibleReview) {
+    return NextResponse.json({ error: "Review not found" }, { status: 404 });
+  }
 
   // Verify this user is a claimed instructor
   const { data: instructorProfile } = await db
     .from("instructors")
     .select("id, full_name")
+    .is("opted_out_at", null)
     .eq("claimed_by", user.id)
     .single();
 

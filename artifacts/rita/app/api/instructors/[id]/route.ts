@@ -8,19 +8,18 @@ export async function GET(
   const { id } = await params;
   const db = createServiceClient();
 
-  const [{ data: instructor, error }, { data: reviews }] = await Promise.all([
-    db.from("instructors").select("*").eq("id", id).single(),
-    db
+  const { data: instructor, error } = await db.from("instructors")
+    .select("*").eq("id", id).is("opted_out_at", null).maybeSingle();
+  if (error || !instructor)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  const { data: reviews } = await db
       .from("reviews")
       .select("*, users(full_name, avatar_url)")
       .eq("instructor_id", id)
       .eq("moderation_status", "approved")
       .order("created_at", { ascending: false })
-      .limit(50),
-  ]);
-
-  if (error || !instructor)
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+      .limit(50);
 
   // Privacy: only expose scores when reviews_visible = true (requires 3+ approved reviews)
   const scoresVisible = instructor.reviews_visible === true;
