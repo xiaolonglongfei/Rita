@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 interface Instructor {
   id: string;
@@ -12,15 +12,25 @@ interface Instructor {
   avg_overall: number;
   total_reviews: number;
   opted_out_at?: string | null;
+  is_active?: boolean | null;
+  created_by_source?: string | null;
 }
 
 export function InstructorAdminTable({ instructors }: { instructors: Instructor[] }) {
+  const [rows, setRows] = useState(instructors);
+  const [filter, setFilter] = useState<"all" | "pending">("all");
+  const [approving, setApproving] = useState<string | null>(null);
+  const [approveError, setApproveError] = useState("");
+  const isPending = (inst: Instructor) => inst.created_by_source === "student" &&
+    inst.is_active === false && inst.opted_out_at == null;
+  const visibleRows = filter === "pending" ? rows.filter(isPending) : rows;
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newBio, setNewBio] = useState("");
   const [newLocation, setNewLocation] = useState("");
   const [newInternalNotes, setNewInternalNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [addError, setAddError] = useState("");
 
   // Expandable row state
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -32,18 +42,43 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
   async function handleAdd() {
     if (!newName.trim()) return;
     setSubmitting(true);
-    await fetch("/api/admin/instructors", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: newName.trim(),
-        bio: newBio || null,
-        location: newLocation || null,
-        specialty: "",
-        internalNotes: newInternalNotes.trim() || undefined,
-      }),
-    });
-    window.location.reload();
+    setAddError("");
+    try {
+      const response = await fetch("/api/instructors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: newName.trim(), bio: newBio || null,
+          teaching_locations: newLocation || null, created_by_source: "admin",
+          internalNotes: newInternalNotes.trim() || null,
+        }),
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Unable to add this instructor.");
+      }
+      window.location.reload();
+    } catch (error) {
+      setAddError(error instanceof Error ? error.message : "Unable to add this instructor.");
+      setSubmitting(false);
+    }
+  }
+
+  async function handleApprove(id: string) {
+    setApproving(id);
+    setApproveError("");
+    try {
+      const response = await fetch(`/api/admin/instructors/${id}/approve`, { method: "POST" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "Unable to approve this instructor.");
+      }
+      setRows((current) => current.map((inst) => inst.id === id ? { ...inst, is_active: true } : inst));
+    } catch (error) {
+      setApproveError(error instanceof Error ? error.message : "Unable to approve this instructor.");
+    } finally {
+      setApproving(null);
+    }
   }
 
   function toggleRow(id: string, currentNotes: string | null) {
@@ -126,10 +161,20 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
           >
             {submitting ? "Adding..." : "Save Instructor"}
           </button>
+          {addError && <p role="alert" className="text-sm text-red-600">{addError}</p>}
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
+      <div className="mb-4 flex gap-2" aria-label="Instructor filters">
+        <button onClick={() => setFilter("all")} aria-pressed={filter === "all"}
+          className="rounded-lg border px-3 py-2 text-sm font-semibold aria-pressed:bg-slate-100">All</button>
+        <button onClick={() => setFilter("pending")} aria-pressed={filter === "pending"}
+          className="rounded-lg border px-3 py-2 text-sm font-semibold aria-pressed:bg-slate-100">
+          Pending ({rows.filter(isPending).length})
+        </button>
+      </div>
+      {approveError && <p role="alert" className="mb-4 text-sm text-red-600">{approveError}</p>}
+      <div className="bg-white rounded-xl border border-slate-100 overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
             <tr>
@@ -138,11 +183,12 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
               <th className="text-left px-4 py-3">Status</th>
               <th className="text-left px-4 py-3">Score</th>
               <th className="text-left px-4 py-3">Reviews</th>
+              <th className="text-left px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {instructors.map((inst) => (
-              <>
+            {visibleRows.map((inst) => (
+              <Fragment key={inst.id}>
                 <tr
                   key={inst.id}
                   className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer"
@@ -150,6 +196,9 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                 >
                   <td className="px-4 py-3 font-medium text-slate-800">
                     {inst.full_name}
+                    {isPending(inst) && (
+                      <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-xs font-normal text-amber-700">Pending</span>
+                    )}
                     {inst.opted_out_at && (
                       <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600">
                         Opted out
@@ -180,11 +229,19 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                     {inst.total_reviews > 0 ? `⭐ ${inst.avg_overall?.toFixed(1)}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{inst.total_reviews}</td>
+                  <td className="px-4 py-3">
+                    {isPending(inst) && <button
+                      onClick={(event) => { event.stopPropagation(); handleApprove(inst.id); }}
+                      disabled={approving !== null}
+                      className="rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+                      {approving === inst.id ? "Approving…" : "Approve"}
+                    </button>}
+                  </td>
                 </tr>
 
                 {expandedId === inst.id && (
                   <tr key={`${inst.id}-detail`} className="border-t border-amber-100 bg-amber-50/40">
-                    <td colSpan={5} className="px-4 py-4">
+                    <td colSpan={6} className="px-4 py-4">
                       <div className="flex flex-col gap-4">
 
                         {/* Public bio — clearly labelled */}
@@ -230,12 +287,12 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
-            {instructors.length === 0 && (
+            {visibleRows.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-400 text-sm">
-                  No instructors yet.
+                <td colSpan={6} className="px-4 py-8 text-center text-slate-400 text-sm">
+                  {filter === "pending" ? "No pending instructors." : "No instructors yet."}
                 </td>
               </tr>
             )}

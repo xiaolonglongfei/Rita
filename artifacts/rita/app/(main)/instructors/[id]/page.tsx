@@ -66,7 +66,7 @@ export default async function InstructorProfilePage({
             className="w-fit max-w-full rounded-xl px-4 py-3 text-sm font-medium"
             style={{ background: "#f4ffe0", color: "#4a6e00", border: "1px solid #b8d400" }}
           >
-            ✓ Instructor added! You can now write a review for them.
+            Instructor added. It will appear in the directory after a quick review.
           </div>
         </div>
       )}

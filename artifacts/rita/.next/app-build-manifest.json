@@ -11,10 +11,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/page.js"
     ],
+    "/api/instructors/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/instructors/route.js"
+    ],
     "/(main)/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/layout.js"
+    ],
+    "/(main)/instructors/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/instructors/[id]/page.js"
     ],
     "/(main)/reviews/layout": [
       "static/chunks/webpack.js",
@@ -26,20 +36,60 @@
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/reviews/new/page.js"
     ],
-    "/api/reviews/route": [
+    "/(main)/instructors/new/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/reviews/route.js"
+      "static/chunks/app/(main)/instructors/new/layout.js"
     ],
-    "/api/sessions/route": [
+    "/(main)/instructors/new/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/api/sessions/route.js"
+      "static/chunks/app/(main)/instructors/new/page.js"
+    ],
+    "/api/rankings/public/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/rankings/public/route.js"
+    ],
+    "/api/rankings/private/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/rankings/private/route.js"
+    ],
+    "/(main)/ranking/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/ranking/layout.js"
+    ],
+    "/(main)/ranking/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(main)/ranking/page.js"
+    ],
+    "/sitemap.xml/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/sitemap.xml/route.js"
     ],
     "/(main)/instructors/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/(main)/instructors/page.js"
+    ],
+    "/api/admin/instructors/[id]/approve/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/admin/instructors/[id]/approve/route.js"
+    ],
+    "/admin/layout": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/layout.js"
+    ],
+    "/admin/instructors/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/instructors/page.js"
     ]
   }
 }

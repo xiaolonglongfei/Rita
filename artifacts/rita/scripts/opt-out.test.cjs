@@ -93,7 +93,8 @@ test("invalid private ranking is rejected before deleting any saved rankings", a
   const calls = [];
   const q = {
     select() { return q; }, in() { return q; },
-    async is(...args) { calls.push(args); return { data: [], error: null }; },
+    is(...args) { calls.push(args); return q; },
+    async eq() { return { data: [], error: null }; },
   };
   const route = load("app/api/rankings/private/route.ts", {
     "next/server": next,

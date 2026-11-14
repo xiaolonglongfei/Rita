@@ -13,6 +13,7 @@ export async function GET() {
     .from("student_rankings")
     .select("*, instructors!inner(*)")
     .is("instructors.opted_out_at", null)
+    .eq("instructors.is_active", true)
     .eq("student_id", user.id)
     .order("rank_position", { ascending: true });
 
@@ -33,7 +34,7 @@ export async function PUT(request: Request) {
   if (rankings?.length) {
     const ids = [...new Set<string>(rankings.map((r: { instructor_id: string }) => r.instructor_id))];
     const { data, error } = await db.from("instructors").select("id")
-      .in("id", ids).is("opted_out_at", null);
+      .in("id", ids).is("opted_out_at", null).eq("is_active", true);
     if (error) return NextResponse.json({ error: "Unable to load instructors" }, { status: 500 });
     if (data.length !== ids.length) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

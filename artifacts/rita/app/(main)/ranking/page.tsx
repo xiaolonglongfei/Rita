@@ -21,6 +21,7 @@ export default async function RankingPage() {
        )`
     )
     .is("instructors.opted_out_at", null)
+    .eq("instructors.is_active", true)
     .eq("student_id", user.id)
     .order("rank_position", { ascending: true });
 
@@ -33,6 +34,7 @@ export default async function RankingPage() {
        )`
     )
     .is("instructors.opted_out_at", null)
+    .eq("instructors.is_active", true)
     .eq("student_id", user.id);
 
   type InstructorRow = {

@@ -1,5 +1,7 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { instructorNameKey, studentInstructorValidation, withInstructorCreationLock } from "@/lib/instructor-creation";
+import { checkReviewContentLayer1 } from "@/lib/moderation/layer1";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -62,57 +64,77 @@ export async function POST(request: Request) {
 
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const full_name = (body.full_name ?? body.name ?? "").trim();
-
-  if (!full_name) {
-    return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Please check the instructor details and try again." }, { status: 400 });
   }
-
-  // Duplicate check (case-insensitive)
-  const { data: existing } = await supabase
-    .from("instructors")
-    .select("id, full_name, opted_out_at")
-    .ilike("full_name", full_name)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    if (existing[0].opted_out_at) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    return NextResponse.json(
-      {
-        error: `An instructor named "${existing[0].full_name}" already exists. Please search for them instead.`,
-      },
-      { status: 409 }
-    );
-  }
-
-  // Determine source: admin vs student
-  const { data: userData } = await supabase
+  const db = createServiceClient();
+  const { data: userData, error: roleError } = await db
     .from("users")
     .select("is_admin")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
+  if (roleError) return NextResponse.json({ error: "Unable to check your account. Please try again." }, { status: 500 });
+  const isAdmin = userData?.is_admin === true;
+  const name = body.full_name ?? body.name;
+  const location = body.teaching_locations ?? body.location ?? null;
+  const validation = isAdmin
+    ? (typeof name !== "string" || !name.trim() ? "Name is required" : null)
+    : studentInstructorValidation(name, location);
+  if (validation) return NextResponse.json({ error: validation }, { status: 400 });
+  const full_name = (name as string).trim();
 
-  const source = userData?.is_admin
-    ? (body.created_by_source ?? "admin")
-    : "student";
+  return withInstructorCreationLock(user.id, async () => {
+    // Sort before limiting: any opted-out match must take precedence over all
+    // other matches, including an active row with the same generated key.
+    const { data: existing, error: lookupError } = await db.from("instructors")
+      .select("id, full_name, is_active, opted_out_at")
+      .eq("name_key", instructorNameKey(full_name))
+      .order("opted_out_at", { ascending: false, nullsFirst: false })
+      .order("is_active", { ascending: false, nullsFirst: false })
+      .limit(1).maybeSingle();
+    if (lookupError) return NextResponse.json({ error: "Unable to check for an existing instructor. Please try again." }, { status: 500 });
+    if (existing?.opted_out_at) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (existing) {
+      return NextResponse.json({ error: existing.is_active === true
+        ? `An instructor named "${existing.full_name}" already exists. Please search for them instead.`
+        : "This coach can’t be added right now." }, { status: 409 });
+    }
 
-  const db = createServiceClient();
-  const { data, error } = await db
-    .from("instructors")
-    .insert({
+    if (!isAdmin) {
+      const { count, error: countError } = await db.from("instructors")
+        .select("id", { count: "exact", head: true }).eq("created_by", user.id)
+        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+      if (countError || count == null) return NextResponse.json({ error: "Unable to check your adding limit. Please try again." }, { status: 500 });
+      if (count >= 3) {
+        return NextResponse.json({ error: "You can add up to 3 instructors in 24 hours. Please try again later." }, { status: 429 });
+      }
+      const results = [full_name, typeof location === "string" ? location.trim() : ""]
+        .map(checkReviewContentLayer1);
+      const blockers = [...new Set(results.flatMap((result) => result.blockers))];
+      const warnings = [...new Set(results.flatMap((result) => result.warnings))];
+      if (blockers.length || warnings.length) {
+        const { error: logError } = await db.from("content_filter_logs").insert({
+          instructor_id: null, attempted_by: user.id,
+          blocked_categories: blockers, warned_categories: warnings,
+          flagged_content: `Name: ${full_name}\nLocation: ${location ?? ""}`,
+        });
+        if (logError) return NextResponse.json({ error: "Unable to check these details. Please try again." }, { status: 500 });
+        return NextResponse.json({ error: "Please revise the instructor name or teaching location to meet our content guidelines." }, { status: 400 });
+      }
+    }
+
+    const { data, error } = await db.from("instructors").insert({
       full_name,
-      bio: body.bio ?? null,
-      teaching_locations: body.teaching_locations ?? body.location ?? null,
-      avatar_url: body.photoUrl ?? null,
+      bio: isAdmin ? body.bio ?? null : null,
+      teaching_locations: typeof location === "string" ? location.trim() || null : location,
+      avatar_url: isAdmin ? body.photoUrl ?? null : null,
+      internal_notes: isAdmin ? body.internalNotes ?? null : null,
       created_by: user.id,
-      created_by_source: source,
-    })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ instructor: data }, { status: 201 });
+      created_by_source: isAdmin ? body.created_by_source ?? "admin" : "student",
+      is_active: isAdmin,
+    }).select().single();
+    if (error) return NextResponse.json({ error: "Unable to add this instructor. Please try again." }, { status: 500 });
+    return NextResponse.json({ instructor: data }, { status: 201 });
+  });
 }

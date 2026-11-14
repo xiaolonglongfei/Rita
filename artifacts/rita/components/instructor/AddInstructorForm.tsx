@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 export function AddInstructorForm() {
   const [fullName, setFullName] = useState("");
-  const [bio, setBio] = useState("");
   const [teachingLocations, setTeachingLocations] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +24,6 @@ export function AddInstructorForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           full_name: fullName.trim(),
-          bio: bio.trim() || null,
           teaching_locations: teachingLocations.trim() || null,
           created_by_source: "student",
         }),
@@ -53,25 +51,12 @@ export function AddInstructorForm() {
           </label>
           <input
             type="text"
+            minLength={2}
+            maxLength={80}
             placeholder="e.g. John Smith"
             className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest block mb-2">
-            About{" "}
-            <span className="font-normal normal-case text-slate-400">(optional)</span>
-          </label>
-          <textarea
-            placeholder="Anything you know about this instructor's background or specialty..."
-            className="w-full border border-slate-200 rounded-lg p-3 text-sm resize-none focus:outline-none focus:border-orange-300"
-            rows={3}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            maxLength={500}
           />
         </div>
 
@@ -83,6 +68,7 @@ export function AddInstructorForm() {
           <input
             type="text"
             placeholder="e.g. Scarsdale Tennis Club"
+            maxLength={100}
             className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-orange-300"
             value={teachingLocations}
             onChange={(e) => setTeachingLocations(e.target.value)}
@@ -90,8 +76,8 @@ export function AddInstructorForm() {
         </div>
 
         <div className="bg-slate-50 rounded-xl p-3 text-xs text-slate-500 leading-relaxed">
-          ℹ️ This instructor&apos;s profile will appear as &quot;Unclaimed&quot; until they sign up and
-          verify their identity. You&apos;ll be able to write a review for them right away.
+          You can write a review right away. This instructor will appear in the directory
+          after a quick review and remain &quot;Unclaimed&quot; until they verify their identity.
         </div>
 
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}

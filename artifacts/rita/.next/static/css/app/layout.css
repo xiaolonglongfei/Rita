@@ -985,6 +985,9 @@ video {
 .overflow-hidden {
   overflow: hidden;
 }
+.overflow-x-auto {
+  overflow-x: auto;
+}
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1124,6 +1127,10 @@ video {
 .bg-orange-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+.bg-orange-600 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(234 88 12 / var(--tw-bg-opacity, 1));
 }
 .bg-red-100 {
   --tw-bg-opacity: 1;
@@ -1405,6 +1412,9 @@ video {
 }
 .uppercase {
   text-transform: uppercase;
+}
+.lowercase {
+  text-transform: lowercase;
 }
 .normal-case {
   text-transform: none;
@@ -1865,6 +1875,10 @@ body {
   --tw-shadow: 0 0 #0000;
   --tw-shadow-colored: 0 0 #0000;
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.aria-pressed\:bg-slate-100[aria-pressed="true"] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1));
 }
 @media (min-width: 640px) {
 
