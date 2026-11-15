@@ -61,6 +61,9 @@ export default function TermsPage() {
             <p>
               When you submit a review or other content (&quot;User Content&quot;), you retain ownership of it, but you grant Rovi a worldwide, royalty-free, non-exclusive license to host, display, reproduce, and distribute that content on Rovi in connection with operating the service. Reviews must reflect your own genuine experience with the instructor in question. Where an instructor has joined Rovi, the instructor can confirm that a lesson took place. Rovi does not verify the truth of the opinions expressed within a review.
             </p>
+            <p className="mt-3">
+              Instructor profiles may be created by users. Rovi does not verify or endorse information users provide. Rovi may correct, hide or remove a profile at its discretion, for example if it is inaccurate, a duplicate, created in error, or the subject of a legitimate concern. A coach, or a club on behalf of its coaches, may contact us about a profile, and we will review each request in good faith. A request does not by itself require us to remove or alter ratings or comments that reflect real lessons.
+            </p>
           </section>
 
           <section>

@@ -8,9 +8,14 @@ export function AddInstructorForm() {
   const [teachingLocations, setTeachingLocations] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [confirmedStudent, setConfirmedStudent] = useState(false);
   const router = useRouter();
 
   async function handleSubmit() {
+    if (!confirmedStudent) {
+      setError("Please confirm that you've taken lessons with this coach.");
+      return;
+    }
     if (!fullName.trim()) {
       setError("Instructor name is required");
       return;
@@ -26,6 +31,7 @@ export function AddInstructorForm() {
           full_name: fullName.trim(),
           teaching_locations: teachingLocations.trim() || null,
           created_by_source: "student",
+          confirmed_student: confirmedStudent,
         }),
       });
 
@@ -82,9 +88,20 @@ export function AddInstructorForm() {
 
         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
+        <label className="flex items-start gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            required
+            checked={confirmedStudent}
+            onChange={(event) => setConfirmedStudent(event.target.checked)}
+            className="mt-1 accent-orange-600"
+          />
+          <span>I&apos;ve taken lessons with this coach.</span>
+        </label>
+
         <button
           onClick={handleSubmit}
-          disabled={submitting || !fullName.trim()}
+          disabled={submitting || !fullName.trim() || !confirmedStudent}
           className="w-full py-3 rounded-xl text-white font-bold text-base disabled:opacity-50"
           style={{ background: "#f97316" }}
         >

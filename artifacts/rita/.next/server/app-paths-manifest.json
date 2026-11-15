@@ -1,5 +1,9 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/admin/instructors/[id]/visibility/route": "app/api/admin/instructors/[id]/visibility/route.js",
+  "/contact/page": "app/contact/page.js",
+  "/terms/page": "app/terms/page.js",
   "/page": "app/page.js",
-  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js"
+  "/(main)/instructors/page": "app/(main)/instructors/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js"
 }

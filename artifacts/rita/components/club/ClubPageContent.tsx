@@ -76,7 +76,7 @@ export function ClubPageContent({ club, coaches }: { club: Club; coaches: ClubCo
 
         <p className="text-xs text-slate-500 border-t border-slate-100 pt-6">
           <a href={mailto} className="underline underline-offset-2 hover:text-slate-700">
-            Are you with this club? Ask us to correct or remove this page
+            Contact us about this page.
           </a>
         </p>
       </div>

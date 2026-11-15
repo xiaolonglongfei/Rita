@@ -57,7 +57,8 @@ function fixture(options = {}) {
   };
   const route = load("app/api/instructors/route.ts", deps);
   return { calls, inserts, logs, deps, async submit(body = { full_name: "Example Coach" }) {
-    return route.POST(new Request("http://test/api/instructors", { method: "POST", body: JSON.stringify(body) }));
+    return route.POST(new Request("http://test/api/instructors", { method: "POST",
+      body: JSON.stringify({ confirmed_student: true, ...body }) }));
   } };
 }
 
@@ -175,7 +176,7 @@ function text(tree) {
   if (tree == null || typeof tree === "boolean") return "";
   return typeof tree === "object" ? text(tree.props?.children) : String(tree);
 }
-test("student form has no About field, sends only name/location/source, and redirects to the new banner", async () => {
+test("student form requires lesson affirmation, sends it, and redirects to the new banner", async () => {
   const requests = [], redirects = [];
   const ui = uiHarness("components/instructor/AddInstructorForm.tsx", {
     "next/navigation": { useRouter: () => ({ push: url => redirects.push(url) }) },
@@ -188,13 +189,167 @@ test("student form has no About field, sends only name/location/source, and redi
   assert.equal(nodes(tree).filter(n => n.type === "textarea").length, 0);
   let inputs = nodes(tree).filter(n => n.type === "input");
   assert.equal(inputs[0].props.maxLength, 80); assert.equal(inputs[1].props.maxLength, 100);
+  const checkbox = inputs.find(n => n.props.type === "checkbox");
+  assert.equal(checkbox.props.checked, false);
+  assert.equal(checkbox.props.required, true);
+  assert.equal(nodes(tree).find(n => n.type === "button").props.disabled, true);
   inputs[0].props.onChange({ target: { value: " Coach Name " } });
   inputs[1].props.onChange({ target: { value: " Court " } });
   tree = ui.render();
   await nodes(tree).find(n => n.type === "button" && text(n) === "Add Instructor").props.onClick();
+  assert.equal(requests.length, 0);
+  checkbox.props.onChange({ target: { checked: true } });
+  tree = ui.render();
+  await nodes(tree).find(n => n.type === "button" && text(n) === "Add Instructor").props.onClick();
   assert.equal(requests[0][0], "/api/instructors");
-  assert.deepEqual(requests[0][1], { full_name: "Coach Name", teaching_locations: "Court", created_by_source: "student" });
+  assert.deepEqual(requests[0][1], { full_name: "Coach Name", teaching_locations: "Court", created_by_source: "student", confirmed_student: true });
   assert.deepEqual(redirects, ["/instructors/created-coach?created=true"]);
+});
+
+test("non-admin creation requires the literal confirmed_student boolean; admins are exempt", async () => {
+  for (const value of [undefined, null, false, "true", 1]) {
+    const f = fixture();
+    const result = await f.submit({ full_name: "Coach Name", confirmed_student: value });
+    assert.equal(result.status, 400);
+    assert.match(result.body.error, /taken lessons/);
+    assert.equal(f.inserts.length, 0);
+    assert.ok(!f.calls.some(call => call[0] === "instructors"));
+  }
+  assert.equal((await fixture({ admin: true }).submit({ full_name: "Coach Name", confirmed_student: false })).status, 201);
+});
+
+function visibilityFixture(options = {}) {
+  const writes = [], tables = [], filters = [];
+  const record = options.missing ? null : {
+    id: "11111111-1111-4111-8111-111111111111",
+    internal_notes: options.notes === undefined ? "Existing admin note" : options.notes,
+    opted_out_at: options.restoring ? "2026-01-01T00:00:00.000Z" : null,
+    is_active: !options.restoring,
+  };
+  const db = { from(table) {
+    tables.push(table);
+    let patch;
+    const query = {
+      select() { return query; },
+      eq(...args) { filters.push(["eq", ...args]); return query; },
+      is(...args) { filters.push(["is", ...args]); return query; },
+      update(value) { patch = value; writes.push(value); return query; },
+      async maybeSingle() {
+        if (table === "users") return { data: { is_admin: options.admin !== false }, error: options.roleError ? {} : null };
+        if (patch) return { data: options.conflict ? null : { ...record, ...patch }, error: options.writeError ? {} : null };
+        return { data: record, error: options.readError ? {} : null };
+      },
+    };
+    return query;
+  } };
+  const route = load("app/api/admin/instructors/[id]/visibility/route.ts", {
+    "next/server": response,
+    "@/lib/supabase/server": {
+      createClient: async () => ({ auth: { getUser: async () => ({ data: { user: options.anonymous ? null : { id: "admin" } } }) } }),
+      createServiceClient: () => db,
+    },
+  });
+  return { writes, tables, filters, submit(body, id = record?.id ?? "11111111-1111-4111-8111-111111111111") {
+    return route.POST(new Request("http://test", { method: "POST", body: JSON.stringify(body) }),
+      { params: Promise.resolve({ id }) });
+  } };
+}
+
+test("visibility actions require server-admin authorization and valid inputs before writing", async () => {
+  for (const [options, status] of [
+    [{ anonymous: true }, 401], [{ admin: false }, 403], [{ roleError: true }, 500],
+  ]) {
+    const f = visibilityFixture(options);
+    assert.equal((await f.submit({ action: "opt_out", reason: "Requested" })).status, status);
+    assert.equal(f.writes.length, 0);
+  }
+  for (const body of [null, {}, { action: "delete" }, { action: "opt_out" }, { action: "opt_out", reason: "  " }]) {
+    const f = visibilityFixture();
+    assert.equal((await f.submit(body)).status, 400);
+    assert.equal(f.writes.length, 0);
+  }
+  assert.equal((await visibilityFixture().submit({ action: "restore" }, "bad-id")).status, 404);
+});
+
+test("opt-out/restore append notes, update only visibility, and never access reviews", async () => {
+  for (const restoring of [false, true]) {
+    const f = visibilityFixture({ restoring });
+    const result = await f.submit({ action: restoring ? "restore" : "opt_out", reason: " Requested by coach " });
+    assert.equal(result.status, 200);
+    assert.equal(f.writes.length, 1);
+    const patch = f.writes[0];
+    assert.deepEqual(Object.keys(patch).sort(), ["internal_notes", "is_active", "opted_out_at"]);
+    assert.equal(patch.is_active, restoring);
+    assert.equal(patch.opted_out_at === null, restoring);
+    assert.match(patch.internal_notes, restoring
+      ? /^Existing admin note\n\d{4}-\d\d-\d\dT.* restored$/
+      : /^Existing admin note\n\d{4}-\d\d-\d\dT.* opted out: Requested by coach$/);
+    assert.ok(f.tables.every(table => ["users", "instructors"].includes(table)));
+    assert.ok(f.filters.some(filter => filter[1] === "internal_notes" && filter[2] === "Existing admin note"));
+    assert.ok(f.filters.some(filter => filter[1] === "opted_out_at"));
+    assert.ok(f.filters.some(filter => filter[1] === "is_active"));
+  }
+  const empty = visibilityFixture({ notes: null });
+  assert.equal((await empty.submit({ action: "opt_out", reason: "Requested" })).status, 200);
+  assert.ok(!empty.writes[0].internal_notes.startsWith("\n"));
+});
+
+test("visibility actions fail safely on missing rows, stale state, concurrent changes and database errors", async () => {
+  for (const [options, action, status, writes] of [
+    [{ missing: true }, "opt_out", 404, 0],
+    [{ readError: true }, "opt_out", 500, 0],
+    [{ restoring: true }, "opt_out", 409, 0],
+    [{}, "restore", 409, 0],
+    [{ conflict: true }, "opt_out", 409, 1],
+    [{ writeError: true }, "opt_out", 500, 1],
+  ]) {
+    const f = visibilityFixture(options);
+    assert.equal((await f.submit({ action, reason: "Requested" })).status, status);
+    assert.equal(f.writes.length, writes);
+  }
+});
+
+test("admin Opt out dialog requires a reason, updates row state, and Restore sends the correct action", async () => {
+  const requests = [];
+  const instructor = { id: "coach", full_name: "Coach Name", internal_notes: "Old note", opted_out_at: null, is_active: true };
+  const ui = uiHarness("components/admin/InstructorAdminTable.tsx", {}, {
+    fetch: async (url, init) => {
+      const body = JSON.parse(init.body);
+      requests.push([url, body]);
+      const restoring = body.action === "restore";
+      return { ok: true, json: async () => ({ instructor: {
+        id: "coach", opted_out_at: restoring ? null : "2026-11-14", is_active: restoring,
+        internal_notes: restoring ? "Old note\nopted out: Requested\nrestored" : "Old note\nopted out: Requested",
+      } }) };
+    },
+  });
+  const render = () => ui.render({ instructors: [instructor] });
+  let tree = render();
+  nodes(tree).find(n => n.type === "button" && text(n) === "Opt out").props.onClick({ stopPropagation() {} });
+  tree = render();
+  let dialog = nodes(tree).find(n => n.type === "dialog");
+  assert.ok(dialog);
+  assert.equal(nodes(dialog).find(n => n.type === "textarea").props.required, true);
+  assert.equal(nodes(dialog).find(n => n.type === "button" && n.props.type === "submit").props.disabled, true);
+  nodes(dialog).find(n => n.type === "textarea").props.onChange({ target: { value: "Requested" } });
+  tree = render();
+  await nodes(tree).find(n => n.type === "form").props.onSubmit({ preventDefault() {} });
+  // onSubmit invokes an async handler; allow its response and state updates to settle.
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.ok(!nodes(tree).some(n => n.type === "dialog"));
+  assert.match(text(tree), /Opted out/);
+  nodes(tree).find(n => n.type === "button" && text(n) === "Restore").props.onClick({ stopPropagation() {} });
+  tree = render();
+  assert.ok(!nodes(nodes(tree).find(n => n.type === "dialog")).some(n => n.type === "textarea"));
+  await nodes(tree).find(n => n.type === "form").props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.ok(nodes(tree).some(n => n.type === "button" && text(n) === "Opt out"));
+  assert.deepEqual(requests, [
+    ["/api/admin/instructors/coach/visibility", { action: "opt_out", reason: "Requested" }],
+    ["/api/admin/instructors/coach/visibility", { action: "restore", reason: "" }],
+  ]);
 });
 test("admin Pending filter excludes opted-out rows and Approve updates the visible list after success", async () => {
   const calls = [];

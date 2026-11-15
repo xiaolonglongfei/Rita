@@ -31,6 +31,34 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
   const [newInternalNotes, setNewInternalNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [addError, setAddError] = useState("");
+  const [visibilityTarget, setVisibilityTarget] = useState<Instructor | null>(null);
+  const [reason, setReason] = useState("");
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
+  const [visibilityError, setVisibilityError] = useState("");
+
+  async function handleVisibility() {
+    if (!visibilityTarget || visibilityBusy) return;
+    setVisibilityBusy(true);
+    setVisibilityError("");
+    try {
+      const response = await fetch(`/api/admin/instructors/${visibilityTarget.id}/visibility`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: visibilityTarget.opted_out_at ? "restore" : "opt_out", reason }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Unable to update this instructor.");
+      const updated = body.instructor;
+      setRows((current) => current.map((inst) => inst.id === updated.id ? { ...inst, ...updated } : inst));
+      setEditNotes((current) => ({ ...current, [updated.id]: updated.internal_notes ?? "" }));
+      setSavedNotes((current) => ({ ...current, [updated.id]: false }));
+      setVisibilityTarget(null);
+    } catch (error) {
+      setVisibilityError(error instanceof Error ? error.message : "Unable to update this instructor.");
+    } finally {
+      setVisibilityBusy(false);
+    }
+  }
 
   // Expandable row state
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -107,6 +135,45 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
 
   return (
     <div>
+      {visibilityTarget && (
+        <dialog
+          ref={(node) => { if (node && !node.open) node.showModal(); }}
+          onCancel={(event) => {
+            if (visibilityBusy) event.preventDefault();
+            else setVisibilityTarget(null);
+          }}
+          aria-labelledby="visibility-title"
+          className="w-full max-w-md rounded-2xl p-6 shadow-xl backdrop:bg-slate-900/40"
+        >
+          <form onSubmit={(event) => { event.preventDefault(); void handleVisibility(); }}>
+            <h2 id="visibility-title" className="text-lg font-bold text-slate-900">
+              {visibilityTarget.opted_out_at ? "Restore" : "Opt out"} {visibilityTarget.full_name}?
+            </h2>
+            <p className="mt-3 text-sm text-slate-600">
+              {visibilityTarget.opted_out_at
+                ? "This makes the coach's profile active and publicly accessible again."
+                : "This hides the coach from public pages and the directory. Their profile and all review data will be retained."}
+            </p>
+            {!visibilityTarget.opted_out_at && (
+              <label className="mt-4 block text-sm font-semibold text-slate-700">
+                Reason
+                <textarea required autoFocus value={reason} onChange={(event) => setReason(event.target.value)}
+                  disabled={visibilityBusy} rows={3}
+                  className="mt-2 w-full rounded-lg border border-slate-300 p-2 font-normal" />
+              </label>
+            )}
+            {visibilityError && <p role="alert" className="mt-3 text-sm text-red-600">{visibilityError}</p>}
+            <div className="mt-5 flex justify-end gap-3">
+              <button type="button" disabled={visibilityBusy} onClick={() => setVisibilityTarget(null)}
+                className="rounded-lg border px-3 py-2 text-sm">Cancel</button>
+              <button type="submit" disabled={visibilityBusy || (!visibilityTarget.opted_out_at && !reason.trim())}
+                className="rounded-lg bg-orange-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                {visibilityBusy ? "Saving…" : visibilityTarget.opted_out_at ? "Restore" : "Opt out"}
+              </button>
+            </div>
+          </form>
+        </dialog>
+      )}
       <button
         onClick={() => setShowAddForm(!showAddForm)}
         className="mb-4 px-4 py-2 rounded-lg text-white text-sm font-semibold"
@@ -236,6 +303,18 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                       className="rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
                       {approving === inst.id ? "Approving…" : "Approve"}
                     </button>}
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setReason("");
+                        setVisibilityError("");
+                        setVisibilityTarget(inst);
+                      }}
+                      disabled={approving !== null || visibilityBusy || !!savingNotes[inst.id]}
+                      className="ml-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                    >
+                      {inst.opted_out_at ? "Restore" : "Opt out"}
+                    </button>
                   </td>
                 </tr>
 
@@ -271,7 +350,7 @@ export function InstructorAdminTable({ instructors }: { instructors: Instructor[
                           <div className="flex items-center gap-3 mt-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleSaveNotes(inst.id); }}
-                              disabled={savingNotes[inst.id]}
+                              disabled={savingNotes[inst.id] || visibilityBusy}
                               className="px-3 py-1.5 rounded-lg text-white text-xs font-semibold disabled:opacity-50"
                               style={{ background: "#f97316" }}
                             >

@@ -14,3 +14,9 @@ Student-created coaches awaiting directory approval are different from opted-out
 **Why:** The user explicitly wants students to review newly added coaches immediately, before an administrator approves directory publication. Inactivity alone is not a removal request.
 
 **How to apply:** Keep pending publication separate from opt-out privacy. Do not extend the opt-out 404 rule to every inactive coach.
+
+Do not advertise coach removal on instructor profiles or on the contact page. Keep contact copy neutral, leave the report-a-review flow intact, and keep the user-created-profile policy paragraph within Terms only.
+
+**Why:** The user explicitly wants profile concerns handled through support without promoting self-serve removal.
+
+**How to apply:** Offer the shared “Contact us” route and neutral club contact wording; only administrators manage opt-out and restoration.

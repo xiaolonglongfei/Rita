@@ -76,6 +76,9 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (roleError) return NextResponse.json({ error: "Unable to check your account. Please try again." }, { status: 500 });
   const isAdmin = userData?.is_admin === true;
+  if (!isAdmin && body.confirmed_student !== true) {
+    return NextResponse.json({ error: "Please confirm that you've taken lessons with this coach." }, { status: 400 });
+  }
   const name = body.full_name ?? body.name;
   const location = body.teaching_locations ?? body.location ?? null;
   const validation = isAdmin

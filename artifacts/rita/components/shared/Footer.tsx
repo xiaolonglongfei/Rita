@@ -7,6 +7,7 @@ export function Footer() {
         <Link href="/terms" className="hover:underline">Terms</Link>
         <Link href="/privacy" className="hover:underline">Privacy</Link>
         <Link href="/guidelines" className="hover:underline">Review guidelines</Link>
+        <Link href="/contact" className="hover:underline">Contact us</Link>
       </nav>
     </footer>
   );
