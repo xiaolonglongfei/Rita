@@ -10,6 +10,9 @@ export default async function TestAuthPage() {
 
   return (
     <div style={{ padding: 40, fontFamily: 'monospace' }}>
+      <a href="/" className="mb-6 inline-block text-2xl font-bold text-slate-800">
+        Rovi<span className="text-rita-lime">.</span>
+      </a>
       <h1>Auth Debug</h1>
       <p><strong>User:</strong> {user ? user.email : 'null'}</p>
       <p><strong>User ID:</strong> {user ? user.id : 'null'}</p>

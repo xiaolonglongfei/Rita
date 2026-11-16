@@ -104,7 +104,7 @@ export default function RulesPage() {
     <main className="min-h-screen bg-slate-50 px-4 py-10 sm:py-14">
       <article className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-sm sm:px-10 sm:py-12">
         <Link
-          href="/win"
+          href="/"
           className="inline-block text-2xl font-black tracking-tight text-slate-800 hover:opacity-80"
           data-testid="link-rovi-giveaway"
         >

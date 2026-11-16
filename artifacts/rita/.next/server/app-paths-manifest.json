@@ -1,9 +1,18 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/api/admin/instructors/[id]/visibility/route": "app/api/admin/instructors/[id]/visibility/route.js",
-  "/contact/page": "app/contact/page.js",
-  "/terms/page": "app/terms/page.js",
   "/page": "app/page.js",
-  "/(main)/instructors/page": "app/(main)/instructors/page.js",
-  "/(auth)/login/page": "app/(auth)/login/page.js"
+  "/terms/page": "app/terms/page.js",
+  "/privacy/page": "app/privacy/page.js",
+  "/rules/page": "app/rules/page.js",
+  "/guidelines/page": "app/guidelines/page.js",
+  "/win/page": "app/win/page.js",
+  "/test-auth/page": "app/test-auth/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(auth)/forgot-password/page": "app/(auth)/forgot-password/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(auth)/reset-password/page": "app/(auth)/reset-password/page.js",
+  "/(auth)/signup/page": "app/(auth)/signup/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js",
+  "/(main)/clubs/[slug]/page": "app/(main)/clubs/[slug]/page.js"
 }
