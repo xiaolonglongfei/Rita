@@ -63,12 +63,20 @@ export default function PrivacyPage() {
             <p>
               Reviews on Rovi are anonymous: your name is never shown alongside a published review or its rating. When you submit a review, an instructor who has claimed their profile is asked to confirm that the session took place; for that confirmation they see your name and the session&apos;s date, time, and location, but not your rating or comments. Internally, our systems retain a link between your account and the reviews you&apos;ve submitted — this is necessary to support lesson confirmation, prevent abuse, and operate features like the giveaway — but this internal record is never disclosed publicly or to instructors.
             </p>
+            <h3 className="mb-2 mt-4 text-lg font-bold text-slate-900">Instructor confirmation.</h3>
+            <p>
+              If an instructor has claimed their profile and confirms a lesson, they see the name on the student&apos;s account and the lesson date, time and place. They do not see the rating or comment. With few reviews, an instructor may be able to guess who wrote a review.
+            </p>
           </section>
 
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">5. How We Share Information</h2>
             <p>
               We do not sell your personal information. We share information only with the service providers that help us operate Rovi (for example, our database, email delivery, and hosting providers), each of whom is only permitted to use your information to provide services to us, and, where required, to comply with the law or protect the rights, safety, or property of Rovi, our users, or others.
+            </p>
+            <h3 className="mb-2 mt-4 text-lg font-bold text-slate-900">Legal requests.</h3>
+            <p>
+              If we receive a legal request to disclose the identity of a person who wrote a review, we will notify that person before disclosing where the law allows, unless we are legally prohibited from doing so.
             </p>
           </section>
 

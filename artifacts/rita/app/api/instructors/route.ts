@@ -2,6 +2,8 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { instructorNameKey, studentInstructorValidation, withInstructorCreationLock } from "@/lib/instructor-creation";
 import { checkReviewContentLayer1 } from "@/lib/moderation/layer1";
+import { parseBioSource } from "@/lib/instructor-bio-source";
+import { bioSourcePermissionsReady } from "@/lib/bio-source-access";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,7 +17,7 @@ export async function GET(request: Request) {
   const supabase = createServiceClient();
   let query = supabase
     .from("instructors")
-    .select("*", { count: "exact" })
+    .select("id, full_name, bio, avatar_url, teaching_locations, is_claimed, reviews_visible, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, created_at", { count: "exact" })
     .is("opted_out_at", null)
     .eq("is_test", false)   // never expose QA/test records to real users
     .eq("is_active", true); // hide former/inactive instructors from public browse
@@ -76,6 +78,15 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (roleError) return NextResponse.json({ error: "Unable to check your account. Please try again." }, { status: 500 });
   const isAdmin = userData?.is_admin === true;
+  const sourceFields = ["bio_source_url", "bio_source_checked_at", "bioSourceUrl", "bioSourceCheckedAt"];
+  if (!isAdmin && sourceFields.some((key) => Object.prototype.hasOwnProperty.call(body, key))) {
+    return NextResponse.json({ error: "Bio source details can only be set by an administrator." }, { status: 400 });
+  }
+  const source = isAdmin ? parseBioSource(body) : { values: {} };
+  if ("error" in source) return NextResponse.json({ error: source.error }, { status: 400 });
+  if (Object.values(source.values).some((value) => value !== null) && !(await bioSourcePermissionsReady())) {
+    return NextResponse.json({ error: "Bio source privacy permissions are not configured yet. Apply the supplied database privacy SQL before saving source details." }, { status: 503 });
+  }
   if (!isAdmin && body.confirmed_student !== true) {
     return NextResponse.json({ error: "Please confirm that you've taken lessons with this coach." }, { status: 400 });
   }
@@ -133,10 +144,11 @@ export async function POST(request: Request) {
       teaching_locations: typeof location === "string" ? location.trim() || null : location,
       avatar_url: isAdmin ? body.photoUrl ?? null : null,
       internal_notes: isAdmin ? body.internalNotes ?? null : null,
+      ...source.values,
       created_by: user.id,
       created_by_source: isAdmin ? body.created_by_source ?? "admin" : "student",
       is_active: isAdmin,
-    }).select().single();
+    }).select("id, full_name, bio, avatar_url, teaching_locations, is_active, created_by_source").single();
     if (error) return NextResponse.json({ error: "Unable to add this instructor. Please try again." }, { status: 500 });
     return NextResponse.json({ instructor: data }, { status: 201 });
   });

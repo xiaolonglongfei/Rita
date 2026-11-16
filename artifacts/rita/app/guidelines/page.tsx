@@ -38,6 +38,7 @@ export default function GuidelinesPage() {
               <li>Describe your own experience in lessons: what happened, what helped, what did not.</li>
               <li>Do not include phone numbers, email addresses, street addresses or social media handles, yours or anyone else&apos;s.</li>
               <li>Do not name children or describe them in ways that could identify them. Say &quot;my son&quot; or &quot;my daughter&quot;.</li>
+              <li>Do not include a child&apos;s name or other personal details about a child. If you are a parent, rate the lesson, not the child.</li>
               <li>No threats, hate, discrimination, sexual content or insults.</li>
               <li>Do not present something as fact unless you know it is true. If it is your opinion, say so.</li>
               <li>Do not promote another coach, business or website.</li>

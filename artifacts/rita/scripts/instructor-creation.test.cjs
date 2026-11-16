@@ -8,7 +8,7 @@ function load(file, deps = {}, globals = {}) {
   const module = { exports: {} };
   vm.runInNewContext(ts.transpileModule(readFileSync(join(__dirname, "..", file), "utf8"), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
-  }).outputText, { module, exports: module.exports, Date, Request, console, ...globals,
+  }).outputText, { module, exports: module.exports, Date, Request, URL, console, ...globals,
     require(name) { assert.ok(name in deps, `Unexpected import ${name}`); return deps[name]; } });
   return module.exports;
 }
@@ -44,6 +44,8 @@ function fixture(options = {}) {
   const deps = {
     "next/server": response,
     "@/lib/instructor-creation": creation,
+    "@/lib/instructor-bio-source": load("lib/instructor-bio-source.ts"),
+    "@/lib/bio-source-access": { bioSourcePermissionsReady: async () => !options.sourcePermissionsMissing },
     "@/lib/moderation/layer1": { checkReviewContentLayer1(text) {
       return { blockers: text.includes("blocked") ? ["profanity"] : [],
         warnings: text.includes("warned") ? ["promotional"] : [], passed: !text.includes("blocked") };
@@ -135,6 +137,60 @@ test("admins keep active creation and optional bio/photo without student limits"
   assert.equal(f.inserts[0].bio, "Bio"); assert.equal(f.inserts[0].avatar_url, "photo");
   assert.equal((await fixture({ anonymous: true }).submit()).status, 401);
 });
+test("only admins can set bio sourcing; student bios remain ignored", async () => {
+  const fields = { bio_source_url: " https://example.test/coach ", bio_source_checked_at: "2026-11-16" };
+  const admin = fixture({ admin: true });
+  assert.equal((await admin.submit({ full_name: "Coach Name", ...fields })).status, 201);
+  assert.equal(admin.inserts[0].bio_source_url, "https://example.test/coach");
+  assert.equal(admin.inserts[0].bio_source_checked_at, "2026-11-16");
+  for (const key of ["bio_source_url", "bio_source_checked_at", "bioSourceUrl", "bioSourceCheckedAt"]) {
+    const student = fixture();
+    assert.equal((await student.submit({ full_name: "Coach Name", [key]: fields[key] ?? "forged" })).status, 400);
+    assert.equal(student.inserts.length, 0);
+  }
+  const student = fixture();
+  assert.equal((await student.submit({ full_name: "Coach Name", bio: "forged", about: "forged" })).status, 201);
+  assert.equal(student.inserts[0].bio, null);
+  assert.equal(student.inserts[0].bio_source_url, undefined);
+  assert.equal(student.inserts[0].bio_source_checked_at, undefined);
+});
+
+test("admin source editor is server-admin-only and updates only submitted allowed fields", async () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  async function patch(f, body) {
+    return load("app/api/admin/instructors/[id]/route.ts", f.deps).PATCH(new Request("http://test", {
+      method: "PATCH", body: JSON.stringify(body),
+    }), { params: Promise.resolve({ id }) });
+  }
+  for (const [options, expected] of [[{ anonymous: true }, 401], [{}, 403], [{ admin: true, roleError: true }, 500]]) {
+    const f = fixture(options);
+    assert.equal((await patch(f, { bio_source_url: "https://example.test" })).status, expected);
+    assert.equal(f.inserts.length, 0);
+  }
+  const f = fixture({ admin: true });
+  assert.equal((await patch(f, {
+    bio_source_url: "https://example.test/coach", bio_source_checked_at: "2026-11-16",
+    bio: "Do not overwrite", opted_out_at: "forged", is_active: false,
+  })).status, 200);
+  assert.deepEqual(JSON.parse(JSON.stringify(f.inserts[0])), {
+    bio_source_url: "https://example.test/coach", bio_source_checked_at: "2026-11-16",
+  });
+  assert.equal((await patch(f, { bio_source_url: "", bio_source_checked_at: "" })).status, 200);
+  assert.equal(f.inserts[1].bio_source_url, null);
+  assert.equal(f.inserts[1].bio_source_checked_at, null);
+  assert.equal((await patch(f, { internalNotes: "Existing notes editor" })).status, 200);
+  assert.equal(f.inserts[2].internal_notes, "Existing notes editor");
+  assert.equal((await patch(f, { bio_source_url: "javascript:alert(1)" })).status, 400);
+  assert.equal((await patch(f, { bio_source_checked_at: "2026-02-30" })).status, 400);
+  assert.equal((await patch(f, { is_active: true })).status, 400);
+  assert.equal((await patch(fixture({ admin: true, notPending: true }), { bio_source_url: null })).status, 404);
+  const unsafe = fixture({ admin: true, sourcePermissionsMissing: true });
+  assert.equal((await patch(unsafe, { bio_source_url: "https://example.test/coach" })).status, 503);
+  assert.equal((await unsafe.submit({ full_name: "Coach Name", bio_source_url: "https://example.test/coach" })).status, 503);
+  assert.equal(unsafe.inserts.length, 0);
+  assert.equal((await patch(unsafe, { bio_source_url: null, bio_source_checked_at: null })).status, 200);
+});
+
 test("approval is admin-only and atomically restricted to pending, non-opted-out students", async () => {
   for (const admin of [false, true]) {
     const f = fixture({ admin });
@@ -158,6 +214,7 @@ function uiHarness(file, deps = {}, globals = {}) {
   const jsx = (type, props) => ({ type, props });
   const exports = load(file, {
     "react/jsx-runtime": { jsx, jsxs: jsx },
+    "./BioSourceFields": { BioSourceFields: "bio-source-fields" },
     react: { Fragment: "fragment", useState(initial) {
       const index = cursor++;
       if (!(index in states)) states[index] = typeof initial === "function" ? initial() : initial;
@@ -373,4 +430,62 @@ test("admin Pending filter excludes opted-out rows and Approve updates the visib
   tree = ui.render(props);
   assert.ok(text(tree).includes("No pending instructors."));
   assert.deepEqual(calls, [["/api/admin/instructors/pending/approve", "POST"]]);
+});
+
+test("Bio, no source filter includes opted-out bios, ignores whitespace, and updates after saving", async () => {
+  const requests = [];
+  const props = { instructors: [
+    { id: "removed", full_name: "Removed Bio", bio: "Bio", bio_source_url: " ", opted_out_at: "2026-01-01" },
+    { id: "normal", full_name: "Normal Bio", bio: "Bio", bio_source_url: null },
+    { id: "blank", full_name: "Blank Bio", bio: "  ", bio_source_url: null },
+    { id: "sourced", full_name: "Sourced Bio", bio: "Bio", bio_source_url: "https://example.test" },
+  ] };
+  const ui = uiHarness("components/admin/InstructorAdminTable.tsx", {}, {
+    fetch: async (url, init) => {
+      const body = JSON.parse(init.body); requests.push([url, body]);
+      return { ok: true, json: async () => ({ instructor: { id: "removed", ...body } }) };
+    },
+  });
+  let tree = ui.render(props);
+  const filter = nodes(tree).find(n => n.type === "button" && text(n).startsWith("Bio, no source"));
+  assert.equal(text(filter).trim(), "Bio, no source (2)");
+  filter.props.onClick();
+  tree = ui.render(props);
+  assert.ok(text(tree).includes("Removed Bio")); assert.ok(text(tree).includes("Normal Bio"));
+  assert.ok(!text(tree).includes("Blank Bio")); assert.ok(!text(tree).includes("Sourced Bio"));
+  nodes(tree).find(n => n.type === "tr" && text(n).includes("Removed Bio")).props.onClick();
+  tree = ui.render(props);
+  let fields = nodes(tree).find(n => n.type === "bio-source-fields");
+  fields.props.onUrlChange("https://example.test/coach");
+  tree = ui.render(props);
+  fields = nodes(tree).find(n => n.type === "bio-source-fields");
+  fields.props.onDateChange("2026-11-16");
+  tree = ui.render(props);
+  await nodes(tree).find(n => n.type === "button" && text(n) === "Save bio source").props.onClick();
+  tree = ui.render(props);
+  assert.ok(!text(tree).includes("Removed Bio"));
+  assert.ok(text(tree).includes("Bio, no source (1)"));
+  assert.deepEqual(requests, [["/api/admin/instructors/removed", {
+    bio_source_url: "https://example.test/coach", bio_source_checked_at: "2026-11-16",
+  }]]);
+});
+
+test("admin add form sends source URL and date with the new coach", async () => {
+  const requests = [];
+  let reloaded = false;
+  const ui = uiHarness("components/admin/InstructorAdminTable.tsx", {}, {
+    window: { location: { reload() { reloaded = true; } } },
+    fetch: async (url, init) => { requests.push([url, JSON.parse(init.body)]); return { ok: true }; },
+  });
+  let tree = ui.render({ instructors: [] });
+  nodes(tree).find(n => n.type === "button" && text(n) === "+ Add Instructor").props.onClick();
+  tree = ui.render({ instructors: [] });
+  nodes(tree).find(n => n.type === "input" && n.props.placeholder === "Full name *").props.onChange({ target: { value: "Coach Name" } });
+  let fields = nodes(tree).find(n => n.type === "bio-source-fields");
+  fields.props.onUrlChange("https://example.test/coach"); fields.props.onDateChange("2026-11-16");
+  tree = ui.render({ instructors: [] });
+  await nodes(tree).find(n => n.type === "button" && text(n) === "Save Instructor").props.onClick();
+  assert.equal(requests[0][1].bio_source_url, "https://example.test/coach");
+  assert.equal(requests[0][1].bio_source_checked_at, "2026-11-16");
+  assert.equal(reloaded, true);
 });

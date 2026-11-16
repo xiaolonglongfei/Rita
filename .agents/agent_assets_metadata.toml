@@ -42,3 +42,17 @@ mtime_ms = 1794860639336
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/647db615-58c6-47bf-a929-327931460e7e/51545b8d-6ac1-421a-a65c-1c1d697cc20a"
 storage_version_token = "1794860667699320"
 content_type = "text/html"
+
+[[outputs]]
+id = "Ian7bLZFpWKt60NJjAAKU"
+uri = "file://generated-artifacts/bio-sourcing-privacy-audit.html"
+type = "html"
+title = "Original privacy text and full anonymity audit"
+description = "Original policy first, requested additions, all 33 matching copy locations with exact wording, changed files, and the database permission step still required."
+logical_id = "e9ce0a93-c9db-49d2-96e7-081f5028f353"
+content_hash = "sha256:faacb4b56102ffbbc84ae390a12ab62f0091b4f6b904761705915440d8f90df1"
+size = 25676
+mtime_ms = 1794861702544
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/e9ce0a93-c9db-49d2-96e7-081f5028f353/67c206b4-dd8b-4d35-bec7-45cbed483786"
+storage_version_token = "1794861777138921"
+content_type = "text/html"

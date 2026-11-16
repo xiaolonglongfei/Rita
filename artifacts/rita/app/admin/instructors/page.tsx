@@ -5,7 +5,7 @@ export default async function AdminInstructorsPage() {
   const supabase = createServiceClient();
   const { data: instructors } = await supabase
     .from("instructors")
-    .select("*")
+    .select("id, full_name, bio, teaching_locations, internal_notes, is_claimed, avg_overall, total_reviews, opted_out_at, is_active, created_by_source, bio_source_url, bio_source_checked_at")
     .order("created_at", { ascending: false });
 
   return (

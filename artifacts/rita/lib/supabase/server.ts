@@ -33,3 +33,10 @@ export function createServiceClient() {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
+
+/** Unauthenticated client for verifying database column permissions, never for admin data. */
+export function createAnonymousClient() {
+  return createSupabaseClient(getUrl(), process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}

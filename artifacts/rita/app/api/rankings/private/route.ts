@@ -11,7 +11,7 @@ export async function GET() {
   const db = createServiceClient();
   const { data } = await db
     .from("student_rankings")
-    .select("*, instructors!inner(*)")
+    .select("id, student_id, instructor_id, rank_position, instructors!inner(id, full_name, avatar_url, teaching_locations, is_claimed, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, reviews_visible)")
     .is("instructors.opted_out_at", null)
     .eq("instructors.is_active", true)
     .eq("student_id", user.id)

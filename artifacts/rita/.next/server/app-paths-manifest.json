@@ -1,9 +1,10 @@
 {
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/api/giveaway/free-entry/route": "app/api/giveaway/free-entry/route.js",
+  "/api/instructors/route": "app/api/instructors/route.js",
+  "/api/instructors/[id]/route": "app/api/instructors/[id]/route.js",
+  "/api/admin/instructors/[id]/route": "app/api/admin/instructors/[id]/route.js",
   "/page": "app/page.js",
-  "/win/page": "app/win/page.js",
-  "/rules/page": "app/rules/page.js",
+  "/privacy/page": "app/privacy/page.js",
   "/guidelines/page": "app/guidelines/page.js",
-  "/(main)/win/free-entry/page": "app/(main)/win/free-entry/page.js"
+  "/(main)/instructors/[id]/page": "app/(main)/instructors/[id]/page.js"
 }

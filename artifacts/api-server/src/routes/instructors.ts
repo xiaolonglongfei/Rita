@@ -64,7 +64,7 @@ router.get("/instructors", async (req, res): Promise<void> => {
   const limit = params.success && params.data.limit ? Number(params.data.limit) : 20;
   const offset = (page - 1) * limit;
 
-  let query = supabase.from("instructors").select("*", { count: "exact" }).is("opted_out_at", null);
+  let query = supabase.from("instructors").select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at", { count: "exact" }).is("opted_out_at", null);
 
   if (search) query = query.or(`name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (specialty) query = query.ilike("specialty", `%${specialty}%`);
@@ -82,7 +82,9 @@ router.get("/instructors/:id", async (req, res): Promise<void> => {
   const id = parseInt(raw, 10);
   if (isNaN(id)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const { data, error } = await supabase.from("instructors").select("*").eq("id", id).is("opted_out_at", null).single();
+  const { data, error } = await supabase.from("instructors")
+    .select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at")
+    .eq("id", id).is("opted_out_at", null).single();
   if (error || !data) { res.status(404).json({ error: "Instructor not found" }); return; }
   res.json(formatInstructor(data as InstructorRow));
 });
@@ -132,7 +134,9 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
   const instructorId = parseInt(raw, 10);
   if (isNaN(instructorId)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const { data: instructor, error: ie } = await supabase.from("instructors").select("*").eq("id", instructorId).is("opted_out_at", null).single();
+  const { data: instructor, error: ie } = await supabase.from("instructors")
+    .select("id, avg_value, avg_effectiveness, avg_punctuality, avg_score, review_count")
+    .eq("id", instructorId).is("opted_out_at", null).single();
   if (ie || !instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data: reviews } = await supabase
@@ -141,7 +145,7 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
     .eq("instructor_id", instructorId)
     .eq("status", "approved");
 
-  const i = instructor as InstructorRow;
+  const i = instructor;
   const scoreDistribution = [1, 2, 3, 4, 5].map(score => ({
     score,
     count: (reviews ?? []).filter((r: { overall_score: number }) => Math.round(r.overall_score) === score).length,

@@ -318,6 +318,8 @@ export function ReviewForm({ instructorId, instructorName, instructorLocation }:
             </div>
           </div>
 
+          <p className="mb-4 text-xs leading-relaxed text-slate-500">Please don&apos;t include a child&apos;s name or personal details.</p>
+
           {error && <p className="text-sm text-red-500 mb-4 text-center">{error}</p>}
 
           <button

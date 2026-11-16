@@ -95,7 +95,7 @@ test("guidelines are indexable, canonical, and retain all nine headings and list
   assert.equal(all.filter(n => n.type === "h2").length, 9);
   assert.equal(all.filter(n => n.type === "ul").length, 4);
   assert.equal(all.filter(n => n.type === "ol").length, 1);
-  assert.equal(all.filter(n => n.type === "li").length, 22);
+  assert.equal(all.filter(n => n.type === "li").length, 23);
   const form = source("components/review/ReviewForm.tsx");
   assert.ok(form.includes("Ratings are all we need. Add a comment only if you&apos;d like to."));
   assert.ok(form.includes('placeholder="Share your experience... (optional)"'));

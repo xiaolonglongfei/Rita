@@ -8,3 +8,4 @@
 - [Moderation schema policy](moderation-schema-policy.md) — propose SQL for moderation action CHECK changes; do not alter the remote table or bypass audit logging.
 - [Club outreach privacy](club-outreach-privacy.md) — outreach records stay private; public club pages are independent, not club-endorsed websites.
 - [Instructor opt-out privacy](instructor-opt-out-privacy.md) — removed coaches disappear from public/member views and giveaway counts; admin records and stored reviews remain intact.
+- [Supabase private column permissions](supabase-column-privacy.md) — public DTOs and row policies do not protect new columns inherited through broad browser-role SELECT grants.

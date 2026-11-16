@@ -20,3 +20,9 @@ Public copy must not claim reviews or instructors are generally "verified." Use 
 **Why:** The user says only instructors who have claimed their profile are asked to confirm lessons; confirmation is not a universal property of reviews.
 
 **How to apply:** Use "Not yet confirmed" for the other state. Keep accurate identity/login-link verification statements and legal disclaimers about not verifying opinions; do not rename internal fields or change confirmation, scoring, or giveaway logic to match the wording.
+
+Bio sourcing is internal administrator information, not public attribution. Source URLs and source-check dates must never appear on public pages, APIs, metadata, sitemaps, or emails.
+
+**Why:** The user explicitly requires sourcing details to remain admin-only.
+
+**How to apply:** Preserve explicit public instructor projections and verify database-level browser-role restrictions before saving sourcing information.

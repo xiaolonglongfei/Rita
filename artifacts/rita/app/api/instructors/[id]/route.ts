@@ -9,7 +9,8 @@ export async function GET(
   const db = createServiceClient();
 
   const { data: instructor, error } = await db.from("instructors")
-    .select("*").eq("id", id).is("opted_out_at", null).maybeSingle();
+    .select("id, full_name, bio, avatar_url, teaching_locations, is_claimed, reviews_visible, avg_overall, avg_value, avg_effectiveness, avg_punctuality, total_reviews, created_at")
+    .eq("id", id).is("opted_out_at", null).maybeSingle();
   if (error || !instructor)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
