@@ -36,6 +36,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <Link href="/admin/users" className="text-slate-300 hover:text-white transition-colors">
                 Users
               </Link>
+              <Link href="/admin/giveaway" className="text-slate-300 hover:text-white transition-colors">
+                Giveaway entries
+              </Link>
             </div>
           </div>
           <div className="flex items-center gap-4 text-sm">

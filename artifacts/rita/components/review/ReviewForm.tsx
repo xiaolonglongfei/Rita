@@ -1,5 +1,7 @@
 "use client";
 
+import { GIVEAWAY_REVIEW_DISCLOSURE } from "@/lib/giveaway";
+
 import { useEffect, useState } from "react";
 import { CalendarDays, Clock3, MapPin, Info, ShieldCheck, CircleDollarSign, TrendingUp } from "lucide-react";
 import { getLocalSessionDefaults } from "@/lib/session-defaults";
@@ -326,6 +328,10 @@ export function ReviewForm({ instructorId, instructorName, instructorLocation }:
           >
             {submitting ? "Submitting..." : "Submit Anonymous Review"}
           </button>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            <Link href="/rules" className="text-orange-600 underline underline-offset-2">Official Rules</Link>. No purchase necessary.
+          </p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-500">{GIVEAWAY_REVIEW_DISCLOSURE}</p>
 
           <p className="flex items-center justify-center gap-2 text-xs text-slate-600 text-center mt-3">
             <ShieldCheck aria-hidden="true" className="h-5 w-5 shrink-0 text-rita-primary" /> Your rating and comments stay anonymous

@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { pageMetadata } from "@/lib/site";
+import { SPONSOR_NAME } from "@/lib/giveaway";
 
-export const metadata: Metadata = pageMetadata("/rules", "Official Giveaway Rules", "Official rules for the Rovi $100 Gift Card Giveaway.");
+export const metadata: Metadata = pageMetadata("/rules", "Official Giveaway Rules", `Official rules for the ${SPONSOR_NAME} $100 Gift Card Giveaway.`);
 
 const sections = [
   {
     title: "1. Sponsor",
     paragraphs: [
-      <>This promotion (&quot;Giveaway&quot;) is sponsored by Rovi (rovi.training) (&quot;Sponsor&quot;). Contact: <a href="mailto:rovi.training.support@gmail.com" className="text-orange-600 underline underline-offset-2">rovi.training.support@gmail.com</a>.</>,
+      <>This promotion (&quot;Giveaway&quot;) is sponsored by {SPONSOR_NAME} (rovi.training) (&quot;Sponsor&quot;). Contact: <a href="mailto:rovi.training.support@gmail.com" className="text-orange-600 underline underline-offset-2">rovi.training.support@gmail.com</a>.</>,
     ],
   },
   {
     title: "2. Eligibility",
     paragraphs: [
-      "The Giveaway is open only to individuals who are (a) 18 years of age or older at the time of entry, and (b) legal residents of the United States. Employees of Sponsor and their immediate family members are not eligible. By entering, you represent that you meet these requirements. Sponsor reserves the right to request proof of age or residency before awarding a prize.",
+      "Open to legal residents of the United States who are 18 years of age or older at the time of entry. Void where prohibited.",
+      "Employees of Sponsor and their immediate family members are not eligible. By entering, you represent that you meet these requirements. Sponsor reserves the right to request proof of age or residency before awarding a prize.",
     ],
   },
   {
@@ -26,6 +28,9 @@ const sections = [
   {
     title: "4. How to Enter",
     paragraphs: [
+      <>There are two ways to enter. (1) Leave at least one qualifying review on Rovi while signed in to your account. (2) Free entry: submit your name and email at <Link href="/win/free-entry" className="text-orange-600 underline underline-offset-2">rovi.training/win/free-entry</Link>. No purchase and no review is required. A free entry has the same chance of winning as an entry made with a review. Free entries are limited to 3 per person during the Promotion Period and no more than one every 7 days.</>,
+      "No purchase of any kind is necessary to enter or to win.",
+      "Whether a review is positive or negative has no effect on entry.",
       "To enter, (a) create a free Rovi account through the Giveaway landing page during the Promotion Period, and (b) submit at least one qualifying review (defined in Section 5). Completing both steps earns you one (1) entry. NO PURCHASE OR PAYMENT OF ANY KIND IS REQUIRED TO ENTER OR WIN.",
       'Alternate method of entry (no review required): To receive one (1) entry without submitting a review, send an email with the subject line "Giveaway Entry" to rovi.training.support@gmail.com during the Promotion Period, including your full name and the email address at which you may be contacted. Limit one (1) alternate-method entry per person, per drawing. Requests must be received before that drawing\'s entry cutoff date.',
       "Limit one (1) Rovi account per person. Entries obtained through unauthorized or automated means will be void.",
@@ -113,7 +118,7 @@ export default function RulesPage() {
 
         <header className="mt-8 border-b border-slate-200 pb-7">
           <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl" data-testid="rules-title">
-            Rovi $100 Gift Card Giveaway — Official Rules
+            {SPONSOR_NAME} $100 Gift Card Giveaway — Official Rules
           </h1>
           <p className="mt-3 text-sm font-medium text-slate-500">Last updated: 10/19/2026</p>
         </header>

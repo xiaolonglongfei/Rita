@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getGiveawayStatus } from "@/lib/giveaway";
+import { getGiveawayStatus, SPONSOR_NAME, GIVEAWAY_REVIEW_DISCLOSURE } from "@/lib/giveaway";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getGiveawayProgress } from "@/lib/giveaway-progress";
@@ -76,8 +76,10 @@ export default async function WinPage() {
           {/* Small Print */}
           <div className="p-5 bg-gray-50 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-sm mx-auto" data-testid="campaign-smallprint">
-              No purchase necessary. Must be 18+ and a legal resident of the United States. See official rules for details.
+              No purchase necessary. <Link href="/rules" className="text-orange-600 underline underline-offset-2">Official Rules</Link>.
+              {" "}Must be 18+ and a legal resident of the United States. Sponsored by {SPONSOR_NAME}.
             </p>
+            <p className="mt-3 text-xs leading-relaxed text-gray-500">{GIVEAWAY_REVIEW_DISCLOSURE}</p>
           </div>
         </div>
       </main>

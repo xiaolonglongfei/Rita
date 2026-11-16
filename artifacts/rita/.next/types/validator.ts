@@ -173,6 +173,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../app/(main)/win/free-entry/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/win/free-entry">> = Specific
+  const handler = {} as typeof import("../../app/(main)/win/free-entry/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/admin/giveaway/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/admin/giveaway">> = Specific
+  const handler = {} as typeof import("../../app/admin/giveaway/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../app/admin/instructors/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/admin/instructors">> = Specific
@@ -303,6 +321,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/auth/callback">> = Specific
   const handler = {} as typeof import("../../app/api/auth/callback/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../app/api/giveaway/free-entry/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/giveaway/free-entry">> = Specific
+  const handler = {} as typeof import("../../app/api/giveaway/free-entry/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

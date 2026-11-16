@@ -7,7 +7,19 @@ Giveaway signup records consent, not entry completion. A user is entered only af
 
 **Why:** The user explicitly said the campaign is intended to get reviews and must not silently depend on instructor-side session verification. A saved, accepted review is the earliest reliable eligibility signal.
 
-**How to apply:** Keep giveaway UI eligibility and draw selection on one shared definition. Do not add instructor verification as a requirement. Preserve the supplied official rules. Alternate-method email entries are added manually at draw time, not inferred from account data.
+**How to apply:** Keep giveaway UI eligibility and draw selection on one shared definition. Do not add instructor verification as a requirement. Alternate-method email entries are added manually at draw time, not inferred from account data.
+
+Free entry is a separate no-account, no-review path. Free entrants get up to three entries per promotion, at least seven days apart, with one equally weighted drawing entry per recorded free entry. Preserve existing reviewer qualification, the reviewer cap, and prior email-entry rights. Do not backfill, recompute, or reduce existing entries when adding free entry.
+
+**Why:** The user explicitly added a free-entry method while requiring existing entrants' entries and rights to remain intact.
+
+**How to apply:** Keep free entrants separate from user accounts and marketing. Link to the form only from Official Rules, not directly from the homepage, review form, or giveaway landing page. At manual drawing time include recorded free entries alongside reviewer entries and existing eligible email entries.
+
+Free-entry count-then-insert must retain cross-instance duplicate-slot protection, not just an in-process lock.
+
+**Why:** Independent server instances can both read the same entry count before either insert completes, bypassing the seven-day and total limits if each generates a random primary key.
+
+**How to apply:** Keep the new-entry slot identifier deterministic for the normalized email, promotion, and next ordinal, relying on primary-key uniqueness; never rewrite historical records.
 
 The confirmation page may encourage opted-in users to review other coaches truthfully: each qualifying review adds an entry up to the shared cap. Never display the numeric cap or the user's entry count. Stop the additional-entry encouragement when the cap is reached, and remind users to review only coaches they have actually had a lesson with.
 

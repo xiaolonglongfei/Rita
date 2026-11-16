@@ -28,3 +28,17 @@ mtime_ms = 1793473640382
 storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/4034acba-74a3-4b58-b8dc-32a454daa604/942e6c2c-87d9-4cff-9452-8b64a7dcf895"
 storage_version_token = "1793473706754126"
 content_type = "text/plain"
+
+[[outputs]]
+id = "rl2DVhGcKWsSfabpkTF5S"
+uri = "file://generated-artifacts/giveaway-compliance-report.html"
+type = "html"
+title = "Giveaway rules: original and final text"
+description = "Complete original rules first, final rules second, followed by changed files, verification results and operational limitations."
+logical_id = "647db615-58c6-47bf-a929-327931460e7e"
+content_hash = "sha256:7a914b5e946b4dbaa7189b3b0d889e130b2c884a36a170fce377a29141a4ad7c"
+size = 22486
+mtime_ms = 1794860639336
+storage_uri = "gcs://replit-rams-assets-riker/rams/assets/repl:c07cf840-1fcb-4dc6-b9a2-dbe8ed9fc2c1/647db615-58c6-47bf-a929-327931460e7e/51545b8d-6ac1-421a-a65c-1c1d697cc20a"
+storage_version_token = "1794860667699320"
+content_type = "text/html"

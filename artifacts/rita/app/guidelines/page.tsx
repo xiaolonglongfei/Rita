@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GIVEAWAY_REVIEW_DISCLOSURE } from "@/lib/giveaway";
 import { pageMetadata } from "@/lib/site";
 
 export const metadata = pageMetadata(
@@ -24,6 +25,7 @@ export default function GuidelinesPage() {
         <div className="mt-8 space-y-8 text-sm leading-7 text-slate-700">
           <section>
             <h2 className="mb-2 text-xl font-bold text-slate-900">1. How reviewing works on Rovi</h2>
+            <p className="mb-3 text-xs leading-relaxed text-slate-500">{GIVEAWAY_REVIEW_DISCLOSURE}</p>
             <p>Ratings come first. Every Rovi review is built around three ratings: Value, Effectiveness and Punctuality. A written comment is optional. You can submit a review with only the ratings, and for most people that is all it takes. We built Rovi this way on purpose: it keeps reviewing quick, and it keeps feedback focused on the lesson experience rather than on personal remarks.</p>
           </section>
           <section>

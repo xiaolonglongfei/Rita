@@ -86,7 +86,7 @@ test("moderation rejects unauthorized users, malformed actions/notes, and missin
 test("guidelines are indexable, canonical, and retain all nine headings and list structure", () => {
   const jsx = (type, props) => ({ type, props });
   const site = load("lib/site.ts");
-  const page = load("app/guidelines/page.tsx", { "@/lib/site": site, "next/link": { default: "a" }, "react/jsx-runtime": { jsx, jsxs: jsx } });
+  const page = load("app/guidelines/page.tsx", { "@/lib/site": site, "@/lib/giveaway": load("lib/giveaway.ts"), "next/link": { default: "a" }, "react/jsx-runtime": { jsx, jsxs: jsx } });
   assert.equal(page.metadata.alternates.canonical, "https://www.rovi.training/guidelines");
   assert.equal(page.metadata.title, "Review Guidelines & Removal Policy");
   assert.equal(page.metadata.robots.index, true);

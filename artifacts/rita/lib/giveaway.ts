@@ -1,4 +1,6 @@
 export const GIVEAWAY_MAX_ENTRIES = 4;
+export const SPONSOR_NAME = "Rovi";
+export const GIVEAWAY_REVIEW_DISCLOSURE = "Reviewers are entered in a prize drawing. Entry does not depend on whether your review is positive or negative.";
 
 export const GIVEAWAY_START_AT = new Date("2026-09-21T00:00:00-04:00");
 export const GIVEAWAY_END_AT = new Date("2027-01-01T00:00:00-05:00");
