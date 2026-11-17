@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     .is("opted_out_at", null)
     .eq("is_test", false)   // never expose QA/test records in public rankings
     .eq("is_active", true)  // hide former/inactive instructors from public rankings
+    .eq("reviews_visible", true)
     .gt("total_reviews", 0)
     .order("avg_overall", { ascending: false })
     .order("total_reviews", { ascending: false })

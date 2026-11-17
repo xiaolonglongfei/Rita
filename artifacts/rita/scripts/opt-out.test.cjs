@@ -51,6 +51,7 @@ test("detail API returns generic 404 before querying any removed coach's reviews
   };
   const route = load("app/api/instructors/[id]/route.ts", {
     "next/server": next,
+    "@/lib/public-review": load("lib/public-review.ts"),
     "@/lib/supabase/server": { createServiceClient: () => ({ from(table) {
       assert.equal(table, "instructors"); return q;
     } }) },

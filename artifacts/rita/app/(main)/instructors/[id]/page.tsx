@@ -7,6 +7,7 @@ import { InstructorBadge } from "@/components/instructor/InstructorBadge";
 import { getInstructorProfile } from "@/lib/instructor-profile";
 import { isIndexableInstructor, plainTextBio } from "@/lib/instructor-seo";
 import { pageMetadata } from "@/lib/site";
+import { PUBLIC_REVIEW_FIELDS, toPublicReview } from "@/lib/public-review";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -34,16 +35,17 @@ export default async function InstructorProfilePage({
   const instructor = await getInstructorProfile(id);
   if (!instructor || instructor.is_test === true) notFound();
   const supabase = createServiceClient();
+  const reviewsVisible = instructor.reviews_visible === true;
 
   const [{ data: reviews }, { count: verifiedSessions }] =
     await Promise.all([
-      supabase
+      reviewsVisible ? supabase
         .from("reviews")
-        .select("id, rating_value, rating_effectiveness, rating_punctuality, comment, created_at, student_id, is_verified")
+        .select(PUBLIC_REVIEW_FIELDS)
         .eq("instructor_id", id)
         .eq("moderation_status", "approved")
         .order("created_at", { ascending: false })
-        .limit(20),
+        .limit(20) : Promise.resolve({ data: [] }),
       supabase
         .from("sessions")
         .select("*", { count: "exact", head: true })
@@ -51,11 +53,7 @@ export default async function InstructorProfilePage({
         .not("verified_at", "is", null),
     ]);
 
-  // Use the stored reviews_visible flag (set by DB trigger when instructor reaches 3+ approved reviews)
-  // Fall back to computing it if the column isn't present yet in local types
-  const reviewsVisible = (instructor as Record<string, unknown>).reviews_visible === true;
-
-  const enrichedReviews = reviews ?? [];
+  const enrichedReviews = reviewsVisible ? (reviews ?? []).map(toPublicReview) : [];
 
   return (
     <div>
@@ -179,9 +177,9 @@ export default async function InstructorProfilePage({
           <div className="lg:col-span-1">
             <div className="sticky top-6">
               <ScoreTriangle
-                value={instructor.avg_value ?? 0}
-                effectiveness={instructor.avg_effectiveness ?? 0}
-                punctuality={instructor.avg_punctuality ?? 0}
+                value={reviewsVisible ? instructor.avg_value ?? 0 : null}
+                effectiveness={reviewsVisible ? instructor.avg_effectiveness ?? 0 : null}
+                punctuality={reviewsVisible ? instructor.avg_punctuality ?? 0 : null}
                 reviewCount={instructor.total_reviews ?? 0}
                 reviewsVisible={reviewsVisible}
               />

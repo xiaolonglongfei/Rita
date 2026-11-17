@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   if (search) query = query.or(`full_name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (location) query = query.ilike("teaching_locations", `%${location}%`);
-  if (minScore) query = query.gte("avg_overall", parseFloat(minScore));
+  if (minScore) query = query.eq("reviews_visible", true).gte("avg_overall", parseFloat(minScore));
 
   const { data, error, count } = await query
     .order("full_name", { ascending: true }) // stable alphabetical order; was avg_overall DESC

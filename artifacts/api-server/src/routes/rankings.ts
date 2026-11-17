@@ -41,6 +41,7 @@ router.get("/rankings/public", async (req, res): Promise<void> => {
     .from("instructors")
     .select("id, name, photo_url, specialty, avg_score, review_count, verified")
     .is("opted_out_at", null)
+    .eq("reviews_visible", true).eq("is_active", true).eq("is_test", false)
     .gt("review_count", 0)
     .order("avg_score", { ascending: false })
     .order("review_count", { ascending: false })

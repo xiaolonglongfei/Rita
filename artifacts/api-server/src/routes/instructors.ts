@@ -19,6 +19,7 @@ type InstructorRow = {
   review_count: number;
   public_rank: number | null;
   created_at: string;
+  reviews_visible?: boolean;
 };
 
 type ReviewRow = {
@@ -33,6 +34,7 @@ type ReviewRow = {
   comment: string | null;
   status: string;
   created_at: string;
+  is_verified: boolean;
 };
 
 function formatInstructor(i: InstructorRow) {
@@ -44,12 +46,12 @@ function formatInstructor(i: InstructorRow) {
     photoUrl: i.photo_url ?? null,
     location: i.location ?? null,
     claimed: i.verified,
-    avgScore: i.avg_score,
-    avgValue: i.avg_value,
-    avgEffectiveness: i.avg_effectiveness,
-    avgPunctuality: i.avg_punctuality,
+    avgScore: i.reviews_visible === true ? i.avg_score : null,
+    avgValue: i.reviews_visible === true ? i.avg_value : null,
+    avgEffectiveness: i.reviews_visible === true ? i.avg_effectiveness : null,
+    avgPunctuality: i.reviews_visible === true ? i.avg_punctuality : null,
     reviewCount: i.review_count,
-    publicRank: i.public_rank ?? null,
+    publicRank: i.reviews_visible === true ? i.public_rank ?? null : null,
     createdAt: i.created_at,
   };
 }
@@ -64,12 +66,13 @@ router.get("/instructors", async (req, res): Promise<void> => {
   const limit = params.success && params.data.limit ? Number(params.data.limit) : 20;
   const offset = (page - 1) * limit;
 
-  let query = supabase.from("instructors").select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at", { count: "exact" }).is("opted_out_at", null);
+  let query = supabase.from("instructors").select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at, reviews_visible", { count: "exact" }).is("opted_out_at", null)
+    .eq("is_active", true).eq("is_test", false);
 
   if (search) query = query.or(`name.ilike.%${search}%,bio.ilike.%${search}%`);
   if (specialty) query = query.ilike("specialty", `%${specialty}%`);
   if (location)  query = query.ilike("location",  `%${location}%`);
-  if (minScore !== undefined) query = query.gte("avg_score", Number(minScore));
+  if (minScore !== undefined) query = query.eq("reviews_visible", true).gte("avg_score", Number(minScore));
 
   const { data, error, count } = await query.range(offset, offset + limit - 1);
 
@@ -83,8 +86,8 @@ router.get("/instructors/:id", async (req, res): Promise<void> => {
   if (isNaN(id)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data, error } = await supabase.from("instructors")
-    .select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at")
-    .eq("id", id).is("opted_out_at", null).single();
+    .select("id, name, bio, specialty, photo_url, location, verified, avg_score, avg_value, avg_effectiveness, avg_punctuality, review_count, public_rank, created_at, reviews_visible")
+    .eq("id", id).is("opted_out_at", null).eq("is_active", true).eq("is_test", false).single();
   if (error || !data) { res.status(404).json({ error: "Instructor not found" }); return; }
   res.json(formatInstructor(data as InstructorRow));
 });
@@ -94,13 +97,17 @@ router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
   const instructorId = parseInt(raw, 10);
   if (isNaN(instructorId)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
-  const { data: visibleInstructor } = await supabase.from("instructors").select("id")
-    .eq("id", instructorId).is("opted_out_at", null).maybeSingle();
+  const { data: visibleInstructor } = await supabase.from("instructors").select("id, reviews_visible")
+    .eq("id", instructorId).is("opted_out_at", null).eq("is_active", true).eq("is_test", false).maybeSingle();
   if (!visibleInstructor) { res.status(404).json({ error: "Instructor not found" }); return; }
+  if (visibleInstructor.reviews_visible !== true) {
+    res.json({ items: [], total: 0, page: 1, limit: 50 });
+    return;
+  }
 
   const { data, error } = await supabase
     .from("reviews")
-    .select("*, users(name, avatar_url), instructors(name)")
+    .select("id, value, effectiveness, punctuality, comment, created_at, is_verified")
     .eq("instructor_id", instructorId)
     .eq("status", "approved")
     .order("created_at", { ascending: false })
@@ -108,22 +115,15 @@ router.get("/instructors/:id/reviews", async (req, res): Promise<void> => {
 
   if (error) { res.status(500).json({ error: error.message }); return; }
 
-  const items = (data as (ReviewRow & { users: { name: string; avatar_url: string | null } | null; instructors: { name: string } | null })[])
+  const items = ((data ?? []) as ReviewRow[])
     .map(r => ({
       id: r.id,
-      userId: r.user_id,
-      userName: r.users?.name ?? null,
-      userAvatarUrl: r.users?.avatar_url ?? null,
-      instructorId: r.instructor_id,
-      instructorName: r.instructors?.name ?? null,
-      sessionId: r.session_id ?? null,
-      value: r.value,
-      effectiveness: r.effectiveness,
-      punctuality: r.punctuality,
-      overallScore: r.overall_score,
+      rating_value: r.value,
+      rating_effectiveness: r.effectiveness,
+      rating_punctuality: r.punctuality,
       comment: r.comment ?? null,
-      status: r.status as "pending" | "approved" | "rejected",
-      createdAt: r.created_at,
+      created_at: r.created_at,
+      is_verified: r.is_verified,
     }));
 
   res.json({ items, total: items.length, page: 1, limit: 50 });
@@ -135,9 +135,16 @@ router.get("/instructors/:id/stats", async (req, res): Promise<void> => {
   if (isNaN(instructorId)) { res.status(404).json({ error: "Instructor not found" }); return; }
 
   const { data: instructor, error: ie } = await supabase.from("instructors")
-    .select("id, avg_value, avg_effectiveness, avg_punctuality, avg_score, review_count")
-    .eq("id", instructorId).is("opted_out_at", null).single();
+    .select("id, avg_value, avg_effectiveness, avg_punctuality, avg_score, review_count, reviews_visible")
+    .eq("id", instructorId).is("opted_out_at", null).eq("is_active", true).eq("is_test", false).single();
   if (ie || !instructor) { res.status(404).json({ error: "Instructor not found" }); return; }
+  if (instructor.reviews_visible !== true) {
+    res.json({
+      instructorId, avgValue: null, avgEffectiveness: null, avgPunctuality: null,
+      avgScore: null, reviewCount: instructor.review_count, scoreDistribution: [],
+    });
+    return;
+  }
 
   const { data: reviews } = await supabase
     .from("reviews")
